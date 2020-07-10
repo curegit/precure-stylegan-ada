@@ -28,7 +28,7 @@ class EqualizedConvolution2D(Chain):
 
 class LeakyRelu(Link):
 
-	def __init__(self, a):
+	def __init__(self, a=0.2):
 		super().__init__()
 		self.a = a
 
