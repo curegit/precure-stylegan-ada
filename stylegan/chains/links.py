@@ -1,5 +1,5 @@
 from math import sqrt
-from chainer import Chain, Link
+from chainer import Link, Chain
 from chainer.links import Linear, Convolution2D
 from chainer.functions import leaky_relu
 from chainer.initializers import Normal
