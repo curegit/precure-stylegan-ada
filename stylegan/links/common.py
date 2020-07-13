@@ -1,8 +1,18 @@
 from math import sqrt
-from chainer import Link, Chain
+from chainer import Variable, Link, Chain
 from chainer.links import Linear, Convolution2D
-from chainer.functions import leaky_relu
+from chainer.functions import leaky_relu, broadcast_to
 from chainer.initializers import Normal
+
+class Constant(Link):
+
+	def __init__(self, value):
+		super().__init__()
+		self.value = value
+
+	def __call__(self, shape):
+		var = Variable(self.xp.array(self.value, dtype=self.xp.float32))
+		return broadcast_to(var, shape)
 
 class EqualizedLinear(Chain):
 
