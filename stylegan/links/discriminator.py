@@ -46,8 +46,8 @@ class ResidualBlock(Chain):
 			self.skip = Sequential(Downsampler(), EqualizedConvolution2D())
 
 	def __call__(self, x):
-		 y = self.a2(self.c2(self.a1(self.c1(x))))
-		 return self.skip(x) + self.down(y)
+		y = self.a2(self.c2(self.a1(self.c1(x))))
+		return self.skip(x) + self.down(y)
 
 class OutputBlock(Chain):
 
