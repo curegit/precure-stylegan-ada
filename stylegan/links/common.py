@@ -1,7 +1,7 @@
-from math import sqrt
+from math import sqrt, log
 from chainer import Variable, Link, Chain
 from chainer.links import Linear, Convolution2D
-from chainer.functions import leaky_relu, broadcast_to
+from chainer.functions import gaussian, leaky_relu, broadcast_to
 from chainer.initializers import Normal
 
 class Constant(Link):
@@ -13,6 +13,17 @@ class Constant(Link):
 	def __call__(self, shape):
 		var = Variable(self.xp.array(self.value, dtype=self.xp.float32))
 		return broadcast_to(var, shape)
+
+class GaussianDistribution(Chain):
+
+	def __init__(self, mean=0.0, sd=1.0):
+		super().__init__()
+		with self.init_scope():
+			self.mean = Constant(mean)
+			self.ln_var = Constant(log(sd ** 2))
+
+	def __call__(self, shape):
+		return gaussian(self.mean(shape), self.ln_var(shape))
 
 class EqualizedLinear(Chain):
 
