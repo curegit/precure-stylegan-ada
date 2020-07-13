@@ -1,5 +1,5 @@
 from chainer import Link, Chain, Sequential
-from chainer.functions import mean, sqrt, concat, broadcast_to, flatten, resize_images
+from chainer.functions import sqrt, mean, resize_images, concat, broadcast_to, flatten
 from stylegan.links.common import EqualizedLinear, EqualizedConvolution2D, LeakyRelu
 
 class FromRGB(Chain):
