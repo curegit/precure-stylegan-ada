@@ -26,10 +26,10 @@ class Upsampler(Link):
 
 class StyleAffineTransform(Chain):
 
-	def __init__(self, latent_size):
+	def __init__(self, latent_size, channels):
 		super().__init__()
 		with self.init_scope():
-			self.s = EqualizedLinear(latent_size, latent_size, initial_bias=One(), gain=1)
+			self.s = EqualizedLinear(latent_size, channels, initial_bias=One(), gain=1)
 
 	def __call__(self, w):
 		return self.s(w)
@@ -74,7 +74,7 @@ class InitialSkipArchitecture(Chain):
 		self.in_channels = in_channels
 		with self.init_scope():
 			self.c1 = Constant(1)
-			self.s1 = StyleAffineTransform(latent_size, latent_size)
+			self.s1 = StyleAffineTransform(latent_size, in_channels)
 			self.w1 = WeightDemodulatedConvolution2D(in_channels, out_channels)
 			self.n1 = NoiseAdder(out_channels)
 			self.a1 = LeakyRelu()
@@ -94,11 +94,11 @@ class SkipArchitecture(Chain):
 		super().__init__()
 		with self.init_scope():
 			self.up = Upsampler()
-			self.s1 = StyleAffineTransform(latent_size, latent_size)
+			self.s1 = StyleAffineTransform(latent_size, in_channels)
 			self.w1 = WeightDemodulatedConvolution2D(in_channels, out_channels)
 			self.n1 = NoiseAdder(out_channels)
 			self.a1 = LeakyRelu()
-			self.s2 = StyleAffineTransform(latent_size, latent_size)
+			self.s2 = StyleAffineTransform(latent_size, out_channels)
 			self.w2 = WeightDemodulatedConvolution2D(out_channels, out_channels)
 			self.n2 = NoiseAdder(out_channels)
 			self.a2 = LeakyRelu()
