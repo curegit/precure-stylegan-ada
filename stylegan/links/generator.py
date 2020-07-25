@@ -49,7 +49,7 @@ class WeightDemodulatedConvolution2D(Link):
 		batch, _, height, width = x.shape
 		mod_w = y.reshape((batch, 1, self.in_channels, 1, 1)) * self.w
 		demod_w = mod_w / sqrt(sum(mod_w ** 2, axis=(2, 3, 4), keepdims=True) + 1e-8)
-		w = demod_w.reshape((batch * self.out_channels, in_channels, 3, 3))
+		w = demod_w.reshape((batch * self.out_channels, self.in_channels, 3, 3))
 		group_x = self.c * x.reshape((1, batch * self.in_channels, height, width))
 		h = convolution_2d(group_x, w, self.b, stride=1, pad=1, groups=batch)
 		return h.reshape((batch, self.out_channels, height, width))
