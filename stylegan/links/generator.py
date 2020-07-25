@@ -69,7 +69,7 @@ class NoiseAdder(Chain):
 
 class InitialSkipArchitecture(Chain):
 
-	def __init__(self, in_channels, out_channels, latent_size):
+	def __init__(self, latent_size, in_channels, out_channels):
 		super().__init__()
 		self.in_channels = in_channels
 		with self.init_scope():
@@ -90,7 +90,7 @@ class InitialSkipArchitecture(Chain):
 
 class SkipArchitecture(Chain):
 
-	def __init__(self, in_channels, out_channels, latent_size):
+	def __init__(self, latent_size, in_channels, out_channels):
 		super().__init__()
 		with self.init_scope():
 			self.up = Upsampler()
