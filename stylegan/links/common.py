@@ -38,7 +38,7 @@ class EqualizedLinear(Chain):
 
 class EqualizedConvolution2D(Chain):
 
-	def __init__(self, in_channels, out_channels, ksize=None, stride=1, pad=0, nobias=False, initial_bias=None, gain=sqrt(2)):
+	def __init__(self, in_channels, out_channels, ksize=3, stride=1, pad=0, nobias=False, initial_bias=None, gain=sqrt(2)):
 		super().__init__()
 		self.c = gain * sqrt(1 / (in_channels * ksize ** 2))
 		with self.init_scope():
