@@ -38,12 +38,12 @@ class ResidualBlock(Chain):
 	def __init__(self, in_channels, out_channels):
 		super().__init__()
 		with self.init_scope():
-			self.c1 = EqualizedConvolution2D()
+			self.c1 = EqualizedConvolution2D(in_channels, in_channels, ksize=3, stride=1, pad=1)
 			self.a1 = LeakyRelu()
-			self.c2 = EqualizedConvolution2D()
+			self.c2 = EqualizedConvolution2D(in_channels, out_channels, ksize=3, stride=1, pad=1)
 			self.a2 = LeakyRelu()
 			self.down = Downsampler()
-			self.skip = Sequential(Downsampler(), EqualizedConvolution2D())
+			self.skip = Sequential(Downsampler(), EqualizedConvolution2D(in_channels, out_channels, ksize=1, stride=1, pad=0, nobias=True))
 
 	def __call__(self, x):
 		y = self.a2(self.c2(self.a1(self.c1(x))))
