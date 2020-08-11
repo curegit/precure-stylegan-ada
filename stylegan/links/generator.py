@@ -3,7 +3,7 @@ from chainer import Parameter, Link, Chain
 from chainer.links import Scale
 from chainer.functions import sqrt, sum, convolution_2d, resize_images, broadcast_to, expand_dims, vstack
 from chainer.initializers import Zero, One, Normal
-from stylegan.links.common import Constant, GaussianDistribution, EqualizedLinear, EqualizedConvolution2D, LeakyRelu
+from stylegan.links.common import GaussianDistribution, EqualizedLinear, EqualizedConvolution2D, LeakyRelu
 
 class ToRGB(Chain):
 
@@ -38,8 +38,6 @@ class WeightDemodulatedConvolution2D(Link):
 
 	def __init__(self, in_channels, out_channels, gain=root(2)):
 		super().__init__()
-		#self.in_channels = in_channels
-		#self.out_channels = out_channels
 		self.c = gain * root(1 / (in_channels * 3 ** 2))
 		with self.init_scope():
 			self.w = Parameter(shape=(out_channels, in_channels, 3, 3), initializer=Normal(1.0))
@@ -51,9 +49,9 @@ class WeightDemodulatedConvolution2D(Link):
 		demod_w = mod_w / sqrt(sum(mod_w ** 2, axis=(2, 3, 4), keepdims=True) + 1e-8)
 		#w = demod_w.reshape((batch * self.out_channels, self.in_channels, 3, 3))
 		#group_x = self.c * x.reshape((1, batch * self.in_channels, height, width))
-		return vstack([convolution_2d(expand_dims(xi, axis=0), w, self.b, stride=1, pad=1) for xi, w in zip(x, demod_w)])
 		#h = convolution_2d(group_x, w, self.b, stride=1, pad=1, groups=batch)
 		#return h.reshape((batch, self.out_channels, height, width))
+		return vstack([convolution_2d(expand_dims(xi, axis=0), w, self.b, stride=1, pad=1) for xi, w in zip(x, demod_w)])
 
 class NoiseAdder(Chain):
 
@@ -72,9 +70,8 @@ class InitialSkipArchitecture(Chain):
 
 	def __init__(self, latent_size, in_channels, out_channels):
 		super().__init__()
-		self.in_channels = in_channels
 		with self.init_scope():
-			self.c1 = Constant(1)
+			self.c1 = Parameter(shape=(1, in_channels, 4, 4), initializer=Normal())
 			self.s1 = StyleAffineTransform(latent_size, in_channels)
 			self.w1 = WeightDemodulatedConvolution2D(in_channels, out_channels)
 			self.n1 = NoiseAdder(out_channels)
@@ -82,8 +79,8 @@ class InitialSkipArchitecture(Chain):
 			self.trgb = ToRGB(out_channels)
 
 	def __call__(self, w):
-		batch = w.shape[0]
-		h1 = self.c1((batch, self.in_channels, 4, 4))
+		shape = w.shape[:1] + self.c1.shape[1:]
+		h1 = broadcast_to(self.c1, shape)
 		h2 = self.w1(h1, self.s1(w))
 		h3 = self.n1(h2)
 		h4 = self.a1(h3)
