@@ -17,10 +17,10 @@ class Mapper(Chain):
 
 class Synthesizer(Chain):
 
-	def __init__(self, latent_size, levels=7, first_channels=512, last_channels=16):
+	def __init__(self, latent_size, levels=7, first_channels=512, last_channels=16, double_last=True):
 		super().__init__()
 		in_channels = [first_channels if i == 1 else min(first_channels, last_channels * 2 ** (levels - i + 1)) for i in range(1, levels + 1)]
-		out_channels = [last_channels if i == levels else min(first_channels, last_channels * 2 ** (levels - i)) for i in range(1, levels + 1)]
+		out_channels = [last_channels * (2 if double_last else 1) if i == levels else min(first_channels, last_channels * 2 ** (levels - i)) for i in range(1, levels + 1)]
 		skips = [SkipArchitecture(latent_size, i, o) for i, o in zip(in_channels[1:], out_channels[1:])]
 		with self.init_scope():
 			self.init = InitialSkipArchitecture(latent_size, in_channels[0], out_channels[0])
@@ -34,18 +34,18 @@ class Synthesizer(Chain):
 
 class Generator(Chain):
 
-	def __init__(self, latent_size=512, levels=7, first_channels=512, last_channels=16):
+	def __init__(self, latent_size=512, depth=8, levels=7, first_channels=512, last_channels=16, double_last=True):
 		super().__init__()
 		self.latent_size = latent_size
 		self.levels = levels
 		self.resolution = (2 * 2 ** levels, 2 * 2 ** levels)
 		with self.init_scope():
 			self.sampler = GaussianDistribution()
-			self.mapper = Mapper(latent_size, levels)
-			self.synthesizer = Synthesizer(latent_size, levels, first_channels, last_channels)
+			self.mapper = Mapper(latent_size, depth)
+			self.synthesizer = Synthesizer(latent_size, levels, first_channels, last_channels, double_last)
 
 	def __call__(self, z):
-		return self.synthesizer([self.mapper(z)] * levels)
+		return self.synthesizer([self.mapper(z)] * self.levels)
 
 	def generate_latents(self, batch):
 		return self.sampler((batch, self.latent_size))
