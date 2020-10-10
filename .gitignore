@@ -1,10 +1,7 @@
-*.dot
 *.pdf
-*.nvp
 *.json
 *.hdf5
 *.npy
-*.npz
 *.png
 *.gif
 *.webp
