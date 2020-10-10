@@ -4,12 +4,13 @@ import os.path
 def mkdirs(dirpath):
 	os.makedirs(dirpath, exist_ok=True)
 
-def filepath(dirpath, filename, fileext):
-	return os.path.normpath(os.path.join(dirpath, filename) + os.extsep + fileext)
-
 def alt_filepath(filepath, suffix="+"):
 	while os.path.lexists(filepath):
 		root, ext = os.path.splitext(filepath)
 		head, tail = os.path.split(root)
-		path = os.path.join(head, tail + suffix) + ext
-	return path
+		filepath = os.path.join(head, tail + suffix) + ext
+	return filepath
+
+def build_filepath(dirpath, filename, fileext, unique=False):
+	filepath = os.path.normpath(os.path.join(dirpath, filename) + os.extsep + fileext)
+	return alt_filepath(filepath) if unique else filepath
