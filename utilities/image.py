@@ -18,9 +18,9 @@ def load_image(filepath, size):
 	array = asarray(img, dtype=uint8).transpose(2, 0, 1) / 255
 	return srgb_to_rgb(array).astype(float32)
 
-def array_to_image(array):
+def to_pil_image(array):
 	srgb = clip(rint(rgb_to_srgb(array) * 255), 0, 255).astype(uint8)
 	return Image.fromarray(srgb.transpose(1, 2, 0), "RGB")
 
 def save_image(array, filepath):
-	array_to_image(array).save(filepath)
+	to_pil_image(array).save(filepath)
