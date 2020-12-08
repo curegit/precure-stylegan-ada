@@ -1,4 +1,5 @@
 from sys import float_info
+from chainer.backend import CpuDevice, GpuDevice
 
 def uint(string):
 	value = int(string)
@@ -33,10 +34,12 @@ def rate(string):
 def device(string):
 	value = string.upper()
 	if value == "CPU":
-		return -1
+		return CpuDevice()
 	if value == "GPU":
-		return 0
+		return GpuDevice.from_device_id(0)
 	value = int(string)
-	if value >= -1:
-		return value
+	if value >= 0:
+		return GpuDevice.from_device_id(value)
+	if value == -1:
+		return CpuDevice()
 	raise ValueError()
