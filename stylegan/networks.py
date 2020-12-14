@@ -9,11 +9,10 @@ from stylegan.links.discriminator import FromRGB, ResidualBlock, OutputBlock
 
 class Network(Chain):
 
-	def load_model(self, filepath):
-		device = self.device
-		self.to_device(CpuDevice())
-		load_hdf5(filepath, self)
-		return self.to_device(device)
+	def load_model(self, filepath=None):
+		if filepath is not None:
+			load_hdf5(filepath, self)
+		return self
 
 	def save_model(self, filepath):
 		device = self.device
