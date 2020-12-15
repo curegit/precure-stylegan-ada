@@ -1,5 +1,6 @@
 import os
 import os.path
+import glob
 
 def mkdirs(dirpath):
 	os.makedirs(dirpath, exist_ok=True)
@@ -14,3 +15,6 @@ def alt_filepath(filepath, suffix="+"):
 def build_filepath(dirpath, filename, fileext, exist_ok=True, suffix="+"):
 	filepath = os.path.normpath(os.path.join(dirpath, filename) + os.extsep + fileext)
 	return filepath if exist_ok else alt_filepath(filepath, suffix)
+
+def glob_recursively(dirpath, fileext):
+	return [f for f in glob.glob(build_filepath(dirpath, "**/*", fileext), recursive=True) if os.path.isfile(f)]
