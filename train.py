@@ -30,11 +30,6 @@ parser.add_argument("-o", "--optimizers", metavar="FILE", nargs=3, help="snapsho
 parser.add_argument("-p", "--preload", action="store_true", help="preload all dataset into RAM")
 args = parser.add_output_args(default_dest="results").add_model_args().add_evaluation_args().parse_args()
 
-mkdirs(args.dest)
-jsonfile = build_filepath(args.dest, "args", "json")
-with open(jsonfile, mode="w", encoding="utf-8") as f:
-	dump(vars(args), f, indent=2, sort_keys=True)
-
 print("Initializing models")
 generator = Generator(args.size, args.depth, args.levels, *args.channels)
 discriminator = Discriminator(args.levels, args.channels[1], args.channels[0])
@@ -45,12 +40,13 @@ mapper_optimizer = SGD(args.sgd[0]) if args.sgd else Adam(args.alphas[0], args.b
 generator_optimizer = SGD(args.sgd[1]) if args.sgd else Adam(args.alphas[1], args.betas[0], args.betas[1], eps=1e-08)
 discriminator_optimizer = SGD(args.sgd[2]) if args.sgd else Adam(args.alphas[2], args.betas[0], args.betas[1], eps=1e-08)
 optimizers = OptimizerSet(mapper_optimizer, generator_optimizer, discriminator_optimizer)
-if args.optimizer is not None: optimizers.load_states(args.optimizer)
+if args.optimizers is not None: optimizers.load_states(args.optimizers)
 optimizers.setup(generator, discriminator)
 
 generator.to_device(args.device)
 discriminator.to_device(args.device)
 
+mkdirs(args.dest)
 dataset = ImageDataset(args.dataset, generator.resolution, args.preload)
 iterator = SerialIterator(dataset, args.batch, repeat=True, shuffle=True)
 updater = CustomUpdater(generator, discriminator, iterator, optimizers, args.mix, args.gamma, args.lsgan)
