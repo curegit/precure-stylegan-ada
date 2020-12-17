@@ -103,7 +103,8 @@ class CustomTrainer(Trainer):
 		self.extend(log_reporter)
 		self.extend(PrintReport(entries, log_reporter))
 		filename = basename(build_filepath(self.out, "plot", "png", self.overwrite))
-		PlotReport(entries[2:], "iteration", trigger=(interval, "iteration"), filename=filename)
+		plot = PlotReport(entries[2:], "iteration", trigger=(interval, "iteration"), filename=filename)
+		self.extend(plot)
 
 	def enable_progress_bar(self, interval):
 		self.extend(ProgressBar(update_interval=interval))
