@@ -1,7 +1,8 @@
+from json import dump
 from chainer import global_config
 from chainer.iterators import SerialIterator
 from chainer.optimizers import SGD, Adam
-from stylegan.data import ImageDataset
+from stylegan.dataset import ImageDataset
 from stylegan.networks import Generator, Discriminator
 from stylegan.training import OptimizerSet, CustomUpdater, CustomTrainer
 from interface.args import CustomArgumentParser
@@ -29,81 +30,37 @@ parser.add_argument("-o", "--optimizers", metavar="FILE", nargs=3, help="snapsho
 parser.add_argument("-p", "--preload", action="store_true", help="preload all dataset into RAM")
 args = parser.add_output_args(default_dest="results").add_model_args().add_evaluation_args().parse_args()
 
+mkdirs(args.dest)
+jsonfile = build_filepath(args.dest, "args", "json")
+with open(jsonfile, mode="w", encoding="utf-8") as f:
+	dump(vars(args), f, indent=2, sort_keys=True)
+
 print("Initializing models")
 generator = Generator(args.size, args.depth, args.levels, *args.channels)
 discriminator = Discriminator(args.levels, args.channels[1], args.channels[0])
-if args.generator is not None: generator.load_model(args.generator)
-if args.discriminator is not None: discriminator.load_model(args.discriminator)
+if args.generator is not None: generator.load_state(args.generator)
+if args.discriminator is not None: discriminator.load_state(args.discriminator)
 
 mapper_optimizer = SGD(args.sgd[0]) if args.sgd else Adam(args.alphas[0], args.betas[0], args.betas[1], eps=1e-08)
 generator_optimizer = SGD(args.sgd[1]) if args.sgd else Adam(args.alphas[1], args.betas[0], args.betas[1], eps=1e-08)
 discriminator_optimizer = SGD(args.sgd[2]) if args.sgd else Adam(args.alphas[2], args.betas[0], args.betas[1], eps=1e-08)
 optimizers = OptimizerSet(mapper_optimizer, generator_optimizer, discriminator_optimizer)
+if args.optimizer is not None: optimizers.load_states(args.optimizer)
 optimizers.setup(generator, discriminator)
-if args.optimizer is not None: optimizers.load_state(args.optimizer)
 
 generator.to_device(args.device)
 discriminator.to_device(args.device)
-#optimizers.to_device()
 
 dataset = ImageDataset(args.dataset, generator.resolution, args.preload)
 iterator = SerialIterator(dataset, args.batch, repeat=True, shuffle=True)
 updater = CustomUpdater(generator, discriminator, iterator, optimizers, args.mix, args.gamma, args.lsgan)
 trainer = CustomTrainer(updater, args.epoch, args.dest)
-
-"""
-# Init optimizers
-print("Initializing optimizers")
-if args.sgd is None:
-	mapper_optimizer = optimizers.Adam(alpha=).setup(generator.mapper)
-	print(f"Mapper: Adam(alpha: {args.adam_alphas[0]}, beta1: {args.adam_betas[0]}, beta2: {args.adam_betas[1]})")
-	generator_optimizer = optimizers.Adam(alpha=args.adam_alphas[1], beta1=args.adam_betas[0], beta2=args.adam_betas[1], eps=1e-08).setup(generator.generator)
-	print(f"Generator: Adam(alpha: {args.adam_alphas[1]}, beta1: {args.adam_betas[0]}, beta2: {args.adam_betas[1]})")
-	discriminator_optimizer = optimizers.Adam(alpha=args.adam_alphas[2], beta1=args.adam_betas[0], beta2=args.adam_betas[1], eps=1e-08).setup(discriminator)
-	print(f"Discriminator: Adam(alpha: {args.adam_alphas[2]}, beta1: {args.adam_betas[0]}, beta2: {args.adam_betas[1]})")
-else:
-	mapper_optimizer = optimizers.SGD(args.sgd[0]).setup(generator.mapper)
-	print(f"Mapper: SGD(learning rate: {args.sgd[0]})")
-	generator_optimizer = optimizers.SGD(args.sgd[1]).setup(generator.generator)
-	print(f"Generator: SGD(learning rate: {args.sgd[1]})")
-	discriminator_optimizer = optimizers.SGD(args.sgd[2]).setup(discriminator)
-	print(f"Discriminator: SGD(learning rate: {args.sgd[2]})")
-"""
-
-mkdirs(args.dest)
-
-"""
-# Dump command-line options
-path = filepath(args.result, "args_quit" if args.quit else "args", "json")
-path = path if args.force else altfilepath(path)
-with open(path, mode="w", encoding="utf-8") as fp:
-	dump(vars(args), fp, indent=2, sort_keys=True)
-"""
-# Prepare updater
-#updater = StyleGanUpdater(generator, discriminator, iterator, {"mapper": mapper_optimizer, "generator": generator_optimizer, "discriminator": discriminator_optimizer}, args.device, args.stage, args.mix, args.alpha, args.delta, args.gamma, args.lsgan)
-# Prepare trainer
-#trainer = GANTrainer(updater, epoch, )
-
-"""
-logpath = filepath(args.result, "report", "log")
-logname = basename(logpath if args.force else altfilepath(logpath))
-plotpath = filepath(args.result, "plot", "png")
-plotname = basename(plotpath if args.force else altfilepath(plotpath))
-trainer = Trainer(updater, (args.epoch, "epoch"), out=args.result)
-if args.print[0] > 0: trainer.extend(extensions.ProgressBar(update_interval=args.print[0]))
-if args.print[1] > 0: trainer.extend(extensions.PrintReport(["epoch", "iteration", "alpha", "loss (gen)", "loss (dis)", "loss (grad)"], extensions.LogReport(trigger=(args.print[1], "iteration"), log_name=None)))
-
-if args.write[0] > 0: trainer.extend(save_middle_images(generator, args.stage, args.result, args.number, args.batch, args.mix, args.force), trigger=(args.write[0], "iteration"))
-if args.write[1] > 0: trainer.extend(save_middle_models(generator, discriminator, args.stage, args.result, args.device, args.force), trigger=(args.write[1], "iteration"))
-if args.write[1] > 0: trainer.extend(save_middle_optimizers(mapper_optimizer, generator_optimizer, discriminator_optimizer, args.stage, args.result, args.force), trigger=(args.write[1], "iteration"))
-
-if args.write[2] > 0: trainer.extend(extensions.LogReport(trigger=(args.write[2], "iteration"), filename=logname))
-if args.write[3] > 0: trainer.extend(extensions.PlotReport(["alpha", "loss (gen)", "loss (dis)", "loss (grad)"], "iteration", trigger=(args.write[3], "iteration"), filename=plotname))
-"""
-
-# Run ML
+trainer.hook_state_save(1000)
+trainer.hook_image_generation(1000, 32)
+trainer.enable_reports(500)
+trainer.enable_progress_bar(1)
 trainer.run()
 
-generator.save_model("gen.hdf5")
-discriminator.save_model("dis.hdf5")
-optimizers.save_state("opt.hdf5")
+generator.save_state(build_filepath(args.dest, "gen", "hdf5"))
+discriminator.save_state(build_filepath(args.dest, "dis", "hdf5"))
+optimizers.save_states(build_filepath(args.dest, "opt", "hdf5"))
