@@ -24,7 +24,7 @@ class CustomArgumentParser(ArgumentParser):
 	def add_evaluation_args(self):
 		group = self.add_argument_group("evaluation", "")
 		group.add_argument("-b", "--batch", type=natural, default=16, help="")
-		group.add_argument("-v", "--device", "--gpu", metavar="ID", dest="device", type=device, default=device(0), help="")
+		group.add_argument("-v", "--device", "--gpu", metavar="ID", dest="device", type=device, default=device("CPU"), help="")
 		return self
 
 	def add_generation_args(self):
