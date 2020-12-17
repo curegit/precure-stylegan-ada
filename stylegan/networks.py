@@ -59,7 +59,8 @@ class Generator(Network):
 		if random_mix is not None:
 			l = randint(1, self.levels - 1)
 			zs[l:] = [random_mix] * (self.levels - l)
-		return self.synthesizer(self.mapper(zs))
+		ws = [self.mapper(z) for z in zs]
+		return self.synthesizer(ws)
 
 	def generate_latents(self, batch):
 		return self.sampler((batch, self.size))
