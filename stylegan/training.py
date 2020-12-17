@@ -45,7 +45,7 @@ class OptimizerSet():
 class CustomUpdater(StandardUpdater):
 
 	def __init__(self, generator, discriminator, iterator, optimizers, mixing_rate=0.5, gamma=10, lsgan=False):
-		super().__init__(iterator, optimizers)
+		super().__init__({}, {})
 		self.generator = generator
 		self.discriminator = discriminator
 		self.iterator = iterator
