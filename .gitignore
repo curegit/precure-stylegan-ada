@@ -1,7 +1,7 @@
 *.pdf
-*.json
-*.hdf5
+*.log
 *.npy
+*.hdf5
 *.png
 *.gif
 *.webp
