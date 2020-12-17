@@ -1,6 +1,5 @@
-from numpy import load, save
-from chainer import Variable, Chain, ChainList, Sequential
-from chainer.backend import CpuDevice
+from random import random, randint
+from chainer import Chain, ChainList, Sequential
 from chainer.functions import sqrt, mean
 from chainer.serializers import load_hdf5, save_hdf5
 from stylegan.links.common import GaussianDistribution, EqualizedLinear, LeakyRelu
@@ -9,29 +8,13 @@ from stylegan.links.discriminator import FromRGB, ResidualBlock, OutputBlock
 
 class Network(Chain):
 
-	def load_model(self, filepath=None):
-		if filepath is not None:
-			load_hdf5(filepath, self)
-		return self
+	def load_state(self, filepath):
+		load_hdf5(filepath, self)
 
-	def save_model(self, filepath):
-		device = self.device
-		self.to_device(CpuDevice())
+	def save_state(self, filepath):
 		save_hdf5(filepath, self)
-		return self.to_device(device)
 
-	def load_variable(self, filepath):
-		x = Variable(load(filepath))
-		x.to_device(self.device)
-		return x
-
-	def save_variable(self, filepath, x):
-		x.to_device(CpuDevice())
-		save(filepath, x.array)
-		x.to_device(self.device)
-		return x
-
-class Mapper(Network):
+class Mapper(Chain):
 
 	def __init__(self, size, depth):
 		super().__init__()
@@ -41,16 +24,15 @@ class Mapper(Network):
 	def __call__(self, z):
 		return self.mlp(z / sqrt(mean(z ** 2, axis=1, keepdims=True) + 1e-8))
 
-class Synthesizer(Network):
+class Synthesizer(Chain):
 
-	def __init__(self, size, levels=7, first_channels=512, last_channels=16, double_last=True):
+	def __init__(self, size, levels, first_channels, last_channels, double_last):
 		super().__init__()
 		in_channels = [first_channels if i == 1 else min(first_channels, last_channels * 2 ** (levels - i + 1)) for i in range(1, levels + 1)]
 		out_channels = [last_channels * (2 if double_last else 1) if i == levels else min(first_channels, last_channels * 2 ** (levels - i)) for i in range(1, levels + 1)]
-		skips = [SkipArchitecture(size, i, o) for i, o in zip(in_channels[1:], out_channels[1:])]
 		with self.init_scope():
 			self.init = InitialSkipArchitecture(size, in_channels[0], out_channels[0])
-			self.skips = ChainList(*skips)
+			self.skips = ChainList(*[SkipArchitecture(size, i, o) for i, o in zip(in_channels[1:], out_channels[1:])])
 
 	def __call__(self, ws):
 		h, rgb = self.init(ws[0])
@@ -60,21 +42,27 @@ class Synthesizer(Network):
 
 class Generator(Network):
 
-	def __init__(self, latent_size=512, depth=8, levels=7, first_channels=512, last_channels=16, double_last=True):
+	def __init__(self, size=512, depth=8, levels=7, first_channels=512, last_channels=16, double_last=True):
 		super().__init__()
-		self.latent_size = latent_size
+		self.size = size
 		self.levels = levels
 		self.resolution = (2 * 2 ** levels, 2 * 2 ** levels)
 		with self.init_scope():
 			self.sampler = GaussianDistribution()
-			self.mapper = Mapper(latent_size, depth)
-			self.synthesizer = Synthesizer(latent_size, levels, first_channels, last_channels, double_last)
+			self.mapper = Mapper(size, depth)
+			self.synthesizer = Synthesizer(size, levels, first_channels, last_channels, double_last)
 
-	def __call__(self, z):
-		return self.synthesizer([self.mapper(z)] * self.levels)
+	def __call__(self, z, *zs, random_mix=None):
+
+		zs = [z, *zs]
+		zs = zs + [zs[-1]] * (self.levels - len(zs))
+		if random_mix is not None:
+			l = randint(1, self.levels - 1)
+			zs[l:] = [random_mix] * (self.levels - l)
+		return self.synthesizer(self.mapper(zs))
 
 	def generate_latents(self, batch):
-		return self.sampler((batch, self.latent_size))
+		return self.sampler((batch, self.size))
 
 class Discriminator(Network):
 
