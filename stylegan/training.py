@@ -42,10 +42,18 @@ class OptimizerSet():
 			HDF5Serializer(hdf5.create_group("synthesizer")).save(self.synthesizer_optimizer)
 			HDF5Serializer(hdf5.create_group("discriminator")).save(self.discriminator_optimizer)
 
+	@property
+	def dictionary(self):
+		return {
+			"mapper": self.mapper_optimizer,
+			"synthesizer": self.synthesizer_optimizer,
+			"discriminator": self.discriminator_optimizer
+		}
+
 class CustomUpdater(StandardUpdater):
 
 	def __init__(self, generator, discriminator, iterator, optimizers, mixing_rate=0.5, gamma=10, lsgan=False):
-		super().__init__({}, {})
+		super().__init__(iterator, optimizers.dictionary)
 		self.generator = generator
 		self.discriminator = discriminator
 		self.iterator = iterator
