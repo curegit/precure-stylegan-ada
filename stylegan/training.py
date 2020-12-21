@@ -76,8 +76,8 @@ class CustomUpdater(StandardUpdater):
 
 	def update_discriminator(self):
 		self.discriminator.cleargrads()
-		x_real = np.array(self.iterator.next())
-		#self.get_iterator("main").
+		x_real = Variable(self.discriminator.xp.array(self.iterator.next()))
+		#self.get_iterator("main")
 		#x_real.to_device(self.discriminator.device)
 		y_real = self.discriminator(x_real)
 		gradient = grad([y_real], [x_real], enable_double_backprop=True)[0]
