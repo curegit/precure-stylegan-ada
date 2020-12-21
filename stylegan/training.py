@@ -76,7 +76,7 @@ class CustomUpdater(StandardUpdater):
 
 	def update_discriminator(self):
 		self.discriminator.cleargrads()
-		x_real = Variable(self.iterator.next())
+		x_real = Variable(np.array(self.iterator.next()))
 		#self.get_iterator("main").
 		#x_real.to_device(self.discriminator.device)
 		y_real = self.discriminator(x_real)
