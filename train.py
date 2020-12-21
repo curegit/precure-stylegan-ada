@@ -18,7 +18,7 @@ parser.add_argument("-p", "--preload", action="store_true", help="preload all da
 
 parser.add_argument("-g", "--generator", metavar="FILE", help="HDF5 file of serialized trained generator to load and retrain")
 parser.add_argument("-d", "--discriminator", metavar="FILE", help="HDF5 file of serialized trained discriminator to load and retrain")
-parser.add_argument("-o", "--optimizers", metavar="FILE", nargs=3, help="snapshot of optimizers of mapper, generator, and discriminator")
+parser.add_argument("-o", "--optimizers", metavar="FILE", help="snapshot of optimizers of mapper, generator, and discriminator")
 
 parser.add_argument("-e", "--epoch", type=natural, default=1, help="")
 parser.add_argument("-G", "--gamma", "--l2-batch", dest="gamma", type=ufloat, default=10, help="")
