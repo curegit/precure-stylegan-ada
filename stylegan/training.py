@@ -1,5 +1,6 @@
 import random
 import numpy as np
+from os.path import basename
 from h5py import File as HDF5File
 from chainer import grad, Variable
 from chainer.reporter import report
@@ -11,12 +12,17 @@ from utilities.iter import range_batch
 from utilities.image import save_image
 from utilities.filesys import build_filepath
 
-class OptimizerSet():
+class OptimizerTriple():
 
 	def __init__(self, mapper_optimizer, synthesizer_optimizer, discriminator_optimizer):
 		self.mapper_optimizer = mapper_optimizer
 		self.synthesizer_optimizer = synthesizer_optimizer
 		self.discriminator_optimizer = discriminator_optimizer
+
+	def __iter__(self):
+		yield "mapper", self.mapper_optimizer
+		yield "synthesizer", self.synthesizer_optimizer
+		yield "discriminator", self.discriminator_optimizer
 
 	def setup(self, generator, discriminator):
 		self.mapper_optimizer.setup(generator.mapper)
@@ -42,21 +48,12 @@ class OptimizerSet():
 			HDF5Serializer(hdf5.create_group("synthesizer")).save(self.synthesizer_optimizer)
 			HDF5Serializer(hdf5.create_group("discriminator")).save(self.discriminator_optimizer)
 
-	@property
-	def dictionary(self):
-		return {
-			"mapper": self.mapper_optimizer,
-			"synthesizer": self.synthesizer_optimizer,
-			"discriminator": self.discriminator_optimizer
-		}
-
 class CustomUpdater(StandardUpdater):
 
 	def __init__(self, generator, discriminator, iterator, optimizers, mixing_rate=0.5, gamma=10, lsgan=False):
-		super().__init__(iterator, optimizers.dictionary)
+		super().__init__(iterator, dict(optimizers))
 		self.generator = generator
 		self.discriminator = discriminator
-		self.iterator = iterator
 		self.optimizers = optimizers
 		self.mixing_rate = mixing_rate
 		self.gamma = gamma
@@ -68,8 +65,8 @@ class CustomUpdater(StandardUpdater):
 
 	def update_generator(self):
 		self.generator.cleargrads()
-		z = self.generator.generate_latents(self.iterator.batch_size)
-		mix = self.generator.generate_latents(self.iterator.batch_size) if random.random() < self.mixing_rate else None
+		z = self.generator.generate_latents(self.batch_size)
+		mix = self.generator.generate_latents(self.batch_size) if random.random() < self.mixing_rate else None
 		x_fake = self.generator(z, random_mix=mix)
 		y_fake = self.discriminator(x_fake)
 		loss = (sum((y_fake - 1) ** 2) / 2 if self.lsgan else sum(softplus(-y_fake))) / self.iterator.batch_size
@@ -80,7 +77,8 @@ class CustomUpdater(StandardUpdater):
 	def update_discriminator(self):
 		self.discriminator.cleargrads()
 		x_real = Variable(self.iterator.next())
-		x_real.to_device(self.discriminator.device)
+		#self.get_iterator("main").
+		#x_real.to_device(self.discriminator.device)
 		y_real = self.discriminator(x_real)
 		gradient = grad([y_real], [x_real], enable_double_backprop=True)[0]
 		gradient_norm = sum(batch_l2_norm_squared(gradient)) / self.iterator.batch_size
@@ -96,6 +94,25 @@ class CustomUpdater(StandardUpdater):
 		self.optimizers.update_discriminator()
 		report({"loss (D)": loss, "penalty (D)": penalty})
 
+	@property
+	def iterator(self):
+		return self.get_iterator("main")
+
+	@property
+	def batch_size(self):
+		return self.iterator.batch_size
+'''
+	@staticmethod
+	def convert(self):
+		self.discriminator.
+
+	@staticmethod
+	def adversarial_loss(x, y):
+
+	@staticmethod
+	def least_square_loss(x, y, a, b, c):
+'''
+
 class CustomTrainer(Trainer):
 
 	def __init__(self, updater, epoch, dest, overwrite=False):
@@ -104,25 +121,25 @@ class CustomTrainer(Trainer):
 		self.number = 16
 
 	def enable_reports(self, interval):
-		entries = ["epoch", "iteration", "loss (G)", "loss (D)", "penalty (D)"]
-		from os.path import basename
+		#entries = ["epoch", "iteration", "loss (G)", "loss (D)", "penalty (D)"]
 		filename = basename(build_filepath(self.out, "report", "log", self.overwrite))
-		log_reporter = LogReport(trigger=(interval, "iteration"), filename=filename)
-		self.extend(log_reporter)
-		self.extend(PrintReport(entries, log_reporter))
+		log = LogReport(trigger=(interval, "iteration"), filename=filename)
+		print = PrintReport(["epoch", "iteration", "loss (G)", "loss (D)", "penalty (D)"], log)
 		filename = basename(build_filepath(self.out, "plot", "png", self.overwrite))
-		plot = PlotReport(entries[2:], "iteration", trigger=(interval, "iteration"), filename=filename)
+		plot = PlotReport(["loss (G)", "loss (D)", "penalty (D)"], "iteration", trigger=(interval, "iteration"), filename=filename)
+		self.extend(log)
+		self.extend(print)
 		self.extend(plot)
 
-	def enable_progress_bar(self, interval):
+	def enable_progress_bar(self, interval=1):
 		self.extend(ProgressBar(update_interval=interval))
 
 	def hook_state_save(self, interval):
 		self.extend(CustomTrainer.save_model_states, trigger=(interval, "iteration"))
 		self.extend(CustomTrainer.save_optimizer_states, trigger=(interval, "iteration"))
 
-	def hook_image_generation(self, interval, number):
-		self.number = number
+	def hook_image_generation(self, interval, number=None):
+		self.number = self.number if number is None else number
 		self.extend(CustomTrainer.save_middle_images, trigger=(interval, "iteration"))
 
 	@staticmethod
@@ -147,6 +164,6 @@ class CustomTrainer(Trainer):
 			z.to_cpu()
 			y.to_cpu()
 			for j in range(n):
-				filename = f"{trainer.updater.iteration}{i + j + 1}"
+				filename = f"{trainer.updater.iteration}_{i + j + 1}"
 				np.save(build_filepath(trainer.out, filename, "npy", trainer.overwrite), z.array[j])
 				save_image(y.array[j], build_filepath(trainer.out, filename, "png", trainer.overwrite))
