@@ -128,15 +128,16 @@ class CustomTrainer(Trainer):
 		self.number = 16
 
 	def enable_reports(self, interval):
-		#entries = ["epoch", "iteration", "loss (G)", "loss (D)", "penalty (D)"]
+		entries = ["epoch", "iteration", "loss (G)", "loss (D)", "penalty (D)"]
 		filename = basename(build_filepath(self.out, "report", "log", self.overwrite))
-		log = LogReport(trigger=(interval, "iteration"), filename=filename)
-		print = PrintReport(["epoch", "iteration", "loss (G)", "loss (D)", "penalty (D)"], log)
+		log_report = LogReport(trigger=(interval, "iteration"), filename=filename)
+		print_report = PrintReport(entries, log_report)
+		entries = ["loss (G)", "loss (D)", "penalty (D)"]
 		filename = basename(build_filepath(self.out, "plot", "png", self.overwrite))
-		plot = PlotReport(["loss (G)", "loss (D)", "penalty (D)"], "iteration", trigger=(interval, "iteration"), filename=filename)
-		self.extend(log)
-		self.extend(print)
-		self.extend(plot)
+		plot_report = PlotReport(entries, "iteration", trigger=(interval, "iteration"), filename=filename)
+		self.extend(log_report)
+		self.extend(print_report)
+		self.extend(plot_report)
 
 	def enable_progress_bar(self, interval=1):
 		self.extend(ProgressBar(update_interval=interval))
