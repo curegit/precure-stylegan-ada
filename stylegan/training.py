@@ -54,10 +54,17 @@ class CustomUpdater(StandardUpdater):
 		super().__init__(iterator, dict(optimizers))
 		self.generator = generator
 		self.discriminator = discriminator
+		self.iterator = iterator
 		self.optimizers = optimizers
 		self.mixing_rate = mixing_rate
 		self.gamma = gamma
 		self.lsgan = lsgan
+
+	def next_latents(self):
+		return self.generator.generate_latents(self.iterator.batch_size)
+
+	def next_real_images(self):
+		return Variable(self.discriminator.xp.array(self.iterator.next()))
 
 	def update_core(self):
 		self.update_discriminator()
@@ -65,53 +72,53 @@ class CustomUpdater(StandardUpdater):
 
 	def update_generator(self):
 		self.generator.cleargrads()
-		z = self.generator.generate_latents(self.batch_size)
-		mix = self.generator.generate_latents(self.batch_size) if random.random() < self.mixing_rate else None
+		z = self.next_latents()
+		mix = self.next_latents() if random.random() < self.mixing_rate else None
 		x_fake = self.generator(z, random_mix=mix)
 		y_fake = self.discriminator(x_fake)
-		loss = (sum((y_fake - 1) ** 2) / 2 if self.lsgan else sum(softplus(-y_fake))) / self.iterator.batch_size
+		loss_func = CustomUpdater.generator_ls_loss if self.lsgan else CustomUpdater.generator_adversarial_loss
+		loss = loss_func(y_fake)
 		loss.backward()
 		self.optimizers.update_generator()
 		report({"loss (G)": loss})
 
 	def update_discriminator(self):
 		self.discriminator.cleargrads()
-		x_real = Variable(self.discriminator.xp.array(self.iterator.next()))
-		#self.get_iterator("main")
-		#x_real.to_device(self.discriminator.device)
+		x_real = self.next_real_images()
 		y_real = self.discriminator(x_real)
-		gradient = grad([y_real], [x_real], enable_double_backprop=True)[0]
-		gradient_norm = sum(batch_l2_norm_squared(gradient)) / self.iterator.batch_size
-		penalty = self.gamma * gradient_norm / 2
-		z = self.generator.generate_latents(self.iterator.batch_size)
-		mix = self.generator.generate_latents(self.iterator.batch_size) if random.random() < self.mixing_rate else None
+		z = self.next_latents()
+		mix = self.next_latents() if random.random() < self.mixing_rate else None
 		x_fake = self.generator(z, random_mix=mix)
 		y_fake = self.discriminator(x_fake)
 		x_fake.unchain_backward()
-		loss = ((sum((y_real - 1) ** 2) + sum(y_fake ** 2)) / 2 if self.lsgan else (sum(softplus(-y_real)) + sum(softplus(y_fake)))) / self.iterator.batch_size
-		loss += penalty
+		penalty = CustomUpdater.gradient_penalty(x_real, y_real, gamma=self.gamma)
+		loss_func = CustomUpdater.discriminator_ls_loss if self.lsgan else CustomUpdater.discriminator_adversarial_loss
+		loss = loss_func(y_real, y_fake) + penalty
 		loss.backward()
 		self.optimizers.update_discriminator()
 		report({"loss (D)": loss, "penalty (D)": penalty})
 
-	@property
-	def iterator(self):
-		return self.get_iterator("main")
-
-	@property
-	def batch_size(self):
-		return self.iterator.batch_size
-'''
 	@staticmethod
-	def convert(self):
-		self.discriminator.
+	def generator_adversarial_loss(fake):
+		return sum(softplus(-fake)) / fake.shape[0]
 
 	@staticmethod
-	def adversarial_loss(x, y):
+	def generator_ls_loss(fake):
+		return sum((fake - 1) ** 2) / 2 / fake.shape[0]
 
 	@staticmethod
-	def least_square_loss(x, y, a, b, c):
-'''
+	def discriminator_adversarial_loss(real, fake):
+		return (sum(softplus(-real)) + sum(softplus(fake))) / real.shape[0]
+
+	@staticmethod
+	def discriminator_ls_loss(real, fake):
+		return (sum((real - 1) ** 2) + sum(fake ** 2)) / 2 / real.shape[0]
+
+	@staticmethod
+	def gradient_penalty(x, y, gamma=10):
+		gradient = grad([y], [x], enable_double_backprop=True)[0]
+		squared_norm = sum(batch_l2_norm_squared(gradient)) / x.shape[0]
+		return gamma * squared_norm / 2
 
 class CustomTrainer(Trainer):
 
