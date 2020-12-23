@@ -7,11 +7,9 @@ def gamma_forward(u):
 def gamma_reverse(u):
 	return u / 12.92 if u <= 0.04045 else ((u + 0.055) / 1.055) ** 2.4
 
-def rgb_to_srgb(array):
-	return vectorize(gamma_forward)(array)
+rgb_to_srgb = vectorize(gamma_forward)
 
-def srgb_to_rgb(array):
-	return vectorize(gamma_reverse)(array)
+srgb_to_rgb = vectorize(gamma_reverse)
 
 def load_image(filepath, size):
 	img = Image.open(filepath).convert("RGB").resize(size, Image.LANCZOS)
