@@ -28,10 +28,10 @@ class MiniBatchStandardDeviation(Link):
 		super().__init__()
 
 	def __call__(self, x):
-		m = mean(x, axis=0, keepdims=True)
-		sd = sqrt(mean((x - m) ** 2, axis=0, keepdims=True) + 1e-8)
-		dev_channel = broadcast_to(mean(sd), (x.shape[0], 1, x.shape[2], x.shape[3]))
-		return concat((x, dev_channel), axis=1)
+		u = mean(x, axis=0, keepdims=True)
+		sd = sqrt(mean((x - u) ** 2, axis=0, keepdims=True) + 1e-8)
+		dev = broadcast_to(mean(sd), (x.shape[0], 1, x.shape[2], x.shape[3]))
+		return concat((x, dev), axis=1)
 
 class ResidualBlock(Chain):
 
@@ -46,8 +46,8 @@ class ResidualBlock(Chain):
 			self.skip = Sequential(Downsampler(), EqualizedConvolution2D(in_channels, out_channels, ksize=1, stride=1, pad=0, nobias=True))
 
 	def __call__(self, x):
-		y = self.a2(self.c2(self.a1(self.c1(x))))
-		return self.skip(x) + self.down(y)
+		h = self.a2(self.c2(self.a1(self.c1(x))))
+		return self.skip(x) + self.down(h)
 
 class OutputBlock(Chain):
 
