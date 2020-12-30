@@ -59,13 +59,17 @@ class Generator(Network):
 			self.synthesizer = Synthesizer(size, levels, first_channels, last_channels, double_last)
 
 	def __call__(self, z, *zs, random_mix=None):
-
-		zs = [z, *zs]
-		zs = zs + [zs[-1]] * (self.levels - len(zs))
-		if random_mix is not None:
-			l = randint(1, self.levels - 1)
-			zs[l:] = [random_mix] * (self.levels - l)
-		ws = [self.mapper(z) for z in zs]
+		w = self.mapper(z)
+		ws = [w] * self.levels
+		stop = self.levels
+		if self.levels > 1 and random_mix is not None:
+			mix_level = randint(1, self.levels - 1)
+			mix_w = self.mapper(random_mix)
+			ws[mix_level:stop] = [mix_w] * (stop - mix_level)
+			stop = mix_level
+		for i, z in zip(range(1, stop), zs):
+			if z is not Ellipsis:
+				ws[i:stop] = [self.mapper(z)] * (stop - i)
 		return self.synthesizer(ws)
 
 	def generate_latents(self, batch):
