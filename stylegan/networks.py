@@ -1,4 +1,4 @@
-from random import random, randint
+from random import randint
 from chainer import Chain, ChainList, Sequential
 from chainer.functions import sqrt, mean
 from chainer.serializers import load_hdf5, save_hdf5
@@ -28,8 +28,14 @@ class Synthesizer(Chain):
 
 	def __init__(self, size, levels, first_channels, last_channels, double_last):
 		super().__init__()
-		in_channels = [first_channels if i == 1 else min(first_channels, last_channels * 2 ** (levels - i + 1)) for i in range(1, levels + 1)]
-		out_channels = [last_channels * (2 if double_last else 1) if i == levels else min(first_channels, last_channels * 2 ** (levels - i)) for i in range(1, levels + 1)]
+		in_channels = [first_channels] * levels
+		out_channels = [last_channels] * levels
+		for i in range(1, levels):
+			channels = min(first_channels, last_channels * 2 ** i)
+			in_channels[-i] = channels
+			out_channels[-i - 1] = channels
+		if double_last:
+			out_channels[-1] *= 2
 		with self.init_scope():
 			self.init = InitialSkipArchitecture(size, in_channels[0], out_channels[0])
 			self.skips = ChainList(*[SkipArchitecture(size, i, o) for i, o in zip(in_channels[1:], out_channels[1:])])
@@ -69,12 +75,15 @@ class Discriminator(Network):
 
 	def __init__(self, levels=7, first_channels=16, last_channels=512):
 		super().__init__()
-		in_channels = [first_channels if i == levels else min(first_channels * 2 ** (levels - i), last_channels) for i in range(levels, 1, -1)]
-		out_channels = [last_channels if i == 2 else min(first_channels * 2 ** (levels - i + 1), last_channels) for i in range(levels, 1, -1)]
-		blocks = [ResidualBlock(i, o) for i, o in zip(in_channels, out_channels)]
+		in_channels = [first_channels] * (levels - 1)
+		out_channels = [last_channels] * (levels - 1)
+		for i in range(1, levels - 1):
+			channels = min(first_channels * 2 ** i, last_channels)
+			in_channels[i] = channels
+			out_channels[i - 1] = channels
 		with self.init_scope():
 			self.frgb = FromRGB(first_channels)
-			self.blocks = Sequential(*blocks)
+			self.blocks = Sequential(*[ResidualBlock(i, o) for i, o in zip(in_channels, out_channels)])
 			self.output = OutputBlock(last_channels)
 
 	def __call__(self, x):
