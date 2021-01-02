@@ -1,3 +1,4 @@
+from math import sqrt as root
 from chainer import Link, Chain, Sequential
 from chainer.functions import sqrt, mean, resize_images, concat, broadcast_to, flatten
 from stylegan.links.common import EqualizedLinear, EqualizedConvolution2D, LeakyRelu
@@ -47,7 +48,7 @@ class ResidualBlock(Chain):
 
 	def __call__(self, x):
 		h = self.a2(self.c2(self.a1(self.c1(x))))
-		return self.skip(x) + self.down(h)
+		return (self.skip(x) + self.down(h)) / root(2)
 
 class OutputBlock(Chain):
 
