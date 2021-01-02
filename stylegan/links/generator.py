@@ -70,7 +70,7 @@ class InitialSkipArchitecture(Chain):
 	def __init__(self, size, in_channels, out_channels):
 		super().__init__()
 		with self.init_scope():
-			self.c1 = Parameter(shape=(1, in_channels, 4, 4), initializer=Normal())
+			self.c1 = Parameter(shape=(in_channels, 4, 4), initializer=Normal())
 			self.s1 = StyleAffineTransform(size, in_channels)
 			self.w1 = WeightDemodulatedConvolution2D(in_channels, out_channels)
 			self.n1 = NoiseAdder(out_channels)
@@ -78,12 +78,13 @@ class InitialSkipArchitecture(Chain):
 			self.trgb = ToRGB(out_channels)
 
 	def __call__(self, w):
-		shape = w.shape[:1] + self.c1.shape[1:]
-		h1 = broadcast_to(self.c1, shape)
-		h2 = self.w1(h1, self.s1(w))
-		h3 = self.n1(h2)
-		h4 = self.a1(h3)
-		return h4, self.trgb(h4)
+		batch = w.shape[0]
+		h1 = self.c1.reshape((1, *self.c1.shape))
+		h2 = broadcast_to(h1, (batch, *self.c1.shape))
+		h3 = self.w1(h2, self.s1(w))
+		h4 = self.n1(h3)
+		h5 = self.a1(h4)
+		return h5, self.trgb(h5)
 
 class SkipArchitecture(Chain):
 
