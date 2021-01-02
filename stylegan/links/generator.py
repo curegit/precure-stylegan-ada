@@ -1,7 +1,7 @@
 from math import sqrt as root
 from chainer import Parameter, Link, Chain
 from chainer.links import Scale
-from chainer.functions import sqrt, sum, convolution_2d, resize_images, broadcast_to, expand_dims, vstack
+from chainer.functions import sqrt, sum, convolution_2d, resize_images, broadcast_to
 from chainer.initializers import Zero, One, Normal
 from stylegan.links.common import GaussianDistribution, EqualizedLinear, EqualizedConvolution2D, LeakyRelu
 
@@ -26,10 +26,10 @@ class Upsampler(Link):
 
 class StyleAffineTransform(Chain):
 
-	def __init__(self, latent_size, channels):
+	def __init__(self, size, channels):
 		super().__init__()
 		with self.init_scope():
-			self.s = EqualizedLinear(latent_size, channels, initial_bias=One(), gain=1)
+			self.s = EqualizedLinear(size, channels, initial_bias=One(), gain=1)
 
 	def __call__(self, w):
 		return self.s(w)
@@ -61,17 +61,17 @@ class NoiseAdder(Chain):
 			self.s = Scale(W_shape=channels)
 
 	def __call__(self, x):
-		b, c, h, w = x.shape
+		b, _, h, w = x.shape
 		n = broadcast_to(self.g((b, 1, h, w)), x.shape)
 		return x + self.s(n)
 
 class InitialSkipArchitecture(Chain):
 
-	def __init__(self, latent_size, in_channels, out_channels):
+	def __init__(self, size, in_channels, out_channels):
 		super().__init__()
 		with self.init_scope():
 			self.c1 = Parameter(shape=(1, in_channels, 4, 4), initializer=Normal())
-			self.s1 = StyleAffineTransform(latent_size, in_channels)
+			self.s1 = StyleAffineTransform(size, in_channels)
 			self.w1 = WeightDemodulatedConvolution2D(in_channels, out_channels)
 			self.n1 = NoiseAdder(out_channels)
 			self.a1 = LeakyRelu()
@@ -87,15 +87,15 @@ class InitialSkipArchitecture(Chain):
 
 class SkipArchitecture(Chain):
 
-	def __init__(self, latent_size, in_channels, out_channels):
+	def __init__(self, size, in_channels, out_channels):
 		super().__init__()
 		with self.init_scope():
 			self.up = Upsampler()
-			self.s1 = StyleAffineTransform(latent_size, in_channels)
+			self.s1 = StyleAffineTransform(size, in_channels)
 			self.w1 = WeightDemodulatedConvolution2D(in_channels, out_channels)
 			self.n1 = NoiseAdder(out_channels)
 			self.a1 = LeakyRelu()
-			self.s2 = StyleAffineTransform(latent_size, out_channels)
+			self.s2 = StyleAffineTransform(size, out_channels)
 			self.w2 = WeightDemodulatedConvolution2D(out_channels, out_channels)
 			self.n2 = NoiseAdder(out_channels)
 			self.a2 = LeakyRelu()
