@@ -38,22 +38,19 @@ class WeightDemodulatedConvolution2D(Link):
 
 	def __init__(self, in_channels, out_channels, gain=root(2)):
 		super().__init__()
-		self.c = gain * root(1 / (in_channels * 3 ** 2))
 		with self.init_scope():
 			self.w = Parameter(shape=(out_channels, in_channels, 3, 3), initializer=Normal(1.0))
 			self.b = Parameter(shape=out_channels, initializer=Zero())
 
 	def __call__(self, x, y):
-		batch, channels = y.shape
-		out_channels, in_channels, height, width = self.w.shape
-		mod_w = y.reshape((batch, 1, channels, 1, 1)) * self.w
-		demod_w = mod_w / sqrt(sum(mod_w ** 2, axis=(2, 3, 4), keepdims=True) + 1e-8)
-		w = demod_w.reshape((batch * out_channels, in_channels, 3, 3))
-		_, _, height, width = x.shape
-		group_x = self.c * x.reshape((1, batch * in_channels, height, width))
-		h = convolution_2d(group_x, w, stride=1, pad=1, groups=batch)
+		out_channels = self.b.shape[0]
+		batch, in_channels, height, width = x.shape
+		w = self.w * y.reshape((batch, 1, in_channels, 1, 1))
+		demod_w = w / sqrt(sum(w ** 2, axis=(2, 3, 4), keepdims=True) + 1e-8)
+		group_w = demod_w.reshape((batch * out_channels, in_channels, 3, 3))
+		group_x = x.reshape((1, batch * in_channels, height, width))
+		h = convolution_2d(group_x, group_w, stride=1, pad=1, groups=batch)
 		return h.reshape((batch, out_channels, height, width)) + self.b.reshape((1, out_channels, 1, 1))
-		#return vstack([convolution_2d(expand_dims(xi, axis=0), w, self.b, stride=1, pad=1) for xi, w in zip(x, demod_w)])
 
 class NoiseAdder(Chain):
 
