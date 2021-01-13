@@ -1,4 +1,3 @@
-from math import sqrt as root
 from chainer import Parameter, Link, Chain
 from chainer.links import Scale
 from chainer.functions import sqrt, sum, convolution_2d, resize_images, broadcast_to
@@ -36,7 +35,7 @@ class StyleAffineTransform(Chain):
 
 class WeightDemodulatedConvolution2D(Link):
 
-	def __init__(self, in_channels, out_channels, gain=root(2)):
+	def __init__(self, in_channels, out_channels):
 		super().__init__()
 		with self.init_scope():
 			self.w = Parameter(shape=(out_channels, in_channels, 3, 3), initializer=Normal(1.0))
@@ -70,7 +69,7 @@ class InitialSkipArchitecture(Chain):
 	def __init__(self, size, in_channels, out_channels):
 		super().__init__()
 		with self.init_scope():
-			self.c1 = Parameter(shape=(in_channels, 4, 4), initializer=Normal())
+			self.c1 = Parameter(shape=(in_channels, 4, 4), initializer=Normal(1.0))
 			self.s1 = StyleAffineTransform(size, in_channels)
 			self.w1 = WeightDemodulatedConvolution2D(in_channels, out_channels)
 			self.n1 = NoiseAdder(out_channels)
