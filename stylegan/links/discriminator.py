@@ -16,17 +16,11 @@ class FromRGB(Chain):
 
 class Downsampler(Link):
 
-	def __init__(self):
-		super().__init__()
-
 	def __call__(self, x):
 		height, width = x.shape[2:]
 		return resize_images(x, (height // 2, width // 2), align_corners=False)
 
 class MiniBatchStandardDeviation(Link):
-
-	def __init__(self):
-		super().__init__()
 
 	def __call__(self, x):
 		u = mean(x, axis=0, keepdims=True)
