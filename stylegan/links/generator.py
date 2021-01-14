@@ -42,7 +42,7 @@ class NoiseAdder(Chain):
 
 	def __call__(self, x):
 		b, _, h, w = x.shape
-		n = broadcast_to(self.g((b, 1, h, w)), x.shape)
+		n = broadcast_to(self.g(b, 1, h, w), x.shape)
 		return x + scale(n, self.s)
 
 class Upsampler(Link):

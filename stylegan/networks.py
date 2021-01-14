@@ -73,7 +73,7 @@ class Generator(Network):
 		return self.synthesizer(ws)
 
 	def generate_latents(self, batch):
-		return self.sampler((batch, self.size))
+		return self.sampler(batch, self.size)
 
 class Discriminator(Network):
 
