@@ -1,5 +1,5 @@
 from chainer import Parameter, Link, Chain
-from chainer.functions import sqrt, sum, scale, convolution_2d, resize_images, broadcast_to
+from chainer.functions import sqrt, sum, scale, convolution_2d, resize_images, broadcast_to, pad
 from chainer.initializers import Zero, One, Normal
 from stylegan.links.common import GaussianDistribution, EqualizedLinear, LeakyRelu
 
@@ -29,7 +29,8 @@ class WeightDemodulatedConvolution2D(Link):
 		w = mod_w / sqrt(sum(mod_w ** 2, axis=(2, 3, 4), keepdims=True) + 1e-8) if self.demod else mod_w
 		group_w = w.reshape(batch * out_channels, in_channels, 3, 3)
 		group_x = x.reshape(1, batch * in_channels, height, width)
-		h = convolution_2d(group_x, group_w, stride=1, pad=1, groups=batch)
+		pad_group_x = pad(group_x, (0, 0, 1, 1), mode="edge")
+		h = convolution_2d(pad_group_x, group_w, stride=1, pad=0, groups=batch)
 		return h.reshape(batch, out_channels, height, width) + self.b.reshape(1, out_channels, 1, 1)
 
 class NoiseAdder(Chain):
