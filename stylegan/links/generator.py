@@ -25,12 +25,12 @@ class WeightDemodulatedConvolution2D(Link):
 	def __call__(self, x, y):
 		out_channels = self.b.shape[0]
 		batch, in_channels, height, width = x.shape
-		mod_w = self.w * y.reshape((batch, 1, in_channels, 1, 1))
+		mod_w = self.w * y.reshape(batch, 1, in_channels, 1, 1)
 		w = mod_w / sqrt(sum(mod_w ** 2, axis=(2, 3, 4), keepdims=True) + 1e-8) if self.demod else mod_w
-		group_w = w.reshape((batch * out_channels, in_channels, 3, 3))
-		group_x = x.reshape((1, batch * in_channels, height, width))
+		group_w = w.reshape(batch * out_channels, in_channels, 3, 3)
+		group_x = x.reshape(1, batch * in_channels, height, width)
 		h = convolution_2d(group_x, group_w, stride=1, pad=1, groups=batch)
-		return h.reshape((batch, out_channels, height, width)) + self.b.reshape((1, out_channels, 1, 1))
+		return h.reshape(batch, out_channels, height, width) + self.b.reshape(1, out_channels, 1, 1)
 
 class NoiseAdder(Chain):
 
@@ -76,7 +76,7 @@ class InitialSkipArchitecture(Chain):
 
 	def __call__(self, w):
 		batch = w.shape[0]
-		h1 = self.c1.reshape((1, *self.c1.shape))
+		h1 = self.c1.reshape(1, *self.c1.shape)
 		h2 = broadcast_to(h1, (batch, *self.c1.shape))
 		h3 = self.w1(h2, self.s1(w))
 		h4 = self.n1(h3)
