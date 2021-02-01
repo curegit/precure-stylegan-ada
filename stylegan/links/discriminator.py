@@ -8,7 +8,7 @@ class FromRGB(Chain):
 	def __init__(self, out_channels):
 		super().__init__()
 		with self.init_scope():
-			self.c = EqualizedConvolution2D(3, out_channels, ksize=3, stride=1, pad=1, gain=1)
+			self.c = EqualizedConvolution2D(3, out_channels, ksize=1, stride=1, pad=0, gain=1)
 			self.a = LeakyRelu()
 
 	def __call__(self, x):

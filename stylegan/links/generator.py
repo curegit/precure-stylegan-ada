@@ -1,3 +1,4 @@
+from math import sqrt as root
 from chainer import Parameter, Link, Chain
 from chainer.functions import sqrt, sum, scale, convolution_2d, resize_images, broadcast_to, pad
 from chainer.initializers import Zero, One, Normal
@@ -15,11 +16,14 @@ class StyleAffineTransform(Chain):
 
 class WeightDemodulatedConvolution2D(Link):
 
-	def __init__(self, in_channels, out_channels, demod=True):
+	def __init__(self, in_channels, out_channels, pointwise=False, demod=True, gain=root(2)):
 		super().__init__()
 		self.demod = demod
+		self.ksize = 1 if pointwise else 3
+		self.pad = 0 if pointwise else 1
+		self.c = gain * root(1 / (in_channels * self.ksize ** 2))
 		with self.init_scope():
-			self.w = Parameter(shape=(out_channels, in_channels, 3, 3), initializer=Normal(1.0))
+			self.w = Parameter(shape=(out_channels, in_channels, self.ksize, self.ksize), initializer=Normal(1.0))
 			self.b = Parameter(shape=out_channels, initializer=Zero())
 
 	def __call__(self, x, y):
@@ -27,9 +31,9 @@ class WeightDemodulatedConvolution2D(Link):
 		batch, in_channels, height, width = x.shape
 		mod_w = self.w * y.reshape(batch, 1, in_channels, 1, 1)
 		w = mod_w / sqrt(sum(mod_w ** 2, axis=(2, 3, 4), keepdims=True) + 1e-8) if self.demod else mod_w
-		group_w = w.reshape(batch * out_channels, in_channels, 3, 3)
+		group_w = w.reshape(batch * out_channels, in_channels, self.ksize, self.ksize)
 		group_x = x.reshape(1, batch * in_channels, height, width)
-		pad_group_x = pad(group_x, (0, 0, 1, 1), mode="edge")
+		pad_group_x = pad(group_x, ((0, 0), (0, 0), (self.pad, self.pad), (self.pad, self.pad)), mode="edge")
 		h = convolution_2d(pad_group_x, group_w, stride=1, pad=0, groups=batch)
 		return h.reshape(batch, out_channels, height, width) + self.b.reshape(1, out_channels, 1, 1)
 
@@ -57,7 +61,7 @@ class ToRGB(Chain):
 	def __init__(self, in_channels):
 		super().__init__()
 		with self.init_scope():
-			self.w = WeightDemodulatedConvolution2D(in_channels, 3, demod=False)
+			self.w = WeightDemodulatedConvolution2D(in_channels, 3, pointwise=True, demod=False, gain=1)
 
 	def __call__(self, x, y):
 		return self.w(x, y)

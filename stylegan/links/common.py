@@ -1,16 +1,15 @@
 from math import sqrt, log
 from chainer import Variable, Link, Chain
 from chainer.links import Linear, Convolution2D
-from chainer.functions import gaussian, leaky_relu, broadcast_to, pad
+from chainer.functions import gaussian, leaky_relu, broadcast_to
 from chainer.initializers import Normal
 
-class GaussianDistribution(Chain):
+class GaussianDistribution(Link):
 
 	def __init__(self, mean=0.0, sd=1.0):
 		super().__init__()
-		with self.init_scope():
-			self.mean = mean
-			self.ln_var = log(sd ** 2)
+		self.mean = mean
+		self.ln_var = log(sd ** 2)
 
 	def __call__(self, *shape):
 		mean = Variable(self.xp.array(self.mean, dtype=self.xp.float32))
@@ -30,16 +29,14 @@ class EqualizedLinear(Chain):
 
 class EqualizedConvolution2D(Chain):
 
-	def __init__(self, in_channels, out_channels, ksize=3, stride=1, pad=0, nobias=False, initial_bias=None, pad_mode="edge", gain=sqrt(2)):
+	def __init__(self, in_channels, out_channels, ksize=3, stride=1, pad=0, nobias=False, initial_bias=None, gain=sqrt(2)):
 		super().__init__()
 		self.c = gain * sqrt(1 / (in_channels * ksize ** 2))
-		self.pad = pad
-		self.pad_mode = pad_mode
 		with self.init_scope():
-			self.conv = Convolution2D(in_channels, out_channels, ksize, stride, 0, nobias=nobias, initialW=Normal(1.0), initial_bias=initial_bias)
+			self.conv = Convolution2D(in_channels, out_channels, ksize, stride, pad, nobias=nobias, initialW=Normal(1.0), initial_bias=initial_bias)
 
 	def __call__(self, x):
-		return self.conv(pad(self.c * x, (0, 0, self.pad, self.pad), mode=self.pad_mode))
+		return self.conv(self.c * x)
 
 class LeakyRelu(Link):
 
