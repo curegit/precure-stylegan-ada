@@ -1,6 +1,6 @@
 from math import sqrt as root
 from chainer import Link, Chain, Sequential
-from chainer.functions import sqrt, mean, resize_images, concat, broadcast_to, flatten
+from chainer.functions import sqrt, mean, average_pooling_2d, concat, broadcast_to, flatten
 from stylegan.links.common import EqualizedLinear, EqualizedConvolution2D, LeakyRelu
 
 class FromRGB(Chain):
@@ -16,17 +16,10 @@ class FromRGB(Chain):
 
 class Downsampler(Link):
 
-	def __init__(self):
-		super().__init__()
-
 	def __call__(self, x):
-		height, width = x.shape[2:]
-		return resize_images(x, (height // 2, width // 2), align_corners=False)
+		return average_pooling_2d(x, ksize=2, stride=2)
 
 class MiniBatchStandardDeviation(Link):
-
-	def __init__(self):
-		super().__init__()
 
 	def __call__(self, x):
 		u = mean(x, axis=0, keepdims=True)
@@ -60,12 +53,9 @@ class OutputBlock(Chain):
 			self.a1 = LeakyRelu()
 			self.c2 = EqualizedConvolution2D(in_channels, in_channels, ksize=4, stride=1, pad=0)
 			self.a2 = LeakyRelu()
-			self.fc1 = EqualizedLinear(in_channels, in_channels)
-			self.a3 = LeakyRelu()
-			self.fc2 = EqualizedLinear(in_channels, 1, gain=1)
+			self.fc = EqualizedLinear(in_channels, 1, gain=1)
 
 	def __call__(self, x):
 		h1 = self.a1(self.c1(self.mbstd(x)))
 		h2 = self.a2(self.c2(h1))
-		h3 = self.fc2(self.a3(self.fc1(h2)))
-		return flatten(h3)
+		return flatten(self.fc(h2))
