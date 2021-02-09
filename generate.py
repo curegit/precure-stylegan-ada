@@ -58,12 +58,10 @@ generator = Generator(args.size, args.depth, args.levels, *args.channels)
 # Load model
 if args.generator is not None:
 	print("Loading generator")
-	generator.load_model(args.generator)
+	generator.load_state(args.generator)
 
 # GPU setting
-if args.device >= 0:
-	print("Converting to GPU")
-	generator.to_gpu(args.device)
+generator.to_device(args.device)
 
 # Load center latent
 '''
@@ -103,8 +101,8 @@ for i, n in range_batch(args.number, args.batch):
 	y.to_cpu()
 	for j in range(n):
 		filename = f"{i + j + 1}"
-		np.save(build_filepath(args.dest, filename, "npy", args.force), z.array[i])
-		save_image(y.array[i], build_filepath(args.dest, filename, "png", args.force))
+		np.save(build_filepath(args.dest, filename, "npy", args.force), z.array[j])
+		save_image(y.array[j], build_filepath(args.dest, filename, "png", args.force))
 '''
 # Generate images
 c = 0
