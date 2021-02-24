@@ -77,7 +77,7 @@ class Generator(Network):
 		for i, z in zip(range(1, stop), zs):
 			if z is not Ellipsis:
 				ws[i:stop] = [truncation_trick(self.mapper(z))] * (stop - i)
-		return self.synthesizer(ws)
+		return ws, self.synthesizer(ws)
 
 	def generate_latents(self, batch):
 		return self.sampler(batch, self.size)

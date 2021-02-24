@@ -6,7 +6,7 @@ from chainer import grad, Variable
 from chainer.reporter import report
 from chainer.training import StandardUpdater, Trainer
 from chainer.training.extensions import PrintReport, LogReport, PlotReport, ProgressBar
-from chainer.functions import sum, batch_l2_norm_squared, softplus
+from chainer.functions import sqrt, sum, mean, batch_l2_norm_squared, softplus, stack
 from chainer.serializers import HDF5Serializer, HDF5Deserializer
 from utilities.iter import range_batch
 from utilities.image import save_image
@@ -50,7 +50,7 @@ class OptimizerTriple():
 
 class CustomUpdater(StandardUpdater):
 
-	def __init__(self, generator, discriminator, iterator, optimizers, mixing_rate=0.5, gamma=10, lsgan=False):
+	def __init__(self, generator, discriminator, iterator, optimizers, mixing_rate=0.5, gamma=10, decay=0.01, lsgan=False):
 		super().__init__(iterator, dict(optimizers))
 		self.generator = generator
 		self.discriminator = discriminator
@@ -58,7 +58,9 @@ class CustomUpdater(StandardUpdater):
 		self.optimizers = optimizers
 		self.mixing_rate = mixing_rate
 		self.gamma = gamma
+		self.decay = decay
 		self.lsgan = lsgan
+		self.path_length = 0
 
 	def next_latents(self):
 		return self.generator.generate_latents(self.iterator.batch_size)
@@ -74,10 +76,16 @@ class CustomUpdater(StandardUpdater):
 		self.generator.cleargrads()
 		z = self.next_latents()
 		mix = self.next_latents() if random.random() < self.mixing_rate else None
-		x_fake = self.generator(z, random_mix=mix)
+		ws, x_fake = self.generator(z, random_mix=mix)
 		y_fake = self.discriminator(x_fake)
+
+		lerp = lambda a, b, t: a + (b - a) * t
+		p = CustomUpdater.path_length_f(ws, x_fake, self.generator.generate_masks(ws.shape[0]))
+		self.path_length = float(lerp(self.path_length, p, self.decay))
+		penalty = (p - self.path_length) ** 2
+
 		loss_func = CustomUpdater.generator_ls_loss if self.lsgan else CustomUpdater.generator_adversarial_loss
-		loss = loss_func(y_fake)
+		loss = loss_func(y_fake) + penalty
 		loss.backward()
 		self.optimizers.update_generator()
 		report({"loss (G)": loss})
@@ -88,7 +96,7 @@ class CustomUpdater(StandardUpdater):
 		y_real = self.discriminator(x_real)
 		z = self.next_latents()
 		mix = self.next_latents() if random.random() < self.mixing_rate else None
-		x_fake = self.generator(z, random_mix=mix)
+		ws, x_fake = self.generator(z, random_mix=mix)
 		y_fake = self.discriminator(x_fake)
 		x_fake.unchain_backward()
 		penalty = CustomUpdater.gradient_penalty(x_real, y_real, gamma=self.gamma)
@@ -119,6 +127,14 @@ class CustomUpdater(StandardUpdater):
 		gradient = grad([y], [x], enable_double_backprop=True)[0]
 		squared_norm = sum(batch_l2_norm_squared(gradient)) / x.shape[0]
 		return gamma * squared_norm / 2
+
+	@staticmethod
+	def path_length_f(ws, x, mask):
+		w = stack(ws).transpose(1, 0, 2)
+		gradient = grad([sum(x * mask)], [w], enable_double_backprop=True)[0]
+		gradient.reshape(w.shape[0] * w.shape[1], w.shape[2])
+		a = batch_l2_norm_squared(gradient).reshape(w.shape[0], w.shape[1])
+		return mean(sqrt(mean(a, axis=1)))
 
 class CustomTrainer(Trainer):
 
@@ -168,7 +184,7 @@ class CustomTrainer(Trainer):
 	def save_middle_images(trainer):
 		for i, n in range_batch(trainer.number, trainer.updater.iterator.batch_size):
 			z = trainer.updater.generator.generate_latents(n)
-			y = trainer.updater.generator(z)
+			ws, y = trainer.updater.generator(z)
 			z.to_cpu()
 			y.to_cpu()
 			for j in range(n):
