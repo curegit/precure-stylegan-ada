@@ -58,22 +58,31 @@ class Generator(Network):
 			self.mapper = Mapper(size, depth)
 			self.synthesizer = Synthesizer(size, levels, first_channels, last_channels, large_network)
 
-	def __call__(self, z, *zs, random_mix=None):
-		w = self.mapper(z)
+	def __call__(self, z, *zs, random_mix=None, psi=1.0, mean_w=None):
+		if psi != 1.0:
+			if mean_w is None:
+				mean_w = self.calculate_mean_w()
+			truncation_trick = lambda w: mean_w + psi * (w - mean_w)
+		else:
+			truncation_trick = lambda w: w
+		w = truncation_trick(self.mapper(z))
 		ws = [w] * self.levels
 		stop = self.levels
 		if self.levels > 1 and random_mix is not None:
 			mix_level = randint(1, self.levels - 1)
-			mix_w = self.mapper(random_mix)
+			mix_w = truncation_trick(self.mapper(random_mix))
 			ws[mix_level:stop] = [mix_w] * (stop - mix_level)
 			stop = mix_level
 		for i, z in zip(range(1, stop), zs):
 			if z is not Ellipsis:
-				ws[i:stop] = [self.mapper(z)] * (stop - i)
+				ws[i:stop] = [truncation_trick(self.mapper(z))] * (stop - i)
 		return self.synthesizer(ws)
 
 	def generate_latents(self, batch):
 		return self.sampler(batch, self.size)
+
+	def calculate_mean_w(self, n=50000):
+		return mean(self.mapper(self.generate_latents(n)), axis=0)
 
 class Discriminator(Network):
 
