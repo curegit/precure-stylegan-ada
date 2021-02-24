@@ -17,4 +17,5 @@ def build_filepath(dirpath, filename, fileext, exist_ok=True, suffix="+"):
 	return filepath if exist_ok else alt_filepath(filepath, suffix)
 
 def glob_recursively(dirpath, fileext):
-	return [f for f in glob.glob(build_filepath(dirpath, f"**{os.sep}*", fileext), recursive=True) if os.path.isfile(f)]
+	pattern = build_filepath(glob.escape(dirpath), os.path.join("**", "*"), glob.escape(fileext))
+	return [f for f in glob.glob(pattern, recursive=True) if os.path.isfile(f)]
