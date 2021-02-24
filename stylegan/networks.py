@@ -1,3 +1,4 @@
+from math import sqrt as root
 from random import randint
 from chainer import Chain, ChainList, Sequential
 from chainer.functions import sqrt, mean
@@ -80,6 +81,9 @@ class Generator(Network):
 
 	def generate_latents(self, batch):
 		return self.sampler(batch, self.size)
+
+	def generate_masks(self, batch):
+		return self.sampler(batch, 3, *self.resolution) / root(self.resolution[0] * self.resolution[1])
 
 	def calculate_mean_w(self, n=50000):
 		return mean(self.mapper(self.generate_latents(n)), axis=0)
