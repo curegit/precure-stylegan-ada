@@ -3,7 +3,7 @@ import os.path
 import glob
 
 def mkdirs(dirpath):
-	os.makedirs(dirpath, exist_ok=True)
+	os.makedirs(os.path.normpath(dirpath), exist_ok=True)
 
 def alt_filepath(filepath, suffix="+"):
 	while os.path.lexists(filepath):
