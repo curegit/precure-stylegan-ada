@@ -132,7 +132,7 @@ class CustomUpdater(StandardUpdater):
 	def path_length_f(ws, x, mask):
 		levels = len(ws)
 		batch, size = ws[0].shape
-		gradients = grad([sum(x * mask)], ws, enable_double_backprop=True)
+		gradients = grad([x * mask], ws, enable_double_backprop=True)
 		gradient = stack(gradients).transpose(1, 0, 2).reshape(batch * levels, size)
 		path_lengths = batch_l2_norm_squared(gradient).reshape(batch, levels)
 		return mean(sqrt(mean(path_lengths, axis=1)))
