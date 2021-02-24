@@ -81,7 +81,7 @@ class CustomUpdater(StandardUpdater):
 
 		lerp = lambda a, b, t: a + (b - a) * t
 		p = CustomUpdater.path_length_f(ws, x_fake, self.generator.generate_masks(ws[0].shape[0]))
-		self.path_length = lerp(self.path_length, float(p.array[0]), self.decay)
+		self.path_length = lerp(self.path_length, float(p.array), self.decay)
 		penalty = (p - self.path_length) ** 2
 
 		loss_func = CustomUpdater.generator_ls_loss if self.lsgan else CustomUpdater.generator_adversarial_loss
