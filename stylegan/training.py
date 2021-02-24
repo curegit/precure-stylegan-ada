@@ -81,7 +81,7 @@ class CustomUpdater(StandardUpdater):
 
 		lerp = lambda a, b, t: a + (b - a) * t
 		p = CustomUpdater.path_length_f(ws, x_fake, self.generator.generate_masks(ws[0].shape[0]))
-		self.path_length = float(lerp(self.path_length, p, self.decay))
+		self.path_length = lerp(self.path_length, float(p.array[0]), self.decay)
 		penalty = (p - self.path_length) ** 2
 
 		loss_func = CustomUpdater.generator_ls_loss if self.lsgan else CustomUpdater.generator_adversarial_loss
@@ -130,11 +130,12 @@ class CustomUpdater(StandardUpdater):
 
 	@staticmethod
 	def path_length_f(ws, x, mask):
-		w = stack(ws).transpose(1, 0, 2)
-		gradient = grad([sum(x * mask)], [w], enable_double_backprop=True)[0]
-		gradient.reshape(w.shape[0] * w.shape[1], w.shape[2])
-		a = batch_l2_norm_squared(gradient).reshape(w.shape[0], w.shape[1])
-		return mean(sqrt(mean(a, axis=1)))
+		levels = len(ws)
+		batch, size = ws[0].shape
+		gradients = grad([sum(x * mask)], ws, enable_double_backprop=True)
+		gradient = stack(gradients).transpose(1, 0, 2).reshape(batch * levels, size)
+		path_lengths = batch_l2_norm_squared(gradient).reshape(batch, levels)
+		return mean(sqrt(mean(path_lengths, axis=1)))
 
 class CustomTrainer(Trainer):
 
