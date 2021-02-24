@@ -154,9 +154,9 @@ class CustomTrainer(Trainer):
 	def save_model_states(trainer):
 		iteration = trainer.updater.iteration
 		filepath = build_filepath(trainer.out, f"gen_{iteration}", "hdf5", trainer.overwrite)
-		trainer.updater.generator.save_state(filepath)
+		trainer.updater.generator.save_weights(filepath)
 		filepath = build_filepath(trainer.out, f"dis_{iteration}", "hdf5", trainer.overwrite)
-		trainer.updater.discriminator.save_state(filepath)
+		trainer.updater.discriminator.save_weights(filepath)
 
 	@staticmethod
 	def save_optimizer_states(trainer):

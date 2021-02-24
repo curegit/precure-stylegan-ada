@@ -8,10 +8,10 @@ from stylegan.links.discriminator import FromRGB, ResidualBlock, OutputBlock
 
 class Network(Chain):
 
-	def load_state(self, filepath):
+	def load_weights(self, filepath):
 		load_hdf5(filepath, self)
 
-	def save_state(self, filepath):
+	def save_weights(self, filepath):
 		save_hdf5(filepath, self)
 
 class Mapper(Chain):
