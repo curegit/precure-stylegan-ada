@@ -80,7 +80,7 @@ class CustomUpdater(StandardUpdater):
 		y_fake = self.discriminator(x_fake)
 
 		lerp = lambda a, b, t: a + (b - a) * t
-		p = CustomUpdater.path_length_f(ws, x_fake, self.generator.generate_masks(ws.shape[0]))
+		p = CustomUpdater.path_length_f(ws, x_fake, self.generator.generate_masks(ws[0].shape[0]))
 		self.path_length = float(lerp(self.path_length, p, self.decay))
 		penalty = (p - self.path_length) ** 2
 
