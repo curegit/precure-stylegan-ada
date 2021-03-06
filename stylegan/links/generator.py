@@ -43,12 +43,11 @@ class NoiseAdder(Chain):
 		super().__init__()
 		with self.init_scope():
 			self.g = GaussianDistribution()
-			self.s = Parameter(shape=channels, initializer=Zero())
+			self.s = Parameter(shape=1, initializer=Zero())
 
 	def __call__(self, x):
 		b, _, h, w = x.shape
-		n = broadcast_to(self.g(b, 1, h, w), x.shape)
-		return x + scale(n, self.s)
+		return x + self.s * self.g(b, 1, h, w)
 
 class Upsampler(Link):
 
