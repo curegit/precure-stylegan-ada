@@ -18,6 +18,7 @@ class OptimizerTriple():
 		self.mapper_optimizer = mapper_optimizer
 		self.synthesizer_optimizer = synthesizer_optimizer
 		self.discriminator_optimizer = discriminator_optimizer
+		self.path_length = 0.0
 
 	def __iter__(self):
 		yield "mapper", self.mapper_optimizer
@@ -38,12 +39,14 @@ class OptimizerTriple():
 
 	def load_states(self, filepath):
 		with HDF5File(filepath, "r") as hdf5:
+			self.path_length = float(hdf5["path_length"].value)
 			HDF5Deserializer(hdf5["mapper"]).load(self.mapper_optimizer)
 			HDF5Deserializer(hdf5["synthesizer"]).load(self.synthesizer_optimizer)
 			HDF5Deserializer(hdf5["discriminator"]).load(self.discriminator_optimizer)
 
 	def save_states(self, filepath):
 		with HDF5File(filepath, "w") as hdf5:
+			hdf5.create_dataset("path_length", data=self.path_length)
 			HDF5Serializer(hdf5.create_group("mapper")).save(self.mapper_optimizer)
 			HDF5Serializer(hdf5.create_group("synthesizer")).save(self.synthesizer_optimizer)
 			HDF5Serializer(hdf5.create_group("discriminator")).save(self.discriminator_optimizer)
@@ -60,7 +63,6 @@ class CustomUpdater(StandardUpdater):
 		self.gamma = gamma
 		self.decay = decay
 		self.lsgan = lsgan
-		self.path_length = 0
 
 	def next_latents(self):
 		return self.generator.generate_latents(self.iterator.batch_size)
@@ -81,8 +83,8 @@ class CustomUpdater(StandardUpdater):
 
 		lerp = lambda a, b, t: a + (b - a) * t
 		p = CustomUpdater.path_length_f(ws, x_fake, self.generator.generate_masks(ws[0].shape[0]))
-		self.path_length = lerp(self.path_length, float(p.array), self.decay)
-		penalty = (p - self.path_length) ** 2
+		self.optimizers.path_length = lerp(self.optimizers.path_length, p.item(), self.decay)
+		penalty = (p - self.optimizers.path_length) ** 2
 
 		loss_func = CustomUpdater.generator_ls_loss if self.lsgan else CustomUpdater.generator_adversarial_loss
 		loss = loss_func(y_fake) + penalty
