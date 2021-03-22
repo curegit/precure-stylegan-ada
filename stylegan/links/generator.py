@@ -39,16 +39,15 @@ class WeightDemodulatedConvolution2D(Link):
 
 class NoiseAdder(Chain):
 
-	def __init__(self, channels):
+	def __init__(self):
 		super().__init__()
 		with self.init_scope():
 			self.g = GaussianDistribution()
-			self.s = Parameter(shape=channels, initializer=Zero())
+			self.s = Parameter(shape=1, initializer=Zero())
 
 	def __call__(self, x):
 		b, _, h, w = x.shape
-		n = broadcast_to(self.g(b, 1, h, w), x.shape)
-		return x + scale(n, self.s)
+		return x + self.s * self.g(b, 1, h, w)
 
 class Upsampler(Link):
 
@@ -74,7 +73,7 @@ class InitialSkipArchitecture(Chain):
 			self.c1 = Parameter(shape=(in_channels, 4, 4), initializer=Normal(1.0))
 			self.s1 = StyleAffineTransform(size, in_channels)
 			self.w1 = WeightDemodulatedConvolution2D(in_channels, out_channels)
-			self.n1 = NoiseAdder(out_channels)
+			self.n1 = NoiseAdder()
 			self.a1 = LeakyRelu()
 			self.s2 = StyleAffineTransform(size, out_channels)
 			self.trgb = ToRGB(out_channels)
@@ -96,11 +95,11 @@ class SkipArchitecture(Chain):
 			self.up = Upsampler()
 			self.s1 = StyleAffineTransform(size, in_channels)
 			self.w1 = WeightDemodulatedConvolution2D(in_channels, out_channels)
-			self.n1 = NoiseAdder(out_channels)
+			self.n1 = NoiseAdder()
 			self.a1 = LeakyRelu()
 			self.s2 = StyleAffineTransform(size, out_channels)
 			self.w2 = WeightDemodulatedConvolution2D(out_channels, out_channels)
-			self.n2 = NoiseAdder(out_channels)
+			self.n2 = NoiseAdder()
 			self.a2 = LeakyRelu()
 			self.s3 = StyleAffineTransform(size, out_channels)
 			self.trgb = ToRGB(out_channels)
