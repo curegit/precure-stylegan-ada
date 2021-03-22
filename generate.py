@@ -58,7 +58,7 @@ generator = Generator(args.size, args.depth, args.levels, *args.channels)
 # Load model
 if args.generator is not None:
 	print("Loading generator")
-	generator.load_state(args.generator)
+	generator.load_weights(args.generator)
 
 # GPU setting
 generator.to_device(args.device)
@@ -96,7 +96,7 @@ for i, n in range_batch(args.number, args.batch):
 	#mixing = mix > random()
 	z = generator.generate_latents(n)
 	#mix_z = generator.generate_latent(n) if mixing else None
-	y = generator(z)
+	ws, y = generator(z)
 	z.to_cpu()
 	y.to_cpu()
 	for j in range(n):
