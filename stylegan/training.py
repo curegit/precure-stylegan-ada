@@ -53,7 +53,7 @@ class OptimizerTriple():
 
 class CustomUpdater(StandardUpdater):
 
-	def __init__(self, generator, discriminator, iterator, optimizers, mixing_rate=0.5, gamma=10, decay=0.01, lsgan=False):
+	def __init__(self, generator, discriminator, iterator, optimizers, mixing_rate=0.5, gamma=10, decay=0.01, pl_weight=2, lsgan=False):
 		super().__init__(iterator, dict(optimizers))
 		self.generator = generator
 		self.discriminator = discriminator
@@ -87,7 +87,7 @@ class CustomUpdater(StandardUpdater):
 		penalty = (p - self.optimizers.path_length) ** 2
 
 		loss_func = CustomUpdater.generator_ls_loss if self.lsgan else CustomUpdater.generator_adversarial_loss
-		loss = loss_func(y_fake) + penalty
+		loss = loss_func(y_fake) + pl_weight * penalty
 		loss.backward()
 		self.optimizers.update_generator()
 		report({"loss (G)": loss})
