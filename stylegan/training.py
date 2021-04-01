@@ -62,6 +62,7 @@ class CustomUpdater(StandardUpdater):
 		self.mixing_rate = mixing_rate
 		self.gamma = gamma
 		self.decay = decay
+		self.pl_weight = pl_weight
 		self.lsgan = lsgan
 
 	def next_latents(self):
@@ -87,7 +88,7 @@ class CustomUpdater(StandardUpdater):
 		penalty = (p - self.optimizers.path_length) ** 2
 
 		loss_func = CustomUpdater.generator_ls_loss if self.lsgan else CustomUpdater.generator_adversarial_loss
-		loss = loss_func(y_fake) + pl_weight * penalty
+		loss = loss_func(y_fake) + self.pl_weight * penalty
 		loss.backward()
 		self.optimizers.update_generator()
 		report({"loss (G)": loss})
