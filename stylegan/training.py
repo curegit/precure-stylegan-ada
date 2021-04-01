@@ -39,7 +39,7 @@ class OptimizerTriple():
 
 	def load_states(self, filepath):
 		with HDF5File(filepath, "r") as hdf5:
-			self.path_length = float(hdf5["path_length"].value)
+			self.path_length = float(hdf5["path_length"][()])
 			HDF5Deserializer(hdf5["mapper"]).load(self.mapper_optimizer)
 			HDF5Deserializer(hdf5["synthesizer"]).load(self.synthesizer_optimizer)
 			HDF5Deserializer(hdf5["discriminator"]).load(self.discriminator_optimizer)
