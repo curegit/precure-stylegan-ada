@@ -1,5 +1,5 @@
 from chainer import global_config
-from chainer.iterators import MultiprocessIterator
+from chainer.iterators import MultiprocessIterator, SerialIterator
 from chainer.optimizers import SGD, Adam
 from stylegan.dataset import ImageDataset
 from stylegan.networks import Generator, Discriminator
@@ -30,7 +30,7 @@ def main(args):
 
 	mkdirs(args.dest)
 	dataset = ImageDataset(args.dataset, generator.resolution, args.preload)
-	iterator = MultiprocessIterator(dataset, args.batch, repeat=True, shuffle=True)
+	iterator = SerialIterator(dataset, args.batch, repeat=True, shuffle=True)
 	updater = CustomUpdater(generator, discriminator, iterator, optimizers, args.mix, args.gamma)
 	trainer = CustomTrainer(updater, args.epoch, args.dest)
 	trainer.hook_state_save(1000)
