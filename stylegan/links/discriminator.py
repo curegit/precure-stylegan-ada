@@ -21,10 +21,19 @@ class Downsampler(Link):
 
 class MiniBatchStandardDeviation(Link):
 
+	def __init__(self, group_size=4):
+		super().__init__()
+		self.group_size = group_size
+
 	def __call__(self, x):
-		u = mean(x, axis=0, keepdims=True)
-		sd = sqrt(mean((x - u) ** 2, axis=0, keepdims=True) + 1e-8)
-		dev = broadcast_to(mean(sd), (x.shape[0], 1, x.shape[2], x.shape[3]))
+		batch, channels, height, width = x.shape
+		group = batch // self.group_size
+		y = x.reshape(group, self.group_size, channels, height, width)
+		y = y - mean(y, axis=1, keepdims=True)
+		y = mean(sqrt(y ** 2), axis=1, keepdims=True)
+		y = mean(y, axis=(2, 3, 4), keepdims=True)
+		y = broadcast_to(y, (group, self.group_size, 1, height, width))
+		dev = y.reshape(batch, 1, height, width)
 		return concat((x, dev), axis=1)
 
 class ResidualBlock(Chain):

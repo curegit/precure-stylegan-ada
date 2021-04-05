@@ -6,7 +6,7 @@ class CustomArgumentParser(ArgumentParser):
 	def __init__(self, description):
 		super().__init__(allow_abbrev=False, description=description)
 
-	def add_output_args(self, default_dest="."):
+	def add_output_args(self, default_dest):
 		group = self.add_argument_group("output", "")
 		group.add_argument("-f", "--force", action="store_true", help="allow overwrite existing files")
 		group.add_argument("-r", "--result", "--dest", metavar="DIR", dest="dest", default=default_dest, help="")

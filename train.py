@@ -4,6 +4,7 @@ from chainer.optimizers import SGD, Adam
 from stylegan.dataset import ImageDataset
 from stylegan.networks import Generator, Discriminator
 from stylegan.training import OptimizerTriple, CustomUpdater, CustomTrainer
+from stylegan.augumentation import AugmentationPipeline
 from interface.args import CustomArgumentParser
 from interface.argtypes import uint, natural, ufloat, positive, rate
 from utilities.stdio import eprint
