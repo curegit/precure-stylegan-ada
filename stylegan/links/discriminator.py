@@ -21,13 +21,13 @@ class Downsampler(Link):
 
 class MiniBatchStandardDeviation(Link):
 
-	def __init__(self, group_size):
+	def __init__(self, group_size=None):
 		super().__init__()
 		self.group_size = group_size
 
 	def __call__(self, x):
 		batch, channels, height, width = x.shape
-		group_size = min(batch, self.group_size)
+		group_size = min(batch, self.group_size or batch)
 		group = batch // group_size
 		grouped = x.reshape(group, group_size, channels, height, width)
 		var = (grouped - mean(grouped, axis=1, keepdims=True)) ** 2
@@ -53,7 +53,7 @@ class ResidualBlock(Chain):
 
 class OutputBlock(Chain):
 
-	def __init__(self, in_channels, group_size=4):
+	def __init__(self, in_channels, group_size=None):
 		super().__init__()
 		with self.init_scope():
 			self.mbstd = MiniBatchStandardDeviation(group_size)
