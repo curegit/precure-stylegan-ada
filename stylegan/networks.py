@@ -45,7 +45,7 @@ class Synthesizer(Chain):
 		h, rgb = self.init(ws[0])
 		for s, w in zip(self.skips, ws[1:]):
 			h, rgb = s(h, rgb, w)
-		return rgb ** 2.2
+		return rgb
 
 class Generator(Network):
 
@@ -104,4 +104,4 @@ class Discriminator(Network):
 			self.output = OutputBlock(last_channels)
 
 	def __call__(self, x):
-		return self.output(self.blocks(self.frgb(x ** (1 / 2.2))))
+		return self.output(self.blocks(self.frgb(x)))
