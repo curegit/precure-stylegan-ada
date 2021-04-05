@@ -21,20 +21,19 @@ class Downsampler(Link):
 
 class MiniBatchStandardDeviation(Link):
 
-	def __init__(self, group_size=4):
+	def __init__(self, group_size):
 		super().__init__()
 		self.group_size = group_size
 
 	def __call__(self, x):
 		batch, channels, height, width = x.shape
-		group = batch // self.group_size
-		y = x.reshape(group, self.group_size, channels, height, width)
-		y = y - mean(y, axis=1, keepdims=True)
-		y = mean(sqrt(y ** 2), axis=1, keepdims=True)
-		y = mean(y, axis=(2, 3, 4), keepdims=True)
-		y = broadcast_to(y, (group, self.group_size, 1, height, width))
-		dev = y.reshape(batch, 1, height, width)
-		return concat((x, dev), axis=1)
+		group_size = min(batch, self.group_size)
+		group = batch // group_size
+		grouped = x.reshape(group, group_size, channels, height, width)
+		var = (grouped - mean(grouped, axis=1, keepdims=True)) ** 2
+		dev = mean(sqrt(var), axis=(1, 2, 3, 4), keepdims=True)
+		devmap = broadcast_to(dev, (group, group_size, 1, height, width)).reshape(batch, 1, height, width)
+		return concat((x, devmap), axis=1)
 
 class ResidualBlock(Chain):
 
@@ -54,10 +53,10 @@ class ResidualBlock(Chain):
 
 class OutputBlock(Chain):
 
-	def __init__(self, in_channels):
+	def __init__(self, in_channels, group_size=4):
 		super().__init__()
 		with self.init_scope():
-			self.mbstd = MiniBatchStandardDeviation()
+			self.mbstd = MiniBatchStandardDeviation(group_size)
 			self.c1 = EqualizedConvolution2D(in_channels + 1, in_channels, ksize=3, stride=1, pad=1)
 			self.a1 = LeakyRelu()
 			self.c2 = EqualizedConvolution2D(in_channels, in_channels, ksize=4, stride=1, pad=0)
