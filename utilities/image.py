@@ -1,5 +1,5 @@
 from PIL import Image
-from numpy import asarray, rint, clip, uint8, float32
+from numpy import rint, clip, asarray, uint8, float32
 
 def load_image(filepath, size):
 	img = Image.open(filepath).convert("RGB").resize(size, Image.LANCZOS)
