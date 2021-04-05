@@ -45,7 +45,7 @@ class ResidualBlock(Chain):
 			self.c2 = EqualizedConvolution2D(in_channels, out_channels, ksize=3, stride=1, pad=1)
 			self.a2 = LeakyRelu()
 			self.down = Downsampler()
-			self.skip = Sequential(Downsampler(), EqualizedConvolution2D(in_channels, out_channels, ksize=1, stride=1, pad=0, nobias=True))
+			self.skip = Sequential(EqualizedConvolution2D(in_channels, out_channels, ksize=1, stride=1, pad=0, nobias=True), Downsampler())
 
 	def __call__(self, x):
 		h = self.a2(self.c2(self.a1(self.c1(x))))
