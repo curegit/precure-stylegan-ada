@@ -6,6 +6,7 @@ from chainer.serializers import load_hdf5, save_hdf5
 from stylegan.links.common import GaussianDistribution, EqualizedLinear, LeakyRelu
 from stylegan.links.generator import InitialSkipArchitecture, SkipArchitecture
 from stylegan.links.discriminator import FromRGB, ResidualBlock, OutputBlock
+from utilities.math import identity, lerp
 
 class Network(Chain):
 
@@ -60,12 +61,11 @@ class Generator(Network):
 			self.synthesizer = Synthesizer(size, levels, first_channels, last_channels, large_network)
 
 	def __call__(self, z, *zs, random_mix=None, psi=1.0, mean_w=None):
+		truncation_trick = identity
 		if psi != 1.0:
 			if mean_w is None:
 				mean_w = self.calculate_mean_w()
-			truncation_trick = lambda w: mean_w + psi * (w - mean_w)
-		else:
-			truncation_trick = lambda w: w
+			truncation_trick = lambda w: lerp(mean_w, w, psi)
 		w = truncation_trick(self.mapper(z))
 		ws = [w] * self.levels
 		stop = self.levels
