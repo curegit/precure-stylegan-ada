@@ -8,14 +8,6 @@ from stylegan.links.generator import InitialSkipArchitecture, SkipArchitecture
 from stylegan.links.discriminator import FromRGB, ResidualBlock, OutputBlock
 from utilities.math import identity, lerp
 
-class Network(Chain):
-
-	def load_weights(self, filepath):
-		load_hdf5(filepath, self)
-
-	def save_weights(self, filepath):
-		save_hdf5(filepath, self)
-
 class Mapper(Chain):
 
 	def __init__(self, size, depth):
@@ -48,7 +40,7 @@ class Synthesizer(Chain):
 			h, rgb = s(h, rgb, w)
 		return rgb
 
-class Generator(Network):
+class Generator(Chain):
 
 	def __init__(self, size=512, depth=8, levels=7, first_channels=512, last_channels=16, large_network=True):
 		super().__init__()
@@ -88,7 +80,13 @@ class Generator(Network):
 	def calculate_mean_w(self, n=50000):
 		return mean(self.mapper(self.generate_latents(n)), axis=0)
 
-class Discriminator(Network):
+	def load_weights(self, filepath):
+		load_hdf5(filepath, self)
+
+	def save_weights(self, filepath):
+		save_hdf5(filepath, self)
+
+class Discriminator(Chain):
 
 	def __init__(self, levels=7, first_channels=16, last_channels=512, group_size=None):
 		super().__init__()
