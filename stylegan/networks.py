@@ -90,7 +90,7 @@ class Generator(Network):
 
 class Discriminator(Network):
 
-	def __init__(self, levels=7, first_channels=16, last_channels=512):
+	def __init__(self, levels=7, first_channels=16, last_channels=512, group_size=None):
 		super().__init__()
 		in_channels = [first_channels] * (levels - 1)
 		out_channels = [last_channels] * (levels - 1)
@@ -101,7 +101,7 @@ class Discriminator(Network):
 		with self.init_scope():
 			self.frgb = FromRGB(first_channels)
 			self.blocks = Sequential(*[ResidualBlock(i, o) for i, o in zip(in_channels, out_channels)])
-			self.output = OutputBlock(last_channels)
+			self.output = OutputBlock(last_channels, group_size=group_size)
 
 	def __call__(self, x):
 		return self.output(self.blocks(self.frgb(x)))
