@@ -30,8 +30,8 @@ class MiniBatchStandardDeviation(Link):
 		group_size = min(batch, self.group_size or batch)
 		group = batch // group_size
 		group_x = x.reshape(group, group_size, channels, height, width)
-		var = (group_x - mean(group_x, axis=1, keepdims=True)) ** 2
-		dev = mean(sqrt(var), axis=(1, 2, 3, 4), keepdims=True)
+		var = mean((group_x - mean(group_x, axis=1, keepdims=True)) ** 2, axis=1, keepdims=True)
+		dev = mean(sqrt(var + 1e-8), axis=(2, 3, 4), keepdims=True)
 		devmap = broadcast_to(dev, (group, group_size, 1, height, width)).reshape(batch, 1, height, width)
 		return concat((x, devmap), axis=1)
 
