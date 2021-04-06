@@ -1,10 +1,10 @@
 from chainer import global_config
-from chainer.iterators import MultiprocessIterator, SerialIterator
-from chainer.optimizers import SGD, Adam
+from chainer.iterators import SerialIterator
+#from chainer.optimizers import SGD, Adam
 from stylegan.dataset import ImageDataset
 from stylegan.networks import Generator, Discriminator
-from stylegan.training import OptimizerTriple, CustomUpdater, CustomTrainer
-from stylegan.augumentation import AugmentationPipeline
+from stylegan.training import AdamTriple, CustomUpdater, CustomTrainer
+#from stylegan.augumentation import AugmentationPipeline
 from interface.args import CustomArgumentParser
 from interface.argtypes import uint, natural, ufloat, positive, rate
 from utilities.stdio import eprint
@@ -14,25 +14,27 @@ def main(args):
 	print("Initializing models")
 	generator = Generator(args.size, args.depth, args.levels, *args.channels)
 	discriminator = Discriminator(args.levels, args.channels[1], args.channels[0])
-	if args.generator is not None:
-		generator.load_weights(args.generator)
-	if args.discriminator is not None:
-		discriminator.load_weights(args.discriminator)
+	#if args.generator is not None:
+	#	generator.load_weights(args.generator)
+	#if args.discriminator is not None:
+	#	discriminator.load_weights(args.discriminator)
 	generator.to_device(args.device)
 	discriminator.to_device(args.device)
 
-	mapper_optimizer = SGD(args.sgd[0]) if args.sgd else Adam(args.alphas[0], args.betas[0], args.betas[1], eps=1e-08)
-	generator_optimizer = SGD(args.sgd[1]) if args.sgd else Adam(args.alphas[1], args.betas[0], args.betas[1], eps=1e-08)
-	discriminator_optimizer = SGD(args.sgd[2]) if args.sgd else Adam(args.alphas[2], args.betas[0], args.betas[1], eps=1e-08)
-	optimizers = OptimizerTriple(mapper_optimizer, generator_optimizer, discriminator_optimizer)
+	#mapper_optimizer = SGD(args.sgd[0]) if args.sgd else Adam(args.alphas[0], args.betas[0], args.betas[1], eps=1e-08)
+	#generator_optimizer = SGD(args.sgd[1]) if args.sgd else Adam(args.alphas[1], args.betas[0], args.betas[1], eps=1e-08)
+	#discriminator_optimizer = SGD(args.sgd[2]) if args.sgd else Adam(args.alphas[2], args.betas[0], args.betas[1], eps=1e-08)
+	optimizers = AdamTriple(args.alphas, args.betas[0], args.betas[1])
 	optimizers.setup(generator, discriminator)
-	if args.optimizers is not None:
-		optimizers.load_states(args.optimizers)
+	#if args.optimizers is not None:
+		#optimizers.load_states(args.optimizers)
 
 	mkdirs(args.dest)
 	dataset = ImageDataset(args.dataset, generator.resolution, args.preload)
 	iterator = SerialIterator(dataset, args.batch, repeat=True, shuffle=True)
 	updater = CustomUpdater(generator, discriminator, iterator, optimizers, args.mix, args.gamma)
+	if args.snapshot is not None:
+		updater.load_states(args.snapshot)
 	trainer = CustomTrainer(updater, args.epoch, args.dest)
 	trainer.hook_state_save(1000)
 	trainer.hook_image_generation(1000, 32)
@@ -40,17 +42,19 @@ def main(args):
 	trainer.enable_progress_bar(1)
 	trainer.run()
 	generator.save_weights(build_filepath(args.dest, "gen", "hdf5"))
-	discriminator.save_weights(build_filepath(args.dest, "dis", "hdf5"))
-	optimizers.save_states(build_filepath(args.dest, "opt", "hdf5"))
+	updater.save_states(build_filepath(args.dest, "up", "hdf5"))
+	#discriminator.save_weights(build_filepath(args.dest, "dis", "hdf5"))
+	#optimizers.save_states(build_filepath(args.dest, "opt", "hdf5"))
 
 def parse_args():
 	parser = CustomArgumentParser("")
 	parser.add_argument("dataset", metavar="DATASET_DIR", help="dataset directory which stores images")
 	parser.add_argument("-p", "--preload", action="store_true", help="preload all dataset into RAM")
 
-	parser.add_argument("-g", "--generator", metavar="FILE", help="HDF5 file of serialized trained generator to load and retrain")
-	parser.add_argument("-d", "--discriminator", metavar="FILE", help="HDF5 file of serialized trained discriminator to load and retrain")
-	parser.add_argument("-o", "--optimizers", metavar="FILE", help="snapshot of optimizers of mapper, generator, and discriminator")
+	parser.add_argument("-s", "--snapshot", metavar="FILE", help="snapshot")
+	#parser.add_argument("-g", "--generator", metavar="FILE", help="HDF5 file of serialized trained generator to load and retrain")
+	#parser.add_argument("-d", "--discriminator", metavar="FILE", help="HDF5 file of serialized trained discriminator to load and retrain")
+	#parser.add_argument("-o", "--optimizers", metavar="FILE", help="snapshot of optimizers of mapper, generator, and discriminator")
 
 	parser.add_argument("-e", "--epoch", type=natural, default=1, help="")
 	parser.add_argument("-G", "--gamma", "--l2-batch", dest="gamma", type=ufloat, default=10, help="")

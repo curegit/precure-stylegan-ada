@@ -7,18 +7,18 @@ from chainer.reporter import report
 from chainer.training import StandardUpdater, Trainer
 from chainer.training.extensions import PrintReport, LogReport, PlotReport, ProgressBar
 from chainer.functions import sqrt, sum, mean, batch_l2_norm_squared, softplus, stack
+from chainer.optimizers import Adam
 from chainer.serializers import HDF5Serializer, HDF5Deserializer
 from utilities.iter import range_batch
 from utilities.image import save_image
 from utilities.filesys import build_filepath
 
-class OptimizerTriple():
+class AdamTriple():
 
-	def __init__(self, mapper_optimizer, synthesizer_optimizer, discriminator_optimizer):
-		self.mapper_optimizer = mapper_optimizer
-		self.synthesizer_optimizer = synthesizer_optimizer
-		self.discriminator_optimizer = discriminator_optimizer
-		self.path_length = 0.0
+	def __init__(self, alphas, beta1, beta2):
+		self.mapper_optimizer = Adam(alphas[0], beta1, beta2, eps=1e-08)
+		self.synthesizer_optimizer = Adam(alphas[1], beta1, beta2, eps=1e-08)
+		self.discriminator_optimizer = Adam(alphas[2], beta1, beta2, eps=1e-08)
 
 	def __iter__(self):
 		yield "mapper", self.mapper_optimizer
@@ -37,20 +37,6 @@ class OptimizerTriple():
 	def update_discriminator(self):
 		self.discriminator_optimizer.update()
 
-	def load_states(self, filepath):
-		with HDF5File(filepath, "r") as hdf5:
-			self.path_length = float(hdf5["path_length"][()])
-			HDF5Deserializer(hdf5["mapper"]).load(self.mapper_optimizer)
-			HDF5Deserializer(hdf5["synthesizer"]).load(self.synthesizer_optimizer)
-			HDF5Deserializer(hdf5["discriminator"]).load(self.discriminator_optimizer)
-
-	def save_states(self, filepath):
-		with HDF5File(filepath, "w") as hdf5:
-			hdf5.create_dataset("path_length", data=self.path_length)
-			HDF5Serializer(hdf5.create_group("mapper")).save(self.mapper_optimizer)
-			HDF5Serializer(hdf5.create_group("synthesizer")).save(self.synthesizer_optimizer)
-			HDF5Serializer(hdf5.create_group("discriminator")).save(self.discriminator_optimizer)
-
 class CustomUpdater(StandardUpdater):
 
 	def __init__(self, generator, discriminator, iterator, optimizers, mixing_rate=0.5, gamma=10, decay=0.01, pl_weight=2, lsgan=False):
@@ -64,6 +50,7 @@ class CustomUpdater(StandardUpdater):
 		self.decay = decay
 		self.pl_weight = pl_weight
 		self.lsgan = lsgan
+		self.path_length = 0.0
 
 	def next_latents(self):
 		return self.generator.generate_latents(self.iterator.batch_size)
@@ -84,8 +71,8 @@ class CustomUpdater(StandardUpdater):
 
 		lerp = lambda a, b, t: a + (b - a) * t
 		p = CustomUpdater.path_length_f(ws, x_fake, self.generator.generate_masks(ws[0].shape[0]))
-		self.optimizers.path_length = lerp(self.optimizers.path_length, p.item(), self.decay)
-		penalty = (p - self.optimizers.path_length) ** 2
+		self.path_length = lerp(self.path_length, p.item(), self.decay)
+		penalty = (p - self.path_length) ** 2
 
 		loss_func = CustomUpdater.generator_ls_loss if self.lsgan else CustomUpdater.generator_adversarial_loss
 		loss = loss_func(y_fake) + self.pl_weight * penalty
@@ -108,6 +95,20 @@ class CustomUpdater(StandardUpdater):
 		loss.backward()
 		self.optimizers.update_discriminator()
 		report({"loss (D)": loss, "penalty (D)": penalty})
+
+	def load_states(self, filepath):
+		with HDF5File(filepath, "r") as hdf5:
+			self.path_length = float(hdf5["path_length"][()])
+			HDF5Deserializer(hdf5["generator"]).load(self.generator)
+			for key, optimizer in dict(self.optimizers).items():
+				HDF5Deserializer(hdf5["optimizers"][key]).load(optimizer)
+
+	def save_states(self, filepath):
+		with HDF5File(filepath, "w") as hdf5:
+			hdf5.create_dataset("path_length", data=self.path_length)
+			optimizers = hdf5.create_group("optimizers")
+			for key, optimizer in dict(self.optimizers).items():
+				HDF5Serializer(optimizers.create_group(key)).save(optimizer)
 
 	@staticmethod
 	def generator_adversarial_loss(fake):
