@@ -5,7 +5,7 @@ from utilities.filesys import glob_recursively
 
 class ImageDataset(DatasetMixin):
 
-	extensions = ["png", "jpg", "jpeg", "gif", "bmp", "tif", "tiff"]
+	extensions = ["png", "jpg", "jpeg", "gif", "bmp", "tif", "tiff", "webp"]
 
 	def __init__(self, directory, resolution, preload=False):
 		super().__init__()
