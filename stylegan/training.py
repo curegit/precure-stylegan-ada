@@ -100,12 +100,15 @@ class CustomUpdater(StandardUpdater):
 		with HDF5File(filepath, "r") as hdf5:
 			self.path_length = float(hdf5["path_length"][()])
 			HDF5Deserializer(hdf5["generator"]).load(self.generator)
+			HDF5Deserializer(hdf5["discriminator"]).load(self.discriminator)
 			for key, optimizer in dict(self.optimizers).items():
 				HDF5Deserializer(hdf5["optimizers"][key]).load(optimizer)
 
 	def save_states(self, filepath):
 		with HDF5File(filepath, "w") as hdf5:
 			hdf5.create_dataset("path_length", data=self.path_length)
+			HDF5Serializer(hdf5.create_group("generator")).save(self.generator)
+			HDF5Serializer(hdf5.create_group("discriminator")).save(self.discriminator)
 			optimizers = hdf5.create_group("optimizers")
 			for key, optimizer in dict(self.optimizers).items():
 				HDF5Serializer(optimizers.create_group(key)).save(optimizer)
@@ -176,14 +179,14 @@ class CustomTrainer(Trainer):
 		iteration = trainer.updater.iteration
 		filepath = build_filepath(trainer.out, f"gen_{iteration}", "hdf5", trainer.overwrite)
 		trainer.updater.generator.save_weights(filepath)
-		filepath = build_filepath(trainer.out, f"dis_{iteration}", "hdf5", trainer.overwrite)
-		trainer.updater.discriminator.save_weights(filepath)
+		#filepath = build_filepath(trainer.out, f"dis_{iteration}", "hdf5", trainer.overwrite)
+		#trainer.updater.discriminator.save_weights(filepath)
 
 	@staticmethod
 	def save_optimizer_states(trainer):
 		iteration = trainer.updater.iteration
-		filepath = build_filepath(trainer.out, f"opt_{iteration}", "hdf5", trainer.overwrite)
-		trainer.updater.optimizers.save_states(filepath)
+		filepath = build_filepath(trainer.out, f"up_{iteration}", "hdf5", trainer.overwrite)
+		trainer.updater.save_states(filepath)
 
 	@staticmethod
 	def save_middle_images(trainer):
