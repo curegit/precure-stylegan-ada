@@ -16,7 +16,7 @@ class Mapper(Chain):
 			self.mlp = Sequential(EqualizedLinear(size, size), LeakyRelu()).repeat(depth)
 
 	def __call__(self, z):
-		return self.mlp(z / sqrt(mean(z ** 2, axis=1, keepdims=True) + 1e-8))
+		return self.mlp(z / sqrt(mean(z ** 2, axis=1, keepdims=True) + 1e-08))
 
 class Synthesizer(Chain):
 
