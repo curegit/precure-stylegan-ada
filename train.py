@@ -25,8 +25,8 @@ def main(args):
 	iterator = SerialIterator(dataset, args.batch, repeat=True, shuffle=True)
 	updater = CustomUpdater(generator, averaged_generator, discriminator, iterator, optimizers, args.ema, args.lsgan)
 	updater.enable_style_mixing(args.mix)
-	updater.enable_r1_regularization(args.gamma)
-	updater.enable_path_length_regularization()
+	updater.enable_r1_regularization(args.gamma, args.r1)
+	updater.enable_path_length_regularization(args.decay, args.weight, args.pl)
 
 	if args.snapshot is not None:
 		updater.load_states(args.snapshot)
@@ -41,22 +41,28 @@ def main(args):
 
 def parse_args():
 	parser = CustomArgumentParser("")
-	parser.add_argument("dataset", metavar="DATASET_DIR", help="dataset directory which stores images")
-	parser.add_argument("-p", "--preload", action="store_true", help="preload all dataset into RAM")
+	group = parser.add_argument_group("training arguments", "")
+	group.add_argument("dataset", metavar="DATASET_DIR", help="dataset directory which stores images")
+	group.add_argument("-p", "--preload", action="store_true", help="preload entire dataset into the memory")
 
-	parser.add_argument("-s", "--snapshot", metavar="FILE", help="snapshot")
-	parser.add_argument("-g", "--group", type=natural, default=16, help="")
+	group.add_argument("-s", "--snapshot", metavar="FILE", help="snapshot")
+	group.add_argument("-g", "--group-size", dest="group", type=natural, default=4, help="")
 
-	parser.add_argument("-e", "--epoch", type=natural, default=1, help="")
-	parser.add_argument("-r", "--gamma", "--l2-batch", dest="gamma", type=ufloat, default=10, help="")
-	parser.add_argument("-L", "--lsgan", "--least-squares", action="store_true", help="")
-	parser.add_argument("-i", "--mixing", metavar="RATE", dest="mix", type=rate, default=0.5, help="")
-	parser.add_argument("-a", "--ema", metavar="N", type=natural, default=10000, help="")
+	group.add_argument("-e", "--epoch", type=natural, default=1, help="")
+	group.add_argument("-r", "--r1-gamma", dest="gamma", type=ufloat, default=10, help="")
+	group.add_argument("-t", "--r1-interval", dest="r1", type=natural, default=16, help="")
+	group.add_argument("-y", "--pl-decay", dest="decay", type=rate, default=0.99, help="")
+	group.add_argument("-w", "--pl-weight", dest="weight", type=ufloat, default=2, help="")
+	group.add_argument("-l", "--pl-interval", dest="pl", type=natural, default=8, help="")
 
-	parser.add_argument("-A", "--alphas", metavar="ALPHA", type=positive, nargs=3, default=(0.00002, 0.002, 0.002), help="Adam's coefficients of learning rates of mapper, generator, and discriminator")
-	parser.add_argument("-B", "--betas", metavar="BETA", type=rate, nargs=2, default=(0.0, 0.99), help="Adam's exponential decay rates of the 1st and 2nd order moments")
+	group.add_argument("-L", "--lsgan", "--least-squares", action="store_true", help="")
+	group.add_argument("-i", "--mixing-rate", metavar="RATE", dest="mix", type=rate, default=0.5, help="")
+	group.add_argument("-a", "--ema-images", metavar="N", dest="ema", type=natural, default=10000, help="")
+
+	group.add_argument("-A", "--alphas", metavar="ALPHA", type=positive, nargs=3, default=(0.00002, 0.002, 0.002), help="Adam's coefficients of learning rates of mapper, generator, and discriminator")
+	group.add_argument("-B", "--betas", metavar=("BETA1", "BETA2"), type=rate, nargs=2, default=(0.0, 0.99), help="Adam's exponential decay rates of the 1st and 2nd order moments")
 	parser.add_argument("-u", "--print-interval", metavar="ITER", dest="print", type=uint, nargs=2, default=(5, 500), help="")
-	parser.add_argument("-l", "--write-interval", metavar="ITER", dest="write", type=uint, nargs=4, default=(1000, 3000, 500, 500), help="")
+	#parser.add_argument("-l", "--write-interval", metavar="ITER", dest="write", type=uint, nargs=4, default=(1000, 3000, 500, 500), help="")
 	return parser.add_output_args(default_dest="results").add_model_args().add_evaluation_args().parse_args()
 
 if __name__ == "__main__":
