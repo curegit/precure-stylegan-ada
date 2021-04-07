@@ -1,6 +1,6 @@
 from math import sqrt as root
 from chainer import Parameter, Link, Chain
-from chainer.functions import sqrt, sum, scale, convolution_2d, resize_images, broadcast_to, pad
+from chainer.functions import sqrt, sum, convolution_2d, resize_images, broadcast_to, pad
 from chainer.initializers import Zero, One, Normal
 from stylegan.links.common import GaussianDistribution, EqualizedLinear, LeakyRelu
 
