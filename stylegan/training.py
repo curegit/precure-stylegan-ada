@@ -231,8 +231,8 @@ class CustomTrainer(Trainer):
 	@staticmethod
 	def save_middle_images(trainer):
 		for i, n in range_batch(trainer.number, trainer.updater.iterator.batch_size):
-			z = trainer.updater.generator.generate_latents(n)
-			ws, y = trainer.updater.generator(z)
+			z = trainer.updater.averaged_generator.generate_latents(n)
+			ws, y = trainer.updater.averaged_generator(z)
 			z.to_cpu()
 			y.to_cpu()
 			for j in range(n):
