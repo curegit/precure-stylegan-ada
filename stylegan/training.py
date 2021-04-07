@@ -10,6 +10,7 @@ from chainer.functions import sqrt, sum, mean, batch_l2_norm_squared, softplus, 
 from chainer.optimizers import Adam
 from chainer.serializers import HDF5Serializer, HDF5Deserializer
 from utilities.iter import range_batch
+from utilities.math import lerp
 from utilities.image import save_image
 from utilities.filesys import build_filepath
 
@@ -39,18 +40,32 @@ class AdamTriple():
 
 class CustomUpdater(StandardUpdater):
 
-	def __init__(self, generator, discriminator, iterator, optimizers, mixing_rate=0.5, gamma=10, decay=0.01, pl_weight=2, lsgan=False):
+	def __init__(self, generator, averaged_generator, discriminator, iterator, optimizers, averaging_images=10000, lsgan=False):
 		super().__init__(iterator, dict(optimizers))
 		self.generator = generator
+		self.averaged_generator = averaged_generator
 		self.discriminator = discriminator
 		self.iterator = iterator
 		self.optimizers = optimizers
-		self.mixing_rate = mixing_rate
-		self.gamma = gamma
-		self.decay = decay
-		self.pl_weight = pl_weight
+		self.averaging_images = averaging_images
 		self.lsgan = lsgan
-		self.path_length = 0.0
+		self.style_mixing_rate = 0.0
+		self.r1_regularization_interval = 0
+		self.averaged_path_length = 0.0
+		self.path_length_regularization_interval = 0
+		self.augumentation_probability = 0.0
+
+	def enable_style_mixing(self, mixing_rate=0.5):
+		self.style_mixing_rate = mixing_rate
+
+	def enable_r1_regularization(self, gamma=10, interval=16):
+		self.r1_regularization_gamma = gamma
+		self.r1_regularization_interval = interval
+
+	def enable_path_length_regularization(self, decay=0.99, weight=2, interval=8):
+		self.path_length_decay = decay
+		self.path_length_penalty_weight = weight
+		self.path_length_regularization_interval = interval
 
 	def next_latents(self):
 		return self.generator.generate_latents(self.iterator.batch_size)
@@ -63,80 +78,103 @@ class CustomUpdater(StandardUpdater):
 		self.update_generator()
 
 	def update_generator(self):
-		self.generator.cleargrads()
 		z = self.next_latents()
-		mix = self.next_latents() if random.random() < self.mixing_rate else None
+		if random.random() < self.style_mixing_rate:
+			mix = self.next_latents()
+		else:
+			mix = None
 		ws, x_fake = self.generator(z, random_mix=mix)
 		y_fake = self.discriminator(x_fake)
-
-		lerp = lambda a, b, t: a + (b - a) * t
-		p = CustomUpdater.path_length_f(ws, x_fake, self.generator.generate_masks(ws[0].shape[0]))
-		self.path_length = lerp(self.path_length, p.item(), self.decay)
-		penalty = (p - self.path_length) ** 2
-
-		loss_func = CustomUpdater.generator_ls_loss if self.lsgan else CustomUpdater.generator_adversarial_loss
-		loss = loss_func(y_fake) + self.pl_weight * penalty
-		loss.backward()
+		if self.path_length_regularization_interval == 0:
+			penalty = 0.0
+		elif self.iteration % self.path_length_regularization_interval == 0:
+				masks = self.generator.generate_masks(ws[0].shape[0])
+				path_length = CustomUpdater.path_length(ws, x_fake, masks)
+				self.averaged_path_length = lerp(path_length.item(), self.averaged_path_length, self.path_length_decay)
+				penalty = self.path_length_penalty_weight * (path_length - self.averaged_path_length) ** 2
+		else:
+			penalty = 0.0
+		if self.lsgan:
+			loss = CustomUpdater.generator_least_squares_loss(y_fake)
+		else:
+			loss = CustomUpdater.generator_logistic_loss(y_fake)
+		(loss + penalty).backward()
 		self.optimizers.update_generator()
-		report({"loss (G)": loss})
+		weight_averaging_decay = 0.5 ** (self.iterator.batch_size / self.averaging_images)
+		for raw, averaged in zip(self.generator.params(), self.averaged_generator.params()):
+			averaged.copydata(lerp(raw, averaged, weight_averaging_decay))
+		report({"loss (G)": loss, "penalty (G)": penalty})
 
 	def update_discriminator(self):
-		self.discriminator.cleargrads()
 		x_real = self.next_real_images()
 		y_real = self.discriminator(x_real)
 		z = self.next_latents()
-		mix = self.next_latents() if random.random() < self.mixing_rate else None
-		ws, x_fake = self.generator(z, random_mix=mix)
+		if random.random() < self.style_mixing_rate:
+			mix = self.next_latents()
+		else:
+			mix = None
+		_, x_fake = self.generator(z, random_mix=mix)
 		y_fake = self.discriminator(x_fake)
 		x_fake.unchain_backward()
-		penalty = CustomUpdater.gradient_penalty(x_real, y_real, gamma=self.gamma)
-		loss_func = CustomUpdater.discriminator_ls_loss if self.lsgan else CustomUpdater.discriminator_adversarial_loss
-		loss = loss_func(y_real, y_fake) + penalty
-		loss.backward()
+		if self.r1_regularization_interval == 0:
+			penalty = 0.0
+		elif self.iteration % self.r1_regularization_interval:
+			penalty = CustomUpdater.gradient_penalty(x_real, y_real, self.r1_regularization_gamma)
+		else:
+			penalty = 0.0
+		if self.lsgan:
+			loss = CustomUpdater.discriminator_least_squares_loss(y_real, y_fake)
+		else:
+			loss = CustomUpdater.discriminator_logistic_loss(y_real, y_fake)
+		(loss + penalty).backward()
 		self.optimizers.update_discriminator()
 		report({"loss (D)": loss, "penalty (D)": penalty})
 
 	def load_states(self, filepath):
 		with HDF5File(filepath, "r") as hdf5:
-			self.path_length = float(hdf5["path_length"][()])
+			self.averaged_path_length = float(hdf5["averaged_path_length"][()])
+			self.augumentation_probability = float(hdf5["augumentation_probability"][()])
 			HDF5Deserializer(hdf5["generator"]).load(self.generator)
+			HDF5Deserializer(hdf5["averaged_generator"]).load(self.averaged_generator)
 			HDF5Deserializer(hdf5["discriminator"]).load(self.discriminator)
 			for key, optimizer in dict(self.optimizers).items():
 				HDF5Deserializer(hdf5["optimizers"][key]).load(optimizer)
 
 	def save_states(self, filepath):
 		with HDF5File(filepath, "w") as hdf5:
-			hdf5.create_dataset("path_length", data=self.path_length)
+			hdf5.create_dataset("averaged_path_length", data=self.averaged_path_length)
+			hdf5.create_dataset("augumentation_probability", data=self.augumentation_probability)
 			HDF5Serializer(hdf5.create_group("generator")).save(self.generator)
+			HDF5Serializer(hdf5.create_group("averaged_generator")).save(self.averaged_generator)
 			HDF5Serializer(hdf5.create_group("discriminator")).save(self.discriminator)
-			optimizers = hdf5.create_group("optimizers")
+			optimizer_group = hdf5.create_group("optimizers")
 			for key, optimizer in dict(self.optimizers).items():
-				HDF5Serializer(optimizers.create_group(key)).save(optimizer)
+				HDF5Serializer(optimizer_group.create_group(key)).save(optimizer)
 
 	@staticmethod
-	def generator_adversarial_loss(fake):
+	def generator_logistic_loss(fake):
 		return sum(softplus(-fake)) / fake.shape[0]
 
 	@staticmethod
-	def generator_ls_loss(fake):
-		return sum((fake - 1) ** 2) / 2 / fake.shape[0]
+	def generator_least_squares_loss(fake):
+		return sum((fake - 1) ** 2) / (2 * fake.shape[0])
 
 	@staticmethod
-	def discriminator_adversarial_loss(real, fake):
+	def discriminator_logistic_loss(real, fake):
 		return (sum(softplus(-real)) + sum(softplus(fake))) / real.shape[0]
 
 	@staticmethod
-	def discriminator_ls_loss(real, fake):
-		return (sum((real - 1) ** 2) + sum(fake ** 2)) / 2 / real.shape[0]
+	def discriminator_least_squares_loss(real, fake):
+		return (sum((real - 1) ** 2) + sum(fake ** 2)) / (2 * real.shape[0])
 
 	@staticmethod
-	def gradient_penalty(x, y, gamma=10):
+	def gradient_penalty(x, y, gamma):
 		gradient = grad([y], [x], enable_double_backprop=True)[0]
 		squared_norm = sum(batch_l2_norm_squared(gradient)) / x.shape[0]
 		return gamma * squared_norm / 2
 
 	@staticmethod
-	def path_length_f(ws, x, mask):
+	def path_length(ws, x, mask):
 		levels = len(ws)
 		batch, size = ws[0].shape
 		gradients = grad([x * mask], ws, enable_double_backprop=True)
@@ -152,11 +190,11 @@ class CustomTrainer(Trainer):
 		self.number = 16
 
 	def enable_reports(self, interval):
-		entries = ["epoch", "iteration", "loss (G)", "loss (D)", "penalty (D)"]
+		entries = ["epoch", "iteration", "loss (G)", "penalty (G)", "loss (D)", "penalty (D)"]
 		filename = basename(build_filepath(self.out, "report", "log", self.overwrite))
 		log_report = LogReport(trigger=(interval, "iteration"), filename=filename)
 		print_report = PrintReport(entries, log_report)
-		entries = ["loss (G)", "loss (D)", "penalty (D)"]
+		entries = ["loss (G)", "penalty (G)", "loss (D)", "penalty (D)"]
 		filename = basename(build_filepath(self.out, "plot", "png", self.overwrite))
 		plot_report = PlotReport(entries, "iteration", trigger=(interval, "iteration"), filename=filename)
 		self.extend(log_report)
@@ -178,14 +216,14 @@ class CustomTrainer(Trainer):
 	def save_model_states(trainer):
 		iteration = trainer.updater.iteration
 		filepath = build_filepath(trainer.out, f"gen_{iteration}", "hdf5", trainer.overwrite)
-		trainer.updater.generator.save_weights(filepath)
+		trainer.updater.averaged_generator.save_weights(filepath)
 		#filepath = build_filepath(trainer.out, f"dis_{iteration}", "hdf5", trainer.overwrite)
 		#trainer.updater.discriminator.save_weights(filepath)
 
 	@staticmethod
 	def save_optimizer_states(trainer):
 		iteration = trainer.updater.iteration
-		filepath = build_filepath(trainer.out, f"up_{iteration}", "hdf5", trainer.overwrite)
+		filepath = build_filepath(trainer.out, f"all_{iteration}", "hdf5", trainer.overwrite)
 		trainer.updater.save_states(filepath)
 
 	@staticmethod

@@ -1,6 +1,5 @@
 from chainer import global_config
 from chainer.iterators import SerialIterator
-#from chainer.optimizers import SGD, Adam
 from stylegan.dataset import ImageDataset
 from stylegan.networks import Generator, Discriminator
 from stylegan.training import AdamTriple, CustomUpdater, CustomTrainer
@@ -11,28 +10,24 @@ from utilities.stdio import eprint
 from utilities.filesys import mkdirs, build_filepath
 
 def main(args):
-	print("Initializing models")
-	generator = Generator(args.size, args.depth, args.levels, *args.channels)
-	discriminator = Discriminator(args.levels, args.channels[1], args.channels[0])
-	#if args.generator is not None:
-	#	generator.load_weights(args.generator)
-	#if args.discriminator is not None:
-	#	discriminator.load_weights(args.discriminator)
+	print("Initializing models...")
+	generator = Generator(args.size, args.depth, args.levels, *args.channels, not args.narrow)
+	averaged_generator = Generator(args.size, args.depth, args.levels, *args.channels, not args.narrow)
+	discriminator = Discriminator(args.levels, args.channels[1], args.channels[0], args.group)
 	generator.to_device(args.device)
+	averaged_generator.to_device(args.device)
 	discriminator.to_device(args.device)
-
-	#mapper_optimizer = SGD(args.sgd[0]) if args.sgd else Adam(args.alphas[0], args.betas[0], args.betas[1], eps=1e-08)
-	#generator_optimizer = SGD(args.sgd[1]) if args.sgd else Adam(args.alphas[1], args.betas[0], args.betas[1], eps=1e-08)
-	#discriminator_optimizer = SGD(args.sgd[2]) if args.sgd else Adam(args.alphas[2], args.betas[0], args.betas[1], eps=1e-08)
 	optimizers = AdamTriple(args.alphas, args.betas[0], args.betas[1])
 	optimizers.setup(generator, discriminator)
-	#if args.optimizers is not None:
-		#optimizers.load_states(args.optimizers)
 
 	mkdirs(args.dest)
 	dataset = ImageDataset(args.dataset, generator.resolution, args.preload)
 	iterator = SerialIterator(dataset, args.batch, repeat=True, shuffle=True)
-	updater = CustomUpdater(generator, discriminator, iterator, optimizers, args.mix, args.gamma)
+	updater = CustomUpdater(generator, averaged_generator, discriminator, iterator, optimizers, args.ema, args.lsgan)
+	updater.enable_style_mixing(args.mix)
+	updater.enable_r1_regularization(args.gamma)
+	updater.enable_path_length_regularization()
+
 	if args.snapshot is not None:
 		updater.load_states(args.snapshot)
 	trainer = CustomTrainer(updater, args.epoch, args.dest)
@@ -42,9 +37,7 @@ def main(args):
 	trainer.enable_progress_bar(1)
 	trainer.run()
 	generator.save_weights(build_filepath(args.dest, "gen", "hdf5"))
-	updater.save_states(build_filepath(args.dest, "up", "hdf5"))
-	#discriminator.save_weights(build_filepath(args.dest, "dis", "hdf5"))
-	#optimizers.save_states(build_filepath(args.dest, "opt", "hdf5"))
+	updater.save_states(build_filepath(args.dest, "all", "hdf5"))
 
 def parse_args():
 	parser = CustomArgumentParser("")
@@ -52,15 +45,13 @@ def parse_args():
 	parser.add_argument("-p", "--preload", action="store_true", help="preload all dataset into RAM")
 
 	parser.add_argument("-s", "--snapshot", metavar="FILE", help="snapshot")
-	#parser.add_argument("-g", "--generator", metavar="FILE", help="HDF5 file of serialized trained generator to load and retrain")
-	#parser.add_argument("-d", "--discriminator", metavar="FILE", help="HDF5 file of serialized trained discriminator to load and retrain")
-	#parser.add_argument("-o", "--optimizers", metavar="FILE", help="snapshot of optimizers of mapper, generator, and discriminator")
+	parser.add_argument("-g", "--group", type=natural, default=16, help="")
 
 	parser.add_argument("-e", "--epoch", type=natural, default=1, help="")
-	parser.add_argument("-G", "--gamma", "--l2-batch", dest="gamma", type=ufloat, default=10, help="")
+	parser.add_argument("-r", "--gamma", "--l2-batch", dest="gamma", type=ufloat, default=10, help="")
 	parser.add_argument("-L", "--lsgan", "--least-squares", action="store_true", help="")
 	parser.add_argument("-i", "--mixing", metavar="RATE", dest="mix", type=rate, default=0.5, help="")
-	parser.add_argument("-S", "--sgd", metavar="LR", type=positive, nargs=3, help="")
+
 	parser.add_argument("-A", "--alphas", metavar="ALPHA", type=positive, nargs=3, default=(0.00002, 0.002, 0.002), help="Adam's coefficients of learning rates of mapper, generator, and discriminator")
 	parser.add_argument("-B", "--betas", metavar="BETA", type=rate, nargs=2, default=(0.0, 0.99), help="Adam's exponential decay rates of the 1st and 2nd order moments")
 	parser.add_argument("-u", "--print-interval", metavar="ITER", dest="print", type=uint, nargs=2, default=(5, 500), help="")
