@@ -6,7 +6,7 @@ from chainer import grad, Variable
 from chainer.reporter import report
 from chainer.training import StandardUpdater, Trainer
 from chainer.training.extensions import PrintReport, LogReport, PlotReport, ProgressBar
-from chainer.functions import sqrt, sum, mean, batch_l2_norm_squared, softplus, stack
+from chainer.functions import sqrt, mean, batch_l2_norm_squared, softplus, stack
 from chainer.optimizers import Adam
 from chainer.serializers import HDF5Serializer, HDF5Deserializer
 from utilities.iter import range_batch
@@ -155,24 +155,24 @@ class CustomUpdater(StandardUpdater):
 
 	@staticmethod
 	def generator_logistic_loss(fake):
-		return sum(softplus(-fake)) / fake.shape[0]
+		return mean(softplus(-fake))
 
 	@staticmethod
 	def generator_least_squares_loss(fake):
-		return sum((fake - 1) ** 2) / fake.shape[0]
+		return mean((fake - 1) ** 2)
 
 	@staticmethod
 	def discriminator_logistic_loss(real, fake):
-		return (sum(softplus(-real)) + sum(softplus(fake))) / real.shape[0]
+		return mean(softplus(-real)) + mean(softplus(fake))
 
 	@staticmethod
 	def discriminator_least_squares_loss(real, fake):
-		return (sum((real - 1) ** 2) + sum(fake ** 2)) / real.shape[0]
+		return mean((real - 1) ** 2) + mean(fake ** 2)
 
 	@staticmethod
 	def gradient_penalty(x, y, gamma):
 		gradient = grad([y], [x], enable_double_backprop=True)[0]
-		squared_norm = sum(batch_l2_norm_squared(gradient)) / x.shape[0]
+		squared_norm = mean(batch_l2_norm_squared(gradient))
 		return gamma * squared_norm / 2
 
 	@staticmethod
