@@ -159,7 +159,7 @@ class CustomUpdater(StandardUpdater):
 
 	@staticmethod
 	def generator_least_squares_loss(fake):
-		return sum((fake - 1) ** 2) / (2 * fake.shape[0])
+		return sum((fake - 1) ** 2) / fake.shape[0]
 
 	@staticmethod
 	def discriminator_logistic_loss(real, fake):
@@ -167,7 +167,7 @@ class CustomUpdater(StandardUpdater):
 
 	@staticmethod
 	def discriminator_least_squares_loss(real, fake):
-		return (sum((real - 1) ** 2) + sum(fake ** 2)) / (2 * real.shape[0])
+		return (sum((real - 1) ** 2) + sum(fake ** 2)) / real.shape[0]
 
 	@staticmethod
 	def gradient_penalty(x, y, gamma):
