@@ -78,6 +78,7 @@ class CustomUpdater(StandardUpdater):
 		self.update_generator()
 
 	def update_generator(self):
+		self.generator.cleargrads()
 		z = self.next_latents()
 		if random.random() < self.style_mixing_rate:
 			mix = self.next_latents()
@@ -106,6 +107,7 @@ class CustomUpdater(StandardUpdater):
 		report({"loss (G)": loss, "penalty (G)": penalty})
 
 	def update_discriminator(self):
+		self.discriminator.cleargrads()
 		x_real = self.next_real_images()
 		y_real = self.discriminator(x_real)
 		z = self.next_latents()
