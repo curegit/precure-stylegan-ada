@@ -14,7 +14,7 @@ class StyleAffineTransform(Chain):
 	def __call__(self, w):
 		return self.s(w)
 
-class WeightDemodulatedConvolution2D(Link):
+class WeightModulatedConvolution2D(Link):
 
 	def __init__(self, in_channels, out_channels, pointwise=False, demod=True, gain=root(2)):
 		super().__init__()
@@ -29,12 +29,12 @@ class WeightDemodulatedConvolution2D(Link):
 	def __call__(self, x, y):
 		out_channels = self.b.shape[0]
 		batch, in_channels, height, width = x.shape
-		mod_w = self.w * y.reshape(batch, 1, in_channels, 1, 1)
-		w = mod_w / sqrt(sum(mod_w ** 2, axis=(2, 3, 4), keepdims=True) + 1e-08) if self.demod else mod_w
-		group_w = w.reshape(batch * out_channels, in_channels, self.ksize, self.ksize)
-		group_x = x.reshape(1, batch * in_channels, height, width)
-		pad_group_x = pad(group_x, ((0, 0), (0, 0), (self.pad, self.pad), (self.pad, self.pad)), mode="edge")
-		h = convolution_2d(pad_group_x, group_w, stride=1, pad=0, groups=batch)
+		modulated_w = self.w * y.reshape(batch, 1, in_channels, 1, 1)
+		w = modulated_w / sqrt(sum(modulated_w ** 2, axis=(2, 3, 4), keepdims=True) + 1e-08) if self.demod else modulated_w
+		grouped_w = w.reshape(batch * out_channels, in_channels, self.ksize, self.ksize)
+		grouped_x = x.reshape(1, batch * in_channels, height, width)
+		padded_grouped_x = pad(grouped_x, ((0, 0), (0, 0), (self.pad, self.pad), (self.pad, self.pad)), mode="edge")
+		h = convolution_2d(padded_grouped_x, grouped_w, stride=1, pad=0, groups=batch)
 		return h.reshape(batch, out_channels, height, width) + self.b.reshape(1, out_channels, 1, 1)
 
 class NoiseAdder(Chain):
@@ -60,7 +60,7 @@ class ToRGB(Chain):
 	def __init__(self, in_channels):
 		super().__init__()
 		with self.init_scope():
-			self.w = WeightDemodulatedConvolution2D(in_channels, 3, pointwise=True, demod=False, gain=1)
+			self.w = WeightModulatedConvolution2D(in_channels, 3, pointwise=True, demod=False, gain=1)
 
 	def __call__(self, x, y):
 		return self.w(x, y)
@@ -72,7 +72,7 @@ class InitialSkipArchitecture(Chain):
 		with self.init_scope():
 			self.c1 = Parameter(shape=(in_channels, 4, 4), initializer=Normal(1.0))
 			self.s1 = StyleAffineTransform(size, in_channels)
-			self.w1 = WeightDemodulatedConvolution2D(in_channels, out_channels)
+			self.w1 = WeightModulatedConvolution2D(in_channels, out_channels)
 			self.n1 = NoiseAdder()
 			self.a1 = LeakyRelu()
 			self.s2 = StyleAffineTransform(size, out_channels)
@@ -94,11 +94,11 @@ class SkipArchitecture(Chain):
 		with self.init_scope():
 			self.up = Upsampler()
 			self.s1 = StyleAffineTransform(size, in_channels)
-			self.w1 = WeightDemodulatedConvolution2D(in_channels, out_channels)
+			self.w1 = WeightModulatedConvolution2D(in_channels, out_channels)
 			self.n1 = NoiseAdder()
 			self.a1 = LeakyRelu()
 			self.s2 = StyleAffineTransform(size, out_channels)
-			self.w2 = WeightDemodulatedConvolution2D(out_channels, out_channels)
+			self.w2 = WeightModulatedConvolution2D(out_channels, out_channels)
 			self.n2 = NoiseAdder()
 			self.a2 = LeakyRelu()
 			self.s3 = StyleAffineTransform(size, out_channels)

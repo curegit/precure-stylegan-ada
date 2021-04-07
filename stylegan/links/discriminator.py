@@ -28,12 +28,12 @@ class MiniBatchStandardDeviation(Link):
 	def __call__(self, x):
 		batch, channels, height, width = x.shape
 		group_size = min(batch, self.group_size or batch)
-		group = batch // group_size
-		group_x = x.reshape(group, group_size, channels, height, width)
-		var = mean((group_x - mean(group_x, axis=1, keepdims=True)) ** 2, axis=1, keepdims=True)
-		dev = mean(sqrt(var + 1e-08), axis=(2, 3, 4), keepdims=True)
-		devmap = broadcast_to(dev, (group, group_size, 1, height, width)).reshape(batch, 1, height, width)
-		return concat((x, devmap), axis=1)
+		groups = batch // group_size
+		grouped_x = x.reshape(groups, group_size, channels, height, width)
+		variance = mean((grouped_x - mean(grouped_x, axis=1, keepdims=True)) ** 2, axis=1, keepdims=True)
+		deviation = mean(sqrt(variance + 1e-08), axis=(2, 3, 4), keepdims=True)
+		deviation_map = broadcast_to(deviation, (groups, group_size, 1, height, width)).reshape(batch, 1, height, width)
+		return concat((x, deviation_map), axis=1)
 
 class ResidualBlock(Chain):
 
