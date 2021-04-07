@@ -51,6 +51,7 @@ def parse_args():
 	parser.add_argument("-r", "--gamma", "--l2-batch", dest="gamma", type=ufloat, default=10, help="")
 	parser.add_argument("-L", "--lsgan", "--least-squares", action="store_true", help="")
 	parser.add_argument("-i", "--mixing", metavar="RATE", dest="mix", type=rate, default=0.5, help="")
+	parser.add_argument("-a", "--ema", metavar="N", type=natural, default=10000, help="")
 
 	parser.add_argument("-A", "--alphas", metavar="ALPHA", type=positive, nargs=3, default=(0.00002, 0.002, 0.002), help="Adam's coefficients of learning rates of mapper, generator, and discriminator")
 	parser.add_argument("-B", "--betas", metavar="BETA", type=rate, nargs=2, default=(0.0, 0.99), help="Adam's exponential decay rates of the 1st and 2nd order moments")
