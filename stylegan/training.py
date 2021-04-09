@@ -6,7 +6,7 @@ from chainer import grad, Variable
 from chainer.reporter import report
 from chainer.training import StandardUpdater, Trainer
 from chainer.training.extensions import PrintReport, LogReport, PlotReport, ProgressBar
-from chainer.functions import sqrt, mean, batch_l2_norm_squared, softplus, stack
+from chainer.functions import sqrt, sign, softplus, mean, batch_l2_norm_squared, stack
 from chainer.optimizers import Adam
 from chainer.serializers import HDF5Serializer, HDF5Deserializer
 from utilities.iter import range_batch
@@ -110,6 +110,7 @@ class CustomUpdater(StandardUpdater):
 		self.discriminator.cleargrads()
 		x_real = self.next_real_images()
 		y_real = self.discriminator(x_real)
+		rt = mean(sign(y_real - 0.5 if self.lsgan else y_real))
 		z = self.next_latents()
 		if random.random() < self.style_mixing_rate:
 			mix = self.next_latents()
