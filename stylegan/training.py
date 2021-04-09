@@ -217,12 +217,12 @@ class CustomTrainer(Trainer):
 
 	@staticmethod
 	def save_states(trainer):
-		filepath = build_filepath(trainer.out, f"all_{trainer.iteration}", "hdf5", trainer.overwrite)
+		filepath = build_filepath(trainer.out, f"snapshot-{trainer.iteration}", "hdf5", trainer.overwrite)
 		trainer.updater.save_states(filepath)
 
 	@staticmethod
 	def save_generator(trainer):
-		filepath = build_filepath(trainer.out, f"gen_{trainer.iteration}", "hdf5", trainer.overwrite)
+		filepath = build_filepath(trainer.out, f"generator-{trainer.iteration}", "hdf5", trainer.overwrite)
 		trainer.updater.averaged_generator.save_weights(filepath)
 
 	@staticmethod
@@ -233,6 +233,6 @@ class CustomTrainer(Trainer):
 			z.to_cpu()
 			y.to_cpu()
 			for j in range(n):
-				filename = f"{trainer.iteration}_{i + j + 1}"
+				filename = f"{trainer.iteration}-{i + j + 1}"
 				np.save(build_filepath(trainer.out, filename, "npy", trainer.overwrite), z.array[j])
 				save_image(y.array[j], build_filepath(trainer.out, filename, "png", trainer.overwrite))
