@@ -97,7 +97,7 @@ class CustomUpdater(StandardUpdater):
 			loss = CustomUpdater.generator_logistic_loss(y_fake)
 		(loss + penalty).backward()
 		self.optimizers.update_generator()
-		report({"loss (G)": loss, "penalty (G)": penalty})
+		report({"loss (G)": loss, "penalty (G)": penalty, "path_length": path_length})
 
 	def average_generator(self):
 		decay = 0.5 ** (self.iterator.batch_size / self.averaging_images)
@@ -185,9 +185,9 @@ class CustomTrainer(Trainer):
 		self.number = 16
 
 	def enable_reports(self, interval):
-		entries = ["epoch", "iteration", "loss (G)", "loss (D)", "penalty (G)", "penalty (D)", "overfitting"]
 		filename = basename(build_filepath(self.out, "report", "log", self.overwrite))
 		log_report = LogReport(trigger=(interval, "iteration"), filename=filename)
+		entries = ["epoch", "iteration", "loss (G)", "loss (D)", "penalty (G)", "penalty (D)", "overfitting"]
 		print_report = PrintReport(entries, log_report)
 		entries = ["loss (G)", "loss (D)", "penalty (G)", "penalty (D)", "overfitting"]
 		filename = basename(build_filepath(self.out, "plot", "png", self.overwrite))
