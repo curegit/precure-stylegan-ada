@@ -189,7 +189,7 @@ class CustomTrainer(Trainer):
 		filename = basename(build_filepath(self.out, "report", "log", self.overwrite))
 		log_report = LogReport(trigger=(interval, "iteration"), filename=filename)
 		print_report = PrintReport(entries, log_report)
-		entries = ["loss (G)", "penalty (G)", "loss (D)", "penalty (D)", "overfitting"]
+		entries = ["loss (G)", "loss (D)", "penalty (G)", "penalty (D)", "overfitting"]
 		filename = basename(build_filepath(self.out, "plot", "png", self.overwrite))
 		plot_report = PlotReport(entries, "iteration", trigger=(interval, "iteration"), filename=filename)
 		self.extend(log_report)
