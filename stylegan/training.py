@@ -74,25 +74,21 @@ class CustomUpdater(StandardUpdater):
 		return Variable(self.discriminator.xp.array(self.iterator.next()))
 
 	def update_core(self):
-		self.update_discriminator()
 		self.update_generator()
+		self.average_generator()
+		self.update_discriminator()
 
 	def update_generator(self):
 		self.generator.cleargrads()
 		z = self.next_latents()
-		if random.random() < self.style_mixing_rate:
-			mix = self.next_latents()
-		else:
-			mix = None
+		mix = self.next_latents() if random.random() < self.style_mixing_rate else None
 		ws, x_fake = self.generator(z, random_mix=mix)
 		y_fake = self.discriminator(x_fake)
-		if self.path_length_regularization_interval == 0:
-			penalty = 0.0
-		elif self.iteration % self.path_length_regularization_interval == 0:
-				masks = self.generator.generate_masks(ws[0].shape[0])
-				path_length = CustomUpdater.path_length(ws, x_fake, masks)
-				self.averaged_path_length = lerp(path_length.item(), self.averaged_path_length, self.path_length_decay)
-				penalty = self.path_length_penalty_weight * (path_length - self.averaged_path_length) ** 2
+		if self.path_length_regularization_interval and self.iteration % self.path_length_regularization_interval == 0:
+			masks = self.generator.generate_masks(self.iterator.batch_size)
+			path_length = CustomUpdater.path_length(ws, x_fake, masks)
+			self.averaged_path_length = lerp(path_length.item(), self.averaged_path_length, self.path_length_decay)
+			penalty = self.path_length_penalty_weight * (path_length - self.averaged_path_length) ** 2
 		else:
 			penalty = 0.0
 		if self.lsgan:
@@ -101,10 +97,12 @@ class CustomUpdater(StandardUpdater):
 			loss = CustomUpdater.generator_logistic_loss(y_fake)
 		(loss + penalty).backward()
 		self.optimizers.update_generator()
-		weight_averaging_decay = 0.5 ** (self.iterator.batch_size / self.averaging_images)
-		for raw, averaged in zip(self.generator.params(), self.averaged_generator.params()):
-			averaged.copydata(lerp(raw, averaged, weight_averaging_decay))
 		report({"loss (G)": loss, "penalty (G)": penalty})
+
+	def average_generator(self):
+		decay = 0.5 ** (self.iterator.batch_size / self.averaging_images)
+		for raw, averaged in zip(self.generator.params(), self.averaged_generator.params()):
+			averaged.copydata(lerp(raw, averaged, decay))
 
 	def update_discriminator(self):
 		self.discriminator.cleargrads()
@@ -112,16 +110,11 @@ class CustomUpdater(StandardUpdater):
 		y_real = self.discriminator(x_real)
 		rt = mean(sign(y_real - 0.5 if self.lsgan else y_real))
 		z = self.next_latents()
-		if random.random() < self.style_mixing_rate:
-			mix = self.next_latents()
-		else:
-			mix = None
+		mix = self.next_latents() if random.random() < self.style_mixing_rate else None
 		_, x_fake = self.generator(z, random_mix=mix)
 		y_fake = self.discriminator(x_fake)
 		x_fake.unchain_backward()
-		if self.r1_regularization_interval == 0:
-			penalty = 0.0
-		elif self.iteration % self.r1_regularization_interval:
+		if self.r1_regularization_interval and self.iteration % self.r1_regularization_interval == 0:
 			penalty = CustomUpdater.gradient_penalty(x_real, y_real, self.r1_regularization_gamma)
 		else:
 			penalty = 0.0
@@ -131,7 +124,7 @@ class CustomUpdater(StandardUpdater):
 			loss = CustomUpdater.discriminator_logistic_loss(y_real, y_fake)
 		(loss + penalty).backward()
 		self.optimizers.update_discriminator()
-		report({"loss (D)": loss, "penalty (D)": penalty})
+		report({"loss (D)": loss, "penalty (D)": penalty, "overfitting": rt})
 
 	def load_states(self, filepath):
 		with HDF5File(filepath, "r") as hdf5:
@@ -178,8 +171,7 @@ class CustomUpdater(StandardUpdater):
 
 	@staticmethod
 	def path_length(ws, x, mask):
-		levels = len(ws)
-		batch, size = ws[0].shape
+		levels, batch, size = len(ws), *(ws[0].shape)
 		gradients = grad([x * mask], ws, enable_double_backprop=True)
 		gradient = stack(gradients).transpose(1, 0, 2).reshape(batch * levels, size)
 		path_lengths = batch_l2_norm_squared(gradient).reshape(batch, levels)
@@ -193,11 +185,11 @@ class CustomTrainer(Trainer):
 		self.number = 16
 
 	def enable_reports(self, interval):
-		entries = ["epoch", "iteration", "loss (G)", "penalty (G)", "loss (D)", "penalty (D)"]
+		entries = ["epoch", "iteration", "loss (G)", "loss (D)", "penalty (G)", "penalty (D)", "overfitting"]
 		filename = basename(build_filepath(self.out, "report", "log", self.overwrite))
 		log_report = LogReport(trigger=(interval, "iteration"), filename=filename)
 		print_report = PrintReport(entries, log_report)
-		entries = ["loss (G)", "penalty (G)", "loss (D)", "penalty (D)"]
+		entries = ["loss (G)", "penalty (G)", "loss (D)", "penalty (D)", "overfitting"]
 		filename = basename(build_filepath(self.out, "plot", "png", self.overwrite))
 		plot_report = PlotReport(entries, "iteration", trigger=(interval, "iteration"), filename=filename)
 		self.extend(log_report)
@@ -208,35 +200,39 @@ class CustomTrainer(Trainer):
 		self.extend(ProgressBar(update_interval=interval))
 
 	def hook_state_save(self, interval):
-		self.extend(CustomTrainer.save_model_states, trigger=(interval, "iteration"))
-		self.extend(CustomTrainer.save_optimizer_states, trigger=(interval, "iteration"))
+		self.extend(CustomTrainer.save_states, trigger=(interval, "iteration"))
+		self.extend(CustomTrainer.save_generator, trigger=(interval, "iteration"))
 
 	def hook_image_generation(self, interval, number=None):
 		self.number = self.number if number is None else number
-		self.extend(CustomTrainer.save_middle_images, trigger=(interval, "iteration"))
+		self.extend(CustomTrainer.save_images, trigger=(interval, "iteration"))
+
+	@property
+	def iteration(self):
+		return self.updater.iteration
+
+	@property
+	def batch_size(self):
+		return self.updater.iterator.batch_size
 
 	@staticmethod
-	def save_model_states(trainer):
-		iteration = trainer.updater.iteration
-		filepath = build_filepath(trainer.out, f"gen_{iteration}", "hdf5", trainer.overwrite)
-		trainer.updater.averaged_generator.save_weights(filepath)
-		#filepath = build_filepath(trainer.out, f"dis_{iteration}", "hdf5", trainer.overwrite)
-		#trainer.updater.discriminator.save_weights(filepath)
-
-	@staticmethod
-	def save_optimizer_states(trainer):
-		iteration = trainer.updater.iteration
-		filepath = build_filepath(trainer.out, f"all_{iteration}", "hdf5", trainer.overwrite)
+	def save_states(trainer):
+		filepath = build_filepath(trainer.out, f"all_{trainer.iteration}", "hdf5", trainer.overwrite)
 		trainer.updater.save_states(filepath)
 
 	@staticmethod
-	def save_middle_images(trainer):
-		for i, n in range_batch(trainer.number, trainer.updater.iterator.batch_size):
+	def save_generator(trainer):
+		filepath = build_filepath(trainer.out, f"gen_{trainer.iteration}", "hdf5", trainer.overwrite)
+		trainer.updater.averaged_generator.save_weights(filepath)
+
+	@staticmethod
+	def save_images(trainer):
+		for i, n in range_batch(trainer.number, trainer.batch_size):
 			z = trainer.updater.averaged_generator.generate_latents(n)
-			ws, y = trainer.updater.averaged_generator(z)
+			_, y = trainer.updater.averaged_generator(z)
 			z.to_cpu()
 			y.to_cpu()
 			for j in range(n):
-				filename = f"{trainer.updater.iteration}_{i + j + 1}"
+				filename = f"{trainer.iteration}_{i + j + 1}"
 				np.save(build_filepath(trainer.out, filename, "npy", trainer.overwrite), z.array[j])
 				save_image(y.array[j], build_filepath(trainer.out, filename, "png", trainer.overwrite))
