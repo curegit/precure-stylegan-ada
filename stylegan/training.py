@@ -187,7 +187,7 @@ class CustomTrainer(Trainer):
 	def enable_reports(self, interval):
 		filename = basename(build_filepath(self.out, "report", "log", self.overwrite))
 		log_report = LogReport(trigger=(interval, "iteration"), filename=filename)
-		entries = ["epoch", "iteration", "loss (G)", "loss (D)", "penalty (G)", "penalty (D)", "overfitting"]
+		entries = ["iteration", "loss (G)", "loss (D)", "penalty (G)", "penalty (D)", "overfitting"]
 		print_report = PrintReport(entries, log_report)
 		entries = ["loss (G)", "loss (D)", "penalty (G)", "penalty (D)", "overfitting"]
 		filename = basename(build_filepath(self.out, "plot", "png", self.overwrite))
