@@ -97,7 +97,7 @@ class CustomUpdater(StandardUpdater):
 			loss = CustomUpdater.generator_logistic_loss(y_fake)
 		(loss + penalty).backward()
 		self.optimizers.update_generator()
-		report({"loss (G)": loss, "penalty (G)": penalty, "path_length": path_length})
+		report({"loss (G)": loss, "penalty (G)": penalty, "path length": self.averaged_path_length})
 
 	def average_generator(self):
 		decay = 0.5 ** (self.iterator.batch_size / self.averaging_images)
@@ -124,7 +124,7 @@ class CustomUpdater(StandardUpdater):
 			loss = CustomUpdater.discriminator_logistic_loss(y_real, y_fake)
 		(loss + penalty).backward()
 		self.optimizers.update_discriminator()
-		report({"loss (D)": loss, "penalty (D)": penalty, "overfitting": rt})
+		report({"loss (D)": loss, "penalty (D)": penalty, "overfitting": rt, "augumentation": self.augumentation_probability})
 
 	def load_states(self, filepath):
 		with HDF5File(filepath, "r") as hdf5:
