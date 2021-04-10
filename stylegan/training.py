@@ -1,7 +1,6 @@
 import random
 import os.path
 import numpy as np
-from os.path import basename
 from h5py import File as HDF5File
 from chainer import grad, Variable
 from chainer.reporter import report
@@ -185,17 +184,17 @@ class CustomTrainer(Trainer):
 		self.overwrite = overwrite
 		self.number = 16
 		self.images_out = os.path.join(dest, "images")
-		self.states_out = os.path.join(dest, "states")
+		self.states_out = os.path.join(dest, "checkpoints")
 		mkdirs(self.images_out)
 		mkdirs(self.states_out)
 
 	def enable_reports(self, interval):
-		filename = basename(build_filepath(self.out, "report", "log", self.overwrite))
+		filename = os.path.basename(build_filepath(self.out, "report", "log", self.overwrite))
 		log_report = LogReport(trigger=(interval, "iteration"), filename=filename)
 		entries = ["iteration", "loss (G)", "loss (D)", "penalty (G)", "penalty (D)", "overfitting"]
 		print_report = PrintReport(entries, log_report)
 		entries = ["loss (G)", "loss (D)", "penalty (G)", "penalty (D)", "overfitting"]
-		filename = basename(build_filepath(self.out, "plot", "png", self.overwrite))
+		filename = os.path.basename(build_filepath(self.out, "curves", "png", self.overwrite))
 		plot_report = PlotReport(entries, "iteration", trigger=(interval, "iteration"), filename=filename)
 		self.extend(log_report)
 		self.extend(print_report)
@@ -239,5 +238,5 @@ class CustomTrainer(Trainer):
 			y.to_cpu()
 			for j in range(n):
 				filename = f"{trainer.iteration}-{i + j + 1}"
-				np.save(build_filepath(trainer.out, filename, "npy", trainer.overwrite), z.array[j])
+				np.save(build_filepath(trainer.images_out, filename, "npy", trainer.overwrite), z.array[j])
 				save_image(y.array[j], build_filepath(trainer.images_out, filename, "png", trainer.overwrite))
