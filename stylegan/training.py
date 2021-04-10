@@ -1,4 +1,5 @@
 import random
+import os.path
 import numpy as np
 from os.path import basename
 from h5py import File as HDF5File
@@ -12,7 +13,7 @@ from chainer.serializers import HDF5Serializer, HDF5Deserializer
 from utilities.iter import range_batch
 from utilities.math import lerp
 from utilities.image import save_image
-from utilities.filesys import build_filepath
+from utilities.filesys import mkdirs, build_filepath
 
 class AdamTriple():
 
@@ -183,6 +184,10 @@ class CustomTrainer(Trainer):
 		super().__init__(updater, (epoch, "epoch"), dest)
 		self.overwrite = overwrite
 		self.number = 16
+		self.images_out = os.path.join(dest, "images")
+		self.states_out = os.path.join(dest, "states")
+		mkdirs(self.images_out)
+		mkdirs(self.states_out)
 
 	def enable_reports(self, interval):
 		filename = basename(build_filepath(self.out, "report", "log", self.overwrite))
@@ -200,7 +205,7 @@ class CustomTrainer(Trainer):
 		self.extend(ProgressBar(update_interval=interval))
 
 	def hook_state_save(self, interval):
-		self.extend(CustomTrainer.save_states, trigger=(interval, "iteration"))
+		self.extend(CustomTrainer.save_snapshot, trigger=(interval, "iteration"))
 		self.extend(CustomTrainer.save_generator, trigger=(interval, "iteration"))
 
 	def hook_image_generation(self, interval, number=None):
@@ -216,13 +221,13 @@ class CustomTrainer(Trainer):
 		return self.updater.iterator.batch_size
 
 	@staticmethod
-	def save_states(trainer):
-		filepath = build_filepath(trainer.out, f"snapshot-{trainer.iteration}", "hdf5", trainer.overwrite)
+	def save_snapshot(trainer):
+		filepath = build_filepath(trainer.states_out, f"snapshot-{trainer.iteration}", "hdf5", trainer.overwrite)
 		trainer.updater.save_states(filepath)
 
 	@staticmethod
 	def save_generator(trainer):
-		filepath = build_filepath(trainer.out, f"generator-{trainer.iteration}", "hdf5", trainer.overwrite)
+		filepath = build_filepath(trainer.states_out, f"generator-{trainer.iteration}", "hdf5", trainer.overwrite)
 		trainer.updater.averaged_generator.save_weights(filepath)
 
 	@staticmethod
@@ -235,4 +240,4 @@ class CustomTrainer(Trainer):
 			for j in range(n):
 				filename = f"{trainer.iteration}-{i + j + 1}"
 				np.save(build_filepath(trainer.out, filename, "npy", trainer.overwrite), z.array[j])
-				save_image(y.array[j], build_filepath(trainer.out, filename, "png", trainer.overwrite))
+				save_image(y.array[j], build_filepath(trainer.images_out, filename, "png", trainer.overwrite))
