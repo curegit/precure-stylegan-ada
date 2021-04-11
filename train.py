@@ -4,7 +4,7 @@ from stylegan.dataset import ImageDataset
 from stylegan.networks import Generator, Discriminator
 from stylegan.training import AdamTriple, CustomUpdater, CustomTrainer
 #from stylegan.augumentation import AugmentationPipeline
-from interface.args import CustomArgumentParser
+from interface.args import dump_json, CustomArgumentParser
 from interface.argtypes import uint, natural, ufloat, positive, rate
 from utilities.stdio import eprint
 from utilities.filesys import mkdirs, build_filepath
@@ -21,7 +21,7 @@ def main(args):
 	optimizers.setup(generator, discriminator)
 
 	mkdirs(args.dest)
-	args.dump_json(build_filepath(args.dest, "arguments", "json", args.force))
+	dump_json(args, build_filepath(args.dest, "arguments", "json", args.force))
 	dataset = ImageDataset(args.dataset, generator.resolution, args.preload)
 	iterator = SerialIterator(dataset, args.batch, repeat=True, shuffle=True)
 	updater = CustomUpdater(generator, averaged_generator, discriminator, iterator, optimizers, args.ema, args.lsgan)

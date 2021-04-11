@@ -2,6 +2,10 @@ from json import dump
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from interface.argtypes import uint, natural, ufloat, positive, rate, device
 
+def dump_json(args, filepath):
+	with open(filepath, mode="w", encoding="utf-8") as fp:
+		dump(vars(args), fp, indent=2, sort_keys=True)
+
 class CustomArgumentParser(ArgumentParser):
 
 	def __init__(self, description):
@@ -35,13 +39,3 @@ class CustomArgumentParser(ArgumentParser):
 		self.add_argument("-e", "--deviation", "--sd", metavar="SIGMA", dest="sd", type=positive, default=1.0, help="")
 		self.add_argument("-t", "--truncation-trick", "--psi", metavar="PSI", dest="psi", type=ufloat, help="")
 		return self
-
-	def parse_args(self, *args, **kwargs):
-		args = super().parse_args(*args, **kwargs)
-		args.dump_json = CustomArgumentParser.dump_json
-		return args
-
-	@staticmethod
-	def dump_json(args, filepath):
-		with open(filepath, mode="w", encoding="utf-8") as fp:
-			dump(vars(args), fp, indent=2, sort_keys=True)
