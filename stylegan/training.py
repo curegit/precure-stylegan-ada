@@ -125,7 +125,7 @@ class CustomUpdater(StandardUpdater):
 			loss = CustomUpdater.discriminator_logistic_loss(y_real, y_fake)
 		(loss + penalty).backward()
 		self.optimizers.update_discriminator()
-		report({"loss (D)": loss, "penalty (D)": penalty, "overfitting": rt, "augumentation": self.augumentation_probability})
+		report({"loss (D)": loss, "penalty (D)": penalty, "overfitting": rt})
 
 	def load_states(self, filepath):
 		with HDF5File(filepath, "r") as hdf5:
