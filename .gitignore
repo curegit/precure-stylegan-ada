@@ -1,4 +1,5 @@
 *.pdf
+*.json
 *.log
 *.npy
 *.hdf5
