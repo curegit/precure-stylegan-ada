@@ -4,7 +4,7 @@ from interface.argtypes import uint, natural, ufloat, positive, rate, device
 
 def dump_json(args, filepath):
 	with open(filepath, mode="w", encoding="utf-8") as fp:
-		dump(vars(args), fp, indent=2, sort_keys=True)
+		dump(vars(args), fp, indent=2, sort_keys=True, default=str)
 
 class CustomArgumentParser(ArgumentParser):
 
