@@ -1,10 +1,10 @@
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from interface.argtypes import uint, natural, ufloat, positive, rate, device
 
 class CustomArgumentParser(ArgumentParser):
 
 	def __init__(self, description):
-		super().__init__(allow_abbrev=False, description=description)
+		super().__init__(allow_abbrev=False, description=description, formatter_class=ArgumentDefaultsHelpFormatter)
 
 	def add_output_args(self, default_dest):
 		group = self.add_argument_group("output", "")
