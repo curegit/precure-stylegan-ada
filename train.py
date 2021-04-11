@@ -21,6 +21,7 @@ def main(args):
 	optimizers.setup(generator, discriminator)
 
 	mkdirs(args.dest)
+	args.dump_json(build_filepath(args.dest, "arguments", "json", args.force))
 	dataset = ImageDataset(args.dataset, generator.resolution, args.preload)
 	iterator = SerialIterator(dataset, args.batch, repeat=True, shuffle=True)
 	updater = CustomUpdater(generator, averaged_generator, discriminator, iterator, optimizers, args.ema, args.lsgan)
