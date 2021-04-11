@@ -30,7 +30,7 @@ def main(args):
 
 	if args.snapshot is not None:
 		updater.load_states(args.snapshot)
-	trainer = CustomTrainer(updater, args.epoch, args.dest)
+	trainer = CustomTrainer(updater, args.epoch, args.dest, args.force)
 	trainer.hook_state_save(1000)
 	trainer.hook_image_generation(1000, 32)
 	trainer.enable_reports(500)
