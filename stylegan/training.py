@@ -89,7 +89,7 @@ class CustomUpdater(StandardUpdater):
 			path_length = CustomUpdater.path_length(ws, x_fake, masks)
 			self.averaged_path_length = lerp(path_length.item(), self.averaged_path_length, self.path_length_decay)
 			penalty = self.path_length_penalty_weight * (path_length - self.averaged_path_length) ** 2
-			report({"path length", path_length})
+			report({"path length": path_length})
 		else:
 			penalty = 0.0
 		if self.lsgan:
