@@ -89,6 +89,7 @@ class CustomUpdater(StandardUpdater):
 			path_length = CustomUpdater.path_length(ws, x_fake, masks)
 			self.averaged_path_length = lerp(path_length.item(), self.averaged_path_length, self.path_length_decay)
 			penalty = self.path_length_penalty_weight * (path_length - self.averaged_path_length) ** 2
+			report({"path length", path_length})
 		else:
 			penalty = 0.0
 		if self.lsgan:
@@ -97,7 +98,7 @@ class CustomUpdater(StandardUpdater):
 			loss = CustomUpdater.generator_logistic_loss(y_fake)
 		(loss + penalty).backward()
 		self.optimizers.update_generator()
-		report({"loss (G)": loss, "penalty (G)": penalty, "path length": self.averaged_path_length})
+		report({"loss (G)": loss, "penalty (G)": penalty})
 
 	def average_generator(self):
 		decay = 0.5 ** (self.iterator.batch_size / self.averaging_images)
