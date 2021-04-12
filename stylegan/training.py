@@ -87,9 +87,9 @@ class CustomUpdater(StandardUpdater):
 		if self.path_length_regularization_interval and self.iteration % self.path_length_regularization_interval == 0:
 			masks = self.generator.generate_masks(self.iterator.batch_size)
 			path_length = CustomUpdater.path_length(ws, x_fake, masks)
-			self.averaged_path_length = lerp(path_length.item(), self.averaged_path_length, self.path_length_decay)
-			penalty = self.path_length_penalty_weight * (path_length - self.averaged_path_length) ** 2
-			report({"path length": path_length})
+			self.averaged_path_length = lerp(mean(path_length).item(), self.averaged_path_length, self.path_length_decay)
+			penalty = self.path_length_penalty_weight * mean((path_length - self.averaged_path_length) ** 2)
+			report({"path length": self.averaged_path_length})
 		else:
 			penalty = 0.0
 		if self.lsgan:
@@ -176,7 +176,7 @@ class CustomUpdater(StandardUpdater):
 		gradients = grad([x * mask], ws, enable_double_backprop=True)
 		gradient = stack(gradients).transpose(1, 0, 2).reshape(batch * levels, size)
 		path_lengths = batch_l2_norm_squared(gradient).reshape(batch, levels)
-		return mean(sqrt(mean(path_lengths, axis=1)))
+		return sqrt(mean(path_lengths, axis=1))
 
 class CustomTrainer(Trainer):
 
