@@ -1,6 +1,7 @@
 from math import sqrt as root
+from numpy import array, pad as padded, float32
 from chainer import Parameter, Link, Chain
-from chainer.functions import sqrt, sum, convolution_2d, resize_images, broadcast_to, pad
+from chainer.functions import sqrt, sum, convolution_2d, resize_images, broadcast_to, depth2space, pad
 from chainer.initializers import Zero, One, Normal
 from stylegan.links.common import GaussianDistribution, EqualizedLinear, LeakyRelu
 
@@ -49,11 +50,35 @@ class NoiseAdder(Chain):
 		b, _, h, w = x.shape
 		return x + self.s * self.g(b, 1, h, w)
 
-class Upsampler(Link):
+class BicubicUpsampler(Link):
+
+	def __init__(self, b=1/3, c=1/3):
+		super().__init__()
+		self.b, self.c = b, c
+		s = array([self.kernel(i + 0.25) for i in range(-2, 2)])
+		e = array([self.kernel(i + 0.75) for i in range(-2, 2)])
+		k1 = padded(s.reshape(1, 4) * s.reshape(4, 1), ((0, 1), (0, 1)))
+		k2 = padded(e.reshape(1, 4) * s.reshape(4, 1), ((0, 1), (1, 0)))
+		k3 = padded(s.reshape(1, 4) * e.reshape(4, 1), ((1, 0), (0, 1)))
+		k4 = padded(e.reshape(1, 4) * e.reshape(4, 1), ((1, 0), (1, 0)))
+		self.w = array([[k1], [k2], [k3], [k4]], dtype=float32)
 
 	def __call__(self, x):
-		height, width = x.shape[2:]
-		return resize_images(x, (height * 2, width * 2), align_corners=False)
+		batch, channels, height, width = x.shape
+		h1 = x.reshape(batch * channels, 1, height, width)
+		h2 = pad(h1, ((0, 0), (0, 0), (2, 2), (2, 2)), mode="symmetric")
+		h3 = convolution_2d(h2, self.xp.array(self.w))
+		h4 = depth2space(h3, 2)
+		return h4.reshape(batch, channels, height * 2, width * 2)
+
+	def kernel(self, x):
+		b, c = self.b, self.c
+		if abs(x) < 1:
+			return 1 / 6 * ((12 - 9 * b - 6 * c) * abs(x) ** 3 + (-18 + 12 * b + 6 * c) * abs(x) ** 2 + (6 - 2 * b))
+		elif 1 <= abs(x) < 2:
+			return 1 / 6 * ((-b - 6 * c) * abs(x) ** 3 + (6 * b + 30 * c) * abs(x) ** 2 + (-12 * b - 48 * c) * abs(x) + (8 * b + 24 * c))
+		else:
+			return 0.0
 
 class ToRGB(Chain):
 
@@ -92,7 +117,7 @@ class SkipArchitecture(Chain):
 	def __init__(self, size, in_channels, out_channels):
 		super().__init__()
 		with self.init_scope():
-			self.up = Upsampler()
+			self.up = BicubicUpsampler()
 			self.s1 = StyleAffineTransform(size, in_channels)
 			self.w1 = WeightModulatedConvolution2D(in_channels, out_channels)
 			self.n1 = NoiseAdder()
@@ -103,7 +128,7 @@ class SkipArchitecture(Chain):
 			self.a2 = LeakyRelu()
 			self.s3 = StyleAffineTransform(size, out_channels)
 			self.trgb = ToRGB(out_channels)
-			self.skip = Upsampler()
+			self.skip = BicubicUpsampler(0, 0.5)
 
 	def __call__(self, x, y, w):
 		h1 = self.up(x)
