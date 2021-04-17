@@ -10,7 +10,7 @@ from chainer.functions import sqrt, sign, softplus, mean, batch_l2_norm_squared,
 from chainer.optimizers import Adam
 from chainer.serializers import HDF5Serializer, HDF5Deserializer
 from utilities.iter import range_batch
-from utilities.math import lerp
+from utilities.math import identity, sgn, clamp, lerp
 from utilities.image import save_image
 from utilities.filesys import mkdirs, build_filepath
 
@@ -53,6 +53,8 @@ class CustomUpdater(StandardUpdater):
 		self.r1_regularization_interval = 0
 		self.averaged_path_length = 0.0
 		self.path_length_regularization_interval = 0
+		self.augumentation = False
+		self.augumentation_pipeline = identity
 		self.augumentation_probability = 0.0
 
 	def enable_style_mixing(self, mixing_rate=0.5):
@@ -67,6 +69,14 @@ class CustomUpdater(StandardUpdater):
 		self.path_length_penalty_weight = weight
 		self.path_length_regularization_interval = interval
 
+	def enable_adaptive_augumentation(self, pipeline, target=0.6, limit=0.8, delta_images=500000, initial_probability=None):
+		self.augumentation = True
+		self.augumentation_pipeline = pipeline
+		self.overfitting_target = target
+		self.augumentation_limit = limit
+		self.augumentation_delta_images = delta_images
+		self.augumentation_probability = initial_probability or self.augumentation_probability
+
 	def next_latents(self):
 		return self.generator.generate_latents(self.iterator.batch_size)
 
@@ -74,16 +84,20 @@ class CustomUpdater(StandardUpdater):
 		return Variable(self.discriminator.xp.array(self.iterator.next()))
 
 	def update_core(self):
+		if self.augumentation:
+			self.apply_augumentation()
 		self.update_generator()
 		self.average_generator()
-		self.update_discriminator()
+		rt = self.update_discriminator()
+		if self.augumentation:
+			self.adapt_augumentation(rt)
 
 	def update_generator(self):
 		self.generator.cleargrads()
 		z = self.next_latents()
 		mix = self.next_latents() if random.random() < self.style_mixing_rate else None
 		ws, x_fake = self.generator(z, random_mix=mix)
-		y_fake = self.discriminator(x_fake)
+		y_fake = self.discriminator(self.augumentation_pipeline(x_fake))
 		if self.path_length_regularization_interval and self.iteration % self.path_length_regularization_interval == 0:
 			masks = self.generator.generate_masks(self.iterator.batch_size)
 			path_length = CustomUpdater.path_length(ws, x_fake, masks)
@@ -108,12 +122,12 @@ class CustomUpdater(StandardUpdater):
 	def update_discriminator(self):
 		self.discriminator.cleargrads()
 		x_real = self.next_real_images()
-		y_real = self.discriminator(x_real)
+		y_real = self.discriminator(self.augumentation_pipeline(x_real))
 		rt = mean(sign(y_real - 0.5 if self.lsgan else y_real))
 		z = self.next_latents()
 		mix = self.next_latents() if random.random() < self.style_mixing_rate else None
 		_, x_fake = self.generator(z, random_mix=mix)
-		y_fake = self.discriminator(x_fake)
+		y_fake = self.discriminator(self.augumentation_pipeline(x_fake))
 		x_fake.unchain_backward()
 		if self.r1_regularization_interval and self.iteration % self.r1_regularization_interval == 0:
 			penalty = CustomUpdater.gradient_penalty(x_real, y_real, self.r1_regularization_gamma)
@@ -126,6 +140,17 @@ class CustomUpdater(StandardUpdater):
 		(loss + penalty).backward()
 		self.optimizers.update_discriminator()
 		report({"loss (D)": loss, "penalty (D)": penalty, "overfitting": rt})
+		return rt.item()
+
+	def adapt_augumentation(self, overfitting):
+		delta = self.iterator.batch_size / self.augumentation_delta_images
+		direction = sgn(overfitting - self.overfitting_target)
+		probability = self.augumentation_probability + delta * direction
+		self.augumentation_probability = clamp(0.0, probability, self.augumentation_limit)
+		report({"augumentation": self.augumentation_probability})
+
+	def apply_augumentation(self):
+		self.augumentation_pipeline.probability = self.augumentation_probability
 
 	def load_states(self, filepath):
 		with HDF5File(filepath, "r") as hdf5:
