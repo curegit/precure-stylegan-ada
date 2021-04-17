@@ -3,7 +3,7 @@ from chainer.iterators import SerialIterator
 from stylegan.dataset import ImageDataset
 from stylegan.networks import Generator, Discriminator
 from stylegan.training import AdamTriple, CustomUpdater, CustomTrainer
-from stylegan.augumentation import AugmentationPipeline
+from stylegan.augmentation import AugmentationPipeline
 from interface.args import dump_json, CustomArgumentParser
 from interface.argtypes import uint, natural, ufloat, positive, rate
 from utilities.stdio import eprint
