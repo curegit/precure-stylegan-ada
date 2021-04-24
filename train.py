@@ -10,6 +10,9 @@ from utilities.stdio import eprint
 from utilities.filesys import mkdirs, build_filepath
 
 def main(args):
+	global_config.train = True
+	global_config.autotune = True
+	global_config.cudnn_deterministic = False
 	print("Initializing models...")
 	generator = Generator(args.size, args.depth, args.levels, *args.channels, not args.narrow)
 	averaged_generator = Generator(args.size, args.depth, args.levels, *args.channels, not args.narrow)
@@ -67,9 +70,6 @@ def parse_args():
 	return parser.add_output_args(default_dest="results").add_model_args().add_evaluation_args().parse_args()
 
 if __name__ == "__main__":
-	global_config.train = True
-	global_config.autotune = True
-	global_config.cudnn_deterministic = False
 	try:
 		main(parse_args())
 	except KeyboardInterrupt:
