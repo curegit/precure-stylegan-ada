@@ -1,7 +1,7 @@
 from math import sqrt as root
 from numpy import array, pad as padded, float32
 from chainer import Parameter, Link, Chain
-from chainer.functions import sqrt, sum, convolution_2d, resize_images, broadcast_to, depth2space, pad
+from chainer.functions import sqrt, sum, convolution_2d, broadcast_to, depth2space, pad
 from chainer.initializers import Zero, One, Normal
 from stylegan.links.common import GaussianDistribution, EqualizedLinear, LeakyRelu
 
