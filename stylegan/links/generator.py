@@ -52,7 +52,7 @@ class NoiseAdder(Chain):
 
 class BicubicUpsampler(Link):
 
-	def __init__(self, b=1/3, c=1/3):
+	def __init__(self, b=0.0, c=0.5):
 		super().__init__()
 		self.b, self.c = b, c
 		s = array([self.kernel(i + 0.25) for i in range(-2, 2)])
@@ -128,7 +128,7 @@ class SkipArchitecture(Chain):
 			self.a2 = LeakyRelu()
 			self.s3 = StyleAffineTransform(size, out_channels)
 			self.trgb = ToRGB(out_channels)
-			self.skip = BicubicUpsampler(0, 0.5)
+			self.skip = BicubicUpsampler(1, 0)
 
 	def __call__(self, x, y, w):
 		h1 = self.up(x)
