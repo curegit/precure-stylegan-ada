@@ -1,13 +1,18 @@
+from chainer import Chain, ChainList
+from stylegan.manipulations.pixel import Mirror, Rotation, Shift
 
-class AugmentationPipeline():
+class AugmentationPipeline(Chain):
 
-	def __init__(self, initial_probability=0.5):
+	def __init__(self, initial_probability=0.0):
 		super().__init__()
-		self.p = initial_probability
-		self.manipulations = []
+		self.probability = initial_probability
+		with self.init_scope():
+			self.manipulations = ChainList(*[
+				Mirror(),
+				Rotation(),
+				Shift()])
 
 	def __call__(self, x):
-		# pseudo
-		for m in manipulations:
-			for i in x:
-				m(i) if random < p else i
+		for f in self.manipulations:
+			x = f(x, self.probability)
+		return x
