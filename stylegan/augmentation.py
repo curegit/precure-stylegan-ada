@@ -3,9 +3,9 @@ from stylegan.manipulations.pixel import Mirror, Rotation, Shift
 
 class AugmentationPipeline(Chain):
 
-	def __init__(self, initial_probability=0.0):
+	def __init__(self, probability=0.0):
 		super().__init__()
-		self.probability = initial_probability
+		self.probability = probability
 		with self.init_scope():
 			self.manipulations = ChainList(*[
 				Mirror(),
