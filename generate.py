@@ -2,6 +2,7 @@
 #from shutil import rmtree
 #from argparse import ArgumentParser
 import numpy as np
+from tqdm import tqdm
 from chainer import global_config
 from stylegan.networks import Generator
 from interface.args import CustomArgumentParser
@@ -92,17 +93,20 @@ if args.quit:
 	exit(0)
 '''
 
-for i, n in range_batch(args.number, args.batch):
-	#mixing = mix > random()
-	z = generator.generate_latents(n)
-	#mix_z = generator.generate_latent(n) if mixing else None
-	ws, y = generator(z)
-	z.to_cpu()
-	y.to_cpu()
-	for j in range(n):
-		filename = f"{i + j + 1}"
-		np.save(build_filepath(args.dest, filename, "npy", args.force), z.array[j])
-		save_image(y.array[j], build_filepath(args.dest, filename, "png", args.force))
+bf = "{desc} [{bar}] {percentage:5.1f}%"
+with tqdm(desc="generation", total=args.number, bar_format=bf, miniters=1, ascii=".#", ncols=70) as bar:
+	for i, n in range_batch(args.number, args.batch):
+		#mixing = mix > random()
+		z = generator.generate_latents(n)
+		#mix_z = generator.generate_latent(n) if mixing else None
+		ws, y = generator(z)
+		z.to_cpu()
+		y.to_cpu()
+		for j in range(n):
+			filename = f"{i + j + 1}"
+			np.save(build_filepath(args.dest, filename, "npy", args.force), z.array[j])
+			save_image(y.array[j], build_filepath(args.dest, filename, "png", args.force))
+			bar.update()
 '''
 # Generate images
 c = 0
