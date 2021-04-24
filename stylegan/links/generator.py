@@ -15,7 +15,7 @@ class StyleAffineTransform(Chain):
 	def __call__(self, w):
 		return self.s(w)
 
-class WeightModulatedConvolution2D(Link):
+class WeightModulatedConvolution(Link):
 
 	def __init__(self, in_channels, out_channels, pointwise=False, demod=True, gain=root(2)):
 		super().__init__()
@@ -85,7 +85,7 @@ class ToRGB(Chain):
 	def __init__(self, in_channels):
 		super().__init__()
 		with self.init_scope():
-			self.w = WeightModulatedConvolution2D(in_channels, 3, pointwise=True, demod=False, gain=1)
+			self.w = WeightModulatedConvolution(in_channels, 3, pointwise=True, demod=False, gain=1)
 
 	def __call__(self, x, y):
 		return self.w(x, y)
@@ -97,7 +97,7 @@ class InitialSkipArchitecture(Chain):
 		with self.init_scope():
 			self.c1 = Parameter(shape=(in_channels, 4, 4), initializer=Normal(1.0))
 			self.s1 = StyleAffineTransform(size, in_channels)
-			self.w1 = WeightModulatedConvolution2D(in_channels, out_channels)
+			self.w1 = WeightModulatedConvolution(in_channels, out_channels)
 			self.n1 = NoiseAdder()
 			self.a1 = LeakyRelu()
 			self.s2 = StyleAffineTransform(size, out_channels)
@@ -119,11 +119,11 @@ class SkipArchitecture(Chain):
 		with self.init_scope():
 			self.up = BicubicUpsampler()
 			self.s1 = StyleAffineTransform(size, in_channels)
-			self.w1 = WeightModulatedConvolution2D(in_channels, out_channels)
+			self.w1 = WeightModulatedConvolution(in_channels, out_channels)
 			self.n1 = NoiseAdder()
 			self.a1 = LeakyRelu()
 			self.s2 = StyleAffineTransform(size, out_channels)
-			self.w2 = WeightModulatedConvolution2D(out_channels, out_channels)
+			self.w2 = WeightModulatedConvolution(out_channels, out_channels)
 			self.n2 = NoiseAdder()
 			self.a2 = LeakyRelu()
 			self.s3 = StyleAffineTransform(size, out_channels)
