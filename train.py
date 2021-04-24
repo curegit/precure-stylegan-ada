@@ -15,11 +15,11 @@ def main(args):
 	global_config.cudnn_deterministic = False
 	print("Initializing models...")
 	generator = Generator(args.size, args.depth, args.levels, *args.channels, not args.narrow)
-	averaged_generator = Generator(args.size, args.depth, args.levels, *args.channels, not args.narrow)
 	discriminator = Discriminator(args.levels, args.channels[1], args.channels[0], args.group)
+	averaged_generator = generator.copy("copy")
 	generator.to_device(args.device)
-	averaged_generator.to_device(args.device)
 	discriminator.to_device(args.device)
+	averaged_generator.to_device(args.device)
 	optimizers = AdamTriple(args.alphas, args.betas[0], args.betas[1])
 	optimizers.setup(generator, discriminator)
 
