@@ -50,7 +50,7 @@ def parse_args():
 	group.add_argument("-p", "--preload", action="store_true", help="preload entire dataset into the memory")
 
 	group.add_argument("-s", "--snapshot", metavar="FILE", help="snapshot")
-	group.add_argument("-g", "--group-size", dest="group", type=natural, default=4, help="")
+	group.add_argument("-g", "--group-size", dest="group", type=uint, default=4, help="set 0 to use entire batch")
 
 	group.add_argument("-e", "--epoch", type=natural, default=1, help="")
 	group.add_argument("-r", "--r1-gamma", dest="gamma", type=ufloat, default=10, help="")
