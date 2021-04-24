@@ -3,7 +3,7 @@ from chainer.iterators import SerialIterator
 from stylegan.dataset import ImageDataset
 from stylegan.networks import Generator, Discriminator
 from stylegan.training import AdamTriple, CustomUpdater, CustomTrainer
-#from stylegan.augumentation import AugmentationPipeline
+from stylegan.augmentation import AugmentationPipeline
 from interface.args import dump_json, CustomArgumentParser
 from interface.argtypes import uint, natural, ufloat, positive, rate
 from utilities.stdio import eprint
@@ -28,6 +28,10 @@ def main(args):
 	updater.enable_style_mixing(args.mix)
 	updater.enable_r1_regularization(args.gamma, args.r1)
 	updater.enable_path_length_regularization(args.decay, args.weight, args.pl)
+
+	pipeline = AugmentationPipeline()
+	pipeline.to_device(args.device)
+	updater.enable_adaptive_augumentation(pipeline)
 
 	if args.snapshot is not None:
 		updater.load_states(args.snapshot)
