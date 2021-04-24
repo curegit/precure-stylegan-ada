@@ -1,7 +1,11 @@
 from chainer import Variable, Link
-from chainer.functions import flip, where, broadcast_to
+from chainer.functions import flip, broadcast_to, pad, where
 
 class Manipulation(Link):
+
+	def random_uniform(self, shape, broadcast=None):
+		samples = Variable(self.xp.random.uniform(size=shape))
+		return broadcast_to(samples, broadcast) if broadcast else samples
 
 	def random_where(self, p, x, y, axis=0):
 		axes = axis if axis is tuple else tuple([axis])
@@ -24,3 +28,13 @@ class Rotation(Manipulation):
 		rot270 = flip(transposed, axis=3)
 		rotated = self.random_where(0.5, self.random_where(0.5, x, rot90), self.random_where(0.5, rot180, rot270))
 		return self.random_where(p, rotated, x)
+
+class Shift(Manipulation):
+
+	def  __call__(self, x, p):
+		batch, _, height, width = x.shape
+		max_h, max_w = int(height * 0.125), int(width * 0.125)
+		padded = pad(x, ((0, 0), (0, 0), (max_h, max_h), (max_w, max_w)), mode="symmetric")
+		shift = self.xp.random.uniform(size=(4, batch)) * self.xp.array([[0], [0], [max_h * 2], [max_w * 2]])
+		b, c, h, w = self.xp.indices(x.shape) + shift.reshape(4, batch, 1, 1, 1).astype("int")
+		return self.random_where(p, padded[b, c, h, w], x)

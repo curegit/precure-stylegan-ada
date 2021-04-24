@@ -1,5 +1,5 @@
 from chainer import Chain, ChainList
-from stylegan.manipulations.pixel import Mirror, Rotation
+from stylegan.manipulations.pixel import Mirror, Rotation, Shift
 
 class AugmentationPipeline(Chain):
 
@@ -9,7 +9,8 @@ class AugmentationPipeline(Chain):
 		with self.init_scope():
 			self.manipulations = ChainList(*[
 				Mirror(),
-				Rotation()])
+				Rotation(),
+				Shift()])
 
 	def __call__(self, x):
 		for f in self.manipulations:
