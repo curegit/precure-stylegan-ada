@@ -33,6 +33,9 @@ i.unchain_backward()
 
 dis_graph = build_computational_graph([y], variable_style=dis_varstyle, function_style=dis_funstyle).dump()
 
+#print(f"D: {self.count_params()}")
+#print(self.count_params())
+
 mkdirs(args.dest)
 gen_path = build_filepath(args.dest, "generator", "pdf", args.force)
 graph_from_dot_data(gen_graph)[0].write_pdf(gen_path)

@@ -26,9 +26,9 @@ class CustomArgumentParser(ArgumentParser):
 		group.add_argument("-N", "--narrow", action="store_true", help="")
 		return self
 
-	def add_evaluation_args(self):
+	def add_evaluation_args(self, include_batch=True):
 		group = self.add_argument_group("evaluation", "")
-		group.add_argument("-b", "--batch", type=natural, default=32, help="")
+		if include_batch: group.add_argument("-b", "--batch", type=natural, default=16, help="")
 		group.add_argument("-v", "--device", "--gpu", metavar="ID", dest="device", type=device, default=device("CPU"), help="")
 		return self
 
