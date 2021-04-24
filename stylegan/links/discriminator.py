@@ -1,7 +1,9 @@
 from math import sqrt as root
+from numpy import array, sum, float32
 from chainer import Link, Chain, Sequential
-from chainer.functions import sqrt, mean, average_pooling_2d, concat, broadcast_to, flatten
+from chainer.functions import sqrt, mean, average_pooling_2d, convolution_2d, concat, broadcast_to, flatten, pad
 from stylegan.links.common import EqualizedLinear, EqualizedConvolution2D, LeakyRelu
+from utilities.math import sinc
 
 class FromRGB(Chain):
 
@@ -16,8 +18,29 @@ class FromRGB(Chain):
 
 class Downsampler(Link):
 
+	def __init__(self, lanczos=True, n=2):
+		super().__init__()
+		self.lanczos = lanczos
+		if lanczos:
+			self.n = n
+			ys = array([self.lanczos_kernel(i + 0.5, n) for i in range(-n, n)])
+			ys = ys / sum(ys)
+			k = ys.reshape(1, n * 2) * ys.reshape(n * 2, 1)
+			self.w = array([[k]], dtype=float32)
+
 	def __call__(self, x):
-		return average_pooling_2d(x, ksize=2, stride=2)
+		if self.lanczos:
+			p = self.n - 1
+			batch, channels, height, width = x.shape
+			h1 = x.reshape(batch * channels, 1, height, width)
+			h2 = pad(h1, ((0, 0), (0, 0), (p, p), (p, p)), mode="symmetric")
+			h3 = convolution_2d(h2, self.xp.array(self.w), stride=2)
+			return h3.reshape(batch, channels, height // 2, width // 2)
+		else:
+			return average_pooling_2d(x, ksize=2, stride=2)
+
+	def lanczos_kernel(self, x, n):
+		return 0.0 if abs(x) > n else sinc(x) * sinc(x / n)
 
 class MiniBatchStandardDeviation(Link):
 
@@ -44,7 +67,7 @@ class ResidualBlock(Chain):
 			self.a1 = LeakyRelu()
 			self.c2 = EqualizedConvolution2D(in_channels, out_channels, ksize=3, stride=1, pad=1)
 			self.a2 = LeakyRelu()
-			self.down = Downsampler()
+			self.down = Downsampler(lanczos=False)
 			self.skip = Sequential(EqualizedConvolution2D(in_channels, out_channels, ksize=1, stride=1, pad=0, nobias=True), Downsampler())
 
 	def __call__(self, x):
