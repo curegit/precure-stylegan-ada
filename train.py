@@ -9,6 +9,11 @@ from interface.argtypes import uint, natural, ufloat, positive, rate
 from utilities.stdio import eprint
 from utilities.filesys import mkdirs, build_filepath
 
+from tqdm import tqdm
+bf = "{desc} [{bar}] {percentage:5.1f}%"
+def chainer_like_tqdm(desc, total):
+	return tqdm(desc=desc, total=total, bar_format=bf, miniters=1, ascii=".#", ncols=70)
+
 def main(args):
 	global_config.train = True
 	global_config.autotune = True
@@ -25,7 +30,10 @@ def main(args):
 
 	mkdirs(args.dest)
 	dump_json(args, build_filepath(args.dest, "arguments", "json", args.force))
-	dataset = ImageDataset(args.dataset, generator.resolution, args.preload)
+	dataset = ImageDataset(args.dataset, generator.resolution)
+	if args.preload:
+		with chainer_like_tqdm("dataset", len(dataset)) as bar:
+			dataset.preload(lambda: bar.update())
 	iterator = SerialIterator(dataset, args.batch, repeat=True, shuffle=True)
 	updater = CustomUpdater(generator, averaged_generator, discriminator, iterator, optimizers, args.ema, args.lsgan)
 	updater.enable_style_mixing(args.mix)
