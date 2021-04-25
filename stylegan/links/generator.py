@@ -5,7 +5,7 @@ from chainer.functions import sqrt, sum, convolution_2d, broadcast_to, depth2spa
 from chainer.initializers import Zero, One, Normal
 from stylegan.links.common import GaussianDistribution, EqualizedLinear, LeakyRelu
 
-class StyleAffineTransform(Chain):
+class StyleAffineTransformation(Chain):
 
 	def __init__(self, size, channels):
 		super().__init__()
@@ -96,11 +96,11 @@ class InitialSkipArchitecture(Chain):
 		super().__init__()
 		with self.init_scope():
 			self.c1 = Parameter(shape=(in_channels, 4, 4), initializer=Normal(1.0))
-			self.s1 = StyleAffineTransform(size, in_channels)
+			self.s1 = StyleAffineTransformation(size, in_channels)
 			self.w1 = WeightModulatedConvolution(in_channels, out_channels)
 			self.n1 = NoiseAdder()
 			self.a1 = LeakyRelu()
-			self.s2 = StyleAffineTransform(size, out_channels)
+			self.s2 = StyleAffineTransformation(size, out_channels)
 			self.trgb = ToRGB(out_channels)
 
 	def __call__(self, w):
@@ -118,15 +118,15 @@ class SkipArchitecture(Chain):
 		super().__init__()
 		with self.init_scope():
 			self.up = BicubicUpsampler()
-			self.s1 = StyleAffineTransform(size, in_channels)
+			self.s1 = StyleAffineTransformation(size, in_channels)
 			self.w1 = WeightModulatedConvolution(in_channels, out_channels)
 			self.n1 = NoiseAdder()
 			self.a1 = LeakyRelu()
-			self.s2 = StyleAffineTransform(size, out_channels)
+			self.s2 = StyleAffineTransformation(size, out_channels)
 			self.w2 = WeightModulatedConvolution(out_channels, out_channels)
 			self.n2 = NoiseAdder()
 			self.a2 = LeakyRelu()
-			self.s3 = StyleAffineTransform(size, out_channels)
+			self.s3 = StyleAffineTransformation(size, out_channels)
 			self.trgb = ToRGB(out_channels)
 			self.skip = BicubicUpsampler(1, 0)
 
