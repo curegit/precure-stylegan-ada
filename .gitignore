@@ -6,5 +6,10 @@
 *.png
 *.gif
 *.webp
+*.jpg
+*.jpeg
+*.bmp
+*.tif
+*.tiff
 !examples/*.png
 __pycache__/
