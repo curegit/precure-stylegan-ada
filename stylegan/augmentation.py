@@ -10,7 +10,7 @@ class AugmentationPipeline(Chain):
 			self.manipulations = ChainList(*[
 				Mirror(),
 				Rotation(),
-				Shift()])
+				Shift(),])
 
 	def __call__(self, x):
 		for f in self.manipulations:
