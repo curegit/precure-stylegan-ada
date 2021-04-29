@@ -13,6 +13,7 @@ class AugmentationPipeline(Chain):
 				Mirror(),
 				Rotation(),
 				Shift(),
+				GammaTransformation(),
 				AdditiveNoise(),
 				Cutout()])
 
