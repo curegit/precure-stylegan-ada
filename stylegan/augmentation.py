@@ -1,4 +1,5 @@
 from chainer import Chain, ChainList
+from stylegan.manipulations.noise import AdditiveNoise, Cutout
 from stylegan.manipulations.pixel import Mirror, Rotation, Shift
 
 class AugmentationPipeline(Chain):
@@ -10,7 +11,9 @@ class AugmentationPipeline(Chain):
 			self.manipulations = ChainList(*[
 				Mirror(),
 				Rotation(),
-				Shift(),])
+				Shift(),
+				AdditiveNoise(),
+				Cutout()])
 
 	def __call__(self, x):
 		for f in self.manipulations:
