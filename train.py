@@ -52,7 +52,7 @@ def main(args):
 	trainer.enable_reports(500)
 	trainer.enable_progress_bar(1)
 	trainer.run()
-	generator.save_weights(build_filepath(args.dest, "generator", "hdf5", args.force))
+	averaged_generator.save_weights(build_filepath(args.dest, "generator", "hdf5", args.force))
 	updater.save_states(build_filepath(args.dest, "snapshot", "hdf5", args.force))
 
 def parse_args():
