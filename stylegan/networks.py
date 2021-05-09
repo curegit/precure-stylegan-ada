@@ -20,7 +20,7 @@ class Mapper(Chain):
 
 class Synthesizer(Chain):
 
-	def __init__(self, size, levels, first_channels, last_channels, large_network):
+	def __init__(self, size, levels, first_channels, last_channels):
 		super().__init__()
 		in_channels = [first_channels] * levels
 		out_channels = [last_channels] * levels
@@ -28,8 +28,6 @@ class Synthesizer(Chain):
 			channels = min(first_channels, last_channels * 2 ** i)
 			in_channels[-i] = channels
 			out_channels[-i - 1] = channels
-		if large_network:
-			out_channels[-1] *= 2
 		with self.init_scope():
 			self.init = InitialSkipArchitecture(size, in_channels[0], out_channels[0])
 			self.skips = ChainList(*[SkipArchitecture(size, i, o) for i, o in zip(in_channels[1:], out_channels[1:])])
@@ -42,7 +40,7 @@ class Synthesizer(Chain):
 
 class Generator(Chain):
 
-	def __init__(self, size=512, depth=8, levels=7, first_channels=512, last_channels=16, large_network=True):
+	def __init__(self, size=512, depth=8, levels=7, first_channels=512, last_channels=64):
 		super().__init__()
 		self.size = size
 		self.levels = levels
@@ -50,7 +48,7 @@ class Generator(Chain):
 		with self.init_scope():
 			self.sampler = GaussianDistribution()
 			self.mapper = Mapper(size, depth)
-			self.synthesizer = Synthesizer(size, levels, first_channels, last_channels, large_network)
+			self.synthesizer = Synthesizer(size, levels, first_channels, last_channels)
 
 	def __call__(self, z, *zs, random_mix=None, psi=1.0, mean_w=None):
 		truncation_trick = identity

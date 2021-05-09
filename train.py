@@ -19,7 +19,7 @@ def main(args):
 	global_config.autotune = True
 	global_config.cudnn_deterministic = False
 	print("Initializing models...")
-	generator = Generator(args.size, args.depth, args.levels, *args.channels, not args.narrow)
+	generator = Generator(args.size, args.depth, args.levels, *args.channels)
 	discriminator = Discriminator(args.levels, args.channels[1], args.channels[0], args.group)
 	averaged_generator = generator.copy("copy")
 	generator.to_device(args.device)
