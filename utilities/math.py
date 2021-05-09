@@ -9,9 +9,6 @@ def sgn(x):
 	else:
 		return math.copysign(1.0, x)
 
-def sinc(x):
-	return math.sin(x * math.pi) / (x * math.pi)
-
 def clamp(a, x, b):
 	return min(max(x, a), b)
 

@@ -67,7 +67,7 @@ class BicubicUpsampler(Link):
 		batch, channels, height, width = x.shape
 		h1 = x.reshape(batch * channels, 1, height, width)
 		h2 = pad(h1, ((0, 0), (0, 0), (2, 2), (2, 2)), mode="symmetric")
-		h3 = convolution_2d(h2, self.xp.array(self.w))
+		h3 = convolution_2d(h2, self.xp.asarray(self.w))
 		h4 = depth2space(h3, 2)
 		return h4.reshape(batch, channels, height * 2, width * 2)
 

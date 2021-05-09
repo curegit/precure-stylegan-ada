@@ -1,9 +1,8 @@
 from math import sqrt as root
-from numpy import array, sum, float32
+from numpy import array, sum, sinc, float32
 from chainer import Link, Chain, Sequential
 from chainer.functions import sqrt, mean, average_pooling_2d, convolution_2d, concat, broadcast_to, flatten, pad
 from stylegan.links.common import EqualizedLinear, EqualizedConvolution2D, LeakyRelu
-from utilities.math import sinc
 
 class FromRGB(Chain):
 
@@ -34,13 +33,13 @@ class Downsampler(Link):
 			batch, channels, height, width = x.shape
 			h1 = x.reshape(batch * channels, 1, height, width)
 			h2 = pad(h1, ((0, 0), (0, 0), (p, p), (p, p)), mode="symmetric")
-			h3 = convolution_2d(h2, self.xp.array(self.w), stride=2)
+			h3 = convolution_2d(h2, self.xp.asarray(self.w), stride=2)
 			return h3.reshape(batch, channels, height // 2, width // 2)
 		else:
 			return average_pooling_2d(x, ksize=2, stride=2)
 
 	def lanczos_kernel(self, x, n):
-		return 0.0 if abs(x) > n else sinc(x) * sinc(x / n)
+		return sinc(x) * sinc(x / n)
 
 class MiniBatchStandardDeviation(Link):
 
