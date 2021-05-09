@@ -27,6 +27,7 @@ def inverse_scaling(s, t):
 class AffineTransformation(Link):
 
 	def __init__(self, translation=0.125, rotation=360, scale=0.2):
+		super().__init__()
 		self.translation = translation
 		self.rotation = rotation / 360 * pi
 		self.scale = scale * log(2)

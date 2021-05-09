@@ -5,6 +5,7 @@ from stylegan.manipulations.base import Manipulation
 class AdditiveNoise(Manipulation):
 
 	def __init__(self, sd=0.05):
+		super().__init__()
 		self.sd = sd
 
 	def __call__(self, x, p):
@@ -19,6 +20,7 @@ class AdditiveNoise(Manipulation):
 class Cutout(Manipulation):
 
 	def __init__(self, width=0.5, height=0.5, fill=0.5):
+		super().__init__()
 		self.width = width
 		self.height = height
 		self.fill = fill

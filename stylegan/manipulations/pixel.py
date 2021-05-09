@@ -20,6 +20,7 @@ class Rotation(Manipulation):
 class Shift(Manipulation):
 
 	def __init__(self, horizontal=0.125, vertical=0.125):
+		super().__init__()
 		self.horizontal = horizontal
 		self.vertical = vertical
 
