@@ -1,7 +1,6 @@
 from chainer import Chain, ChainList
 from stylegan.manipulations.noise import AdditiveNoise, Cutout
 from stylegan.manipulations.pixel import Mirror, Rotation, Shift
-from stylegan.manipulations.color import GammaTransformation
 from stylegan.manipulations.geometric import AffineTransformation
 
 class AugmentationPipeline(Chain):
@@ -15,7 +14,6 @@ class AugmentationPipeline(Chain):
 				Rotation(),
 				Shift(),
 				AffineTransformation(),
-				GammaTransformation(),
 				AdditiveNoise(),
 				Cutout()])
 
