@@ -76,8 +76,12 @@ class AffineTransformation(Link):
 		dirty_weight = self.xp.sinc(t) * self.xp.sinc(t / 2)
 		wh, ww = dirty_weight / dirty_weight.sum(axis=1, keepdims=True)
 		weight = wh.reshape(4, 1, batch, 1, height, width) * ww.reshape(1, 4, batch, 1, height, width)
-		top, left = abs(self.xp.minimum(i1.min(axis=(1, 2, 3)), 0))
-		bottom, right = self.xp.maximum(i4.max(axis=(1, 2, 3)) - (height - 1, width - 1), 0)
+		lower = i1.min(axis=(1, 2, 3))
+		upper = i4.max(axis=(1, 2, 3))
+		top = abs(min(int(lower[0]), 0))
+		left = abs(min(int(lower[1]), 0))
+		bottom = max(int(upper[0]) - height + 1, 0)
+		right = max(int(upper[1]) - width + 1, 0)
 		ih, iw = indices.transpose(1, 0, 2, 3, 4)
 		h = ih.reshape(4, 1, batch, 1, height, width) + top
 		w = iw.reshape(1, 4, batch, 1, height, width) + left
