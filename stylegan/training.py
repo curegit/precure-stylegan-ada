@@ -253,7 +253,7 @@ class CustomTrainer(Trainer):
 	@staticmethod
 	def save_generator(trainer):
 		filepath = build_filepath(trainer.states_out, f"generator-{trainer.iteration}", "hdf5", trainer.overwrite)
-		trainer.updater.averaged_generator.save_weights(filepath)
+		trainer.updater.averaged_generator.save(filepath)
 
 	@staticmethod
 	def save_images(trainer):

@@ -45,7 +45,7 @@ global_config.cudnn_deterministic = True
 
 # Init model
 print("Initializing model")
-generator = Generator(args.size, args.depth, args.levels, *args.channels)
+generator = Generator.load(args.generator)
 
 # Print information
 #args.stage = args.maxstage if args.stage > args.maxstage else args.stage
@@ -55,11 +55,6 @@ generator = Generator(args.size, args.depth, args.levels, *args.channels)
 #print(f"Channel: {args.channels[0]} (initial) -> {args.channels[1]} (final)")
 #print(f"Alpha: {args.alpha}, Latent: {'Yes' if args.center is not None else 'No'}, Deviation: {args.sd}")
 #print(f"Truncation Trick: {args.psi if args.psi is not None else 'No'}, Device: {'CPU' if args.device < 0 else f'GPU {args.device}'}")
-
-# Load model
-if args.generator is not None:
-	print("Loading generator")
-	generator.load_weights(args.generator)
 
 # GPU setting
 generator.to_device(args.device)

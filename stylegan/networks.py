@@ -1,8 +1,9 @@
 from math import sqrt as root
 from random import randint
+from h5py import File as HDF5File
 from chainer import Chain, ChainList, Sequential
 from chainer.functions import sqrt, mean
-from chainer.serializers import load_hdf5, save_hdf5
+from chainer.serializers import HDF5Serializer, HDF5Deserializer
 from stylegan.links.common import GaussianDistribution, EqualizedLinear, LeakyRelu
 from stylegan.links.generator import InitialSkipArchitecture, SkipArchitecture
 from stylegan.links.discriminator import FromRGB, ResidualBlock, OutputBlock
@@ -43,7 +44,10 @@ class Generator(Chain):
 	def __init__(self, size=512, depth=8, levels=7, first_channels=512, last_channels=64):
 		super().__init__()
 		self.size = size
+		self.depth = depth
 		self.levels = levels
+		self.first_channels = first_channels
+		self.last_channels = last_channels
 		self.resolution = (2 * 2 ** levels, 2 * 2 ** levels)
 		with self.init_scope():
 			self.sampler = GaussianDistribution()
@@ -78,11 +82,26 @@ class Generator(Chain):
 	def calculate_mean_w(self, n=50000):
 		return mean(self.mapper(self.generate_latents(n)), axis=0)
 
-	def load_weights(self, filepath):
-		load_hdf5(filepath, self)
+	def save(self, filepath):
+		with HDF5File(filepath, "w") as hdf5:
+			hdf5.create_dataset("size", data=self.size)
+			hdf5.create_dataset("depth", data=self.depth)
+			hdf5.create_dataset("levels", data=self.levels)
+			hdf5.create_dataset("first_channels", data=self.first_channels)
+			hdf5.create_dataset("last_channels", data=self.last_channels)
+			HDF5Serializer(hdf5.create_group("weights")).save(self)
 
-	def save_weights(self, filepath):
-		save_hdf5(filepath, self)
+	@staticmethod
+	def load(filepath):
+		with HDF5File as hdf5:
+			size = int(hdf5["size"][()])
+			depth = int(hdf5["depth"][()])
+			levels = int(hdf5["levels"][()])
+			first_channels = int(hdf5["size"][()])
+			last_channels = int(hdf5["size"][()])
+			generator = Generator(size, depth, levels, first_channels, last_channels)
+			HDF5Deserializer(hdf5["weights"]).load(generator)
+		return generator
 
 class Discriminator(Chain):
 
