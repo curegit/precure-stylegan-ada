@@ -118,14 +118,14 @@ class CustomUpdater(StandardUpdater):
 				averaged_path_length = lerp(mean(path_length).item(), self.averaged_path_length, self.path_length_decay)
 				weight = self.path_length_penalty_weight * self.path_length_regularization_interval
 				penalty = weight * sum((path_length - averaged_path_length) ** 2) / self.batch_size
+				accumulated_penalty += penalty.item()
 				accumulated_path_length += sum(path_length).item() / self.batch_size
 			if self.lsgan:
 				loss = CustomUpdater.generator_least_squares_loss(y_fake) / self.batch_size
 			else:
 				loss = CustomUpdater.generator_logistic_loss(y_fake) / self.batch_size
-			(loss + penalty).backward()
 			accumulated_loss += loss.item()
-			accumulated_penalty += penalty.item()
+			(loss + penalty).backward()
 		self.optimizers.update_generator()
 		report({"loss (G)": accumulated_loss, "penalty (G)": accumulated_penalty})
 		if self.path_length_regularization():
@@ -145,7 +145,7 @@ class CustomUpdater(StandardUpdater):
 		for x_real, z in zip(self.next_real_groups(), self.next_latent_groups()):
 			group_size = z.shape[0]
 			y_real = self.discriminator(self.augumentation_pipeline(x_real))
-			accumulated_rt += sum(sign(y_real - 0.5 if self.lsgan else y_real)) / self.batch_size
+			accumulated_rt += sum(sign(y_real - 0.5 if self.lsgan else y_real)).item() / self.batch_size
 			mix = self.next_latents(group_size) if random.random() < self.style_mixing_rate else None
 			_, x_fake = self.generator(z, random_mix=mix)
 			y_fake = self.discriminator(self.augumentation_pipeline(x_fake))
@@ -154,13 +154,13 @@ class CustomUpdater(StandardUpdater):
 			if self.r1_regularization():
 				weight = self.r1_regularization_interval * self.r1_regularization_gamma
 				penalty = weight * CustomUpdater.gradient_penalty(x_real, y_real) / self.batch_size
+				accumulated_penalty += penalty.item()
 			if self.lsgan:
 				loss = CustomUpdater.discriminator_least_squares_loss(y_real, y_fake) / self.batch_size
 			else:
 				loss = CustomUpdater.discriminator_logistic_loss(y_real, y_fake) / self.batch_size
-			(loss + penalty).backward()
 			accumulated_loss += loss.item()
-			accumulated_penalty += penalty.item()
+			(loss + penalty).backward()
 		self.optimizers.update_discriminator()
 		report({"loss (D)": accumulated_loss, "penalty (D)": accumulated_penalty, "overfitting": accumulated_rt})
 		return accumulated_rt
