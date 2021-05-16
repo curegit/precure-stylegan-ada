@@ -11,8 +11,9 @@ from utilities.math import identity, lerp
 
 class Mapper(Chain):
 
-	def __init__(self, size, depth):
+	def __init__(self, size, depth, categories=1):
 		super().__init__()
+		self.categories = categories
 		with self.init_scope():
 			self.mlp = Sequential(EqualizedLinear(size, size), LeakyRelu()).repeat(depth)
 
@@ -105,7 +106,7 @@ class Generator(Chain):
 
 class Discriminator(Chain):
 
-	def __init__(self, levels=7, first_channels=16, last_channels=512, group_size=None):
+	def __init__(self, levels=7, first_channels=16, last_channels=512, group_size=None, categories=1):
 		super().__init__()
 		in_channels = [first_channels] * (levels - 1)
 		out_channels = [last_channels] * (levels - 1)
@@ -118,5 +119,5 @@ class Discriminator(Chain):
 			self.blocks = Sequential(*[ResidualBlock(i, o) for i, o in zip(in_channels, out_channels)])
 			self.output = OutputBlock(last_channels, group_size=group_size)
 
-	def __call__(self, x):
-		return self.output(self.blocks(self.frgb(x)))
+	def __call__(self, x, c=None):
+		return self.output(self.blocks(self.frgb(x)), c)
