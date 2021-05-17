@@ -6,10 +6,10 @@ from chainer import grad, Variable
 from chainer.reporter import report
 from chainer.training import StandardUpdater, Trainer
 from chainer.training.extensions import PrintReport, LogReport, PlotReport, ProgressBar
-from chainer.functions import sqrt, sign, softplus, mean, batch_l2_norm_squared, stack
+from chainer.functions import sqrt, sign, softplus, sum, mean, batch_l2_norm_squared, stack
 from chainer.optimizers import Adam
 from chainer.serializers import HDF5Serializer, HDF5Deserializer
-from utilities.iter import range_batch
+from utilities.iter import range_batch, iter_batch
 from utilities.math import identity, sgn, clamp, lerp
 from utilities.image import save_image
 from utilities.filesys import mkdirs, build_filepath
@@ -49,6 +49,7 @@ class CustomUpdater(StandardUpdater):
 		self.optimizers = optimizers
 		self.averaging_images = averaging_images
 		self.lsgan = lsgan
+		self.group = None
 		self.style_mixing_rate = 0.0
 		self.r1_regularization_interval = 0
 		self.averaged_path_length = 0.0
@@ -56,6 +57,9 @@ class CustomUpdater(StandardUpdater):
 		self.augumentation = False
 		self.augumentation_pipeline = identity
 		self.augumentation_probability = 0.0
+
+	def enable_gradient_accumulation(self, group_size):
+		self.group = group_size
 
 	def enable_style_mixing(self, mixing_rate=0.5):
 		self.style_mixing_rate = mixing_rate
@@ -77,11 +81,16 @@ class CustomUpdater(StandardUpdater):
 		self.augumentation_delta_images = delta_images
 		self.augumentation_probability = initial_probability or self.augumentation_probability
 
-	def next_latents(self):
-		return self.generator.generate_latents(self.iterator.batch_size)
+	def next_latents(self, n):
+		return self.generator.generate_latents(n)
 
-	def next_real_images(self):
-		return Variable(self.discriminator.xp.array(self.iterator.next()))
+	def next_latent_groups(self):
+		for _, n in range_batch(self.batch_size, self.group_size):
+			yield self.next_latents(n)
+
+	def next_real_groups(self):
+		for group in iter_batch(self.iterator.next(), self.group_size):
+			yield Variable(self.discriminator.xp.array(list(group)))
 
 	def update_core(self):
 		if self.augumentation:
@@ -93,57 +102,71 @@ class CustomUpdater(StandardUpdater):
 			self.adapt_augumentation(rt)
 
 	def update_generator(self):
+		accumulated_loss = 0.0
+		accumulated_penalty = 0.0
+		accumulated_path_length = 0.0
 		self.generator.cleargrads()
-		z = self.next_latents()
-		mix = self.next_latents() if random.random() < self.style_mixing_rate else None
-		ws, x_fake = self.generator(z, random_mix=mix)
-		y_fake = self.discriminator(self.augumentation_pipeline(x_fake))
-		if self.path_length_regularization_interval and self.iteration % self.path_length_regularization_interval == 0:
-			masks = self.generator.generate_masks(self.iterator.batch_size)
-			path_length = CustomUpdater.path_length(ws, x_fake, masks)
-			self.averaged_path_length = lerp(mean(path_length).item(), self.averaged_path_length, self.path_length_decay)
-			penalty = self.path_length_penalty_weight * self.path_length_regularization_interval * mean((path_length - self.averaged_path_length) ** 2)
-			report({"path length": self.averaged_path_length})
-		else:
+		for z in self.next_latent_groups():
+			group_size = z.shape[0]
+			mix = self.next_latents(group_size) if random.random() < self.style_mixing_rate else None
+			ws, x_fake = self.generator(z, random_mix=mix)
+			y_fake = self.discriminator(self.augumentation_pipeline(x_fake))
 			penalty = 0.0
-		if self.lsgan:
-			loss = CustomUpdater.generator_least_squares_loss(y_fake)
-		else:
-			loss = CustomUpdater.generator_logistic_loss(y_fake)
-		(loss + penalty).backward()
+			if self.path_length_regularization():
+				masks = self.generator.generate_masks(group_size)
+				path_length = CustomUpdater.path_length(ws, x_fake, masks)
+				averaged_path_length = lerp(mean(path_length).item(), self.averaged_path_length, self.path_length_decay)
+				weight = self.path_length_penalty_weight * self.path_length_regularization_interval
+				penalty = weight * sum((path_length - averaged_path_length) ** 2) / self.batch_size
+				accumulated_penalty += penalty.item()
+				accumulated_path_length += sum(path_length).item() / self.batch_size
+			if self.lsgan:
+				loss = CustomUpdater.generator_least_squares_loss(y_fake) / self.batch_size
+			else:
+				loss = CustomUpdater.generator_logistic_loss(y_fake) / self.batch_size
+			accumulated_loss += loss.item()
+			(loss + penalty).backward()
 		self.optimizers.update_generator()
-		report({"loss (G)": loss, "penalty (G)": penalty})
+		report({"loss (G)": accumulated_loss, "penalty (G)": accumulated_penalty})
+		if self.path_length_regularization():
+			self.averaged_path_length = lerp(accumulated_path_length, self.averaged_path_length, self.path_length_decay)
+			report({"path length": self.averaged_path_length})
 
 	def average_generator(self):
-		decay = 0.5 ** (self.iterator.batch_size / self.averaging_images)
+		decay = 0.5 ** (self.batch_size / self.averaging_images)
 		for raw, averaged in zip(self.generator.params(), self.averaged_generator.params()):
 			averaged.copydata(lerp(raw, averaged, decay))
 
 	def update_discriminator(self):
+		accumulated_loss = 0.0
+		accumulated_penalty = 0.0
+		accumulated_rt = 0.0
 		self.discriminator.cleargrads()
-		x_real = self.next_real_images()
-		y_real = self.discriminator(self.augumentation_pipeline(x_real))
-		rt = mean(sign(y_real - 0.5 if self.lsgan else y_real))
-		z = self.next_latents()
-		mix = self.next_latents() if random.random() < self.style_mixing_rate else None
-		_, x_fake = self.generator(z, random_mix=mix)
-		y_fake = self.discriminator(self.augumentation_pipeline(x_fake))
-		x_fake.unchain_backward()
-		if self.r1_regularization_interval and self.iteration % self.r1_regularization_interval == 0:
-			penalty = self.r1_regularization_interval * CustomUpdater.gradient_penalty(x_real, y_real, self.r1_regularization_gamma)
-		else:
+		for x_real, z in zip(self.next_real_groups(), self.next_latent_groups()):
+			group_size = z.shape[0]
+			y_real = self.discriminator(self.augumentation_pipeline(x_real))
+			accumulated_rt += sum(sign(y_real - 0.5 if self.lsgan else y_real)).item() / self.batch_size
+			mix = self.next_latents(group_size) if random.random() < self.style_mixing_rate else None
+			_, x_fake = self.generator(z, random_mix=mix)
+			y_fake = self.discriminator(self.augumentation_pipeline(x_fake))
+			x_fake.unchain_backward()
 			penalty = 0.0
-		if self.lsgan:
-			loss = CustomUpdater.discriminator_least_squares_loss(y_real, y_fake)
-		else:
-			loss = CustomUpdater.discriminator_logistic_loss(y_real, y_fake)
-		(loss + penalty).backward()
+			if self.r1_regularization():
+				weight = self.r1_regularization_interval * self.r1_regularization_gamma
+				penalty = weight * CustomUpdater.gradient_penalty(x_real, y_real) / self.batch_size
+				accumulated_penalty += penalty.item()
+			if self.lsgan:
+				loss = CustomUpdater.discriminator_least_squares_loss(y_real, y_fake) / self.batch_size
+			else:
+				loss = CustomUpdater.discriminator_logistic_loss(y_real, y_fake) / self.batch_size
+			accumulated_loss += loss.item()
+			(loss + penalty).backward()
 		self.optimizers.update_discriminator()
-		report({"loss (D)": loss, "penalty (D)": penalty, "overfitting": rt})
-		return rt.item()
+		report({"loss (D)": accumulated_loss, "penalty (D)": accumulated_penalty, "overfitting": accumulated_rt})
+		return accumulated_rt
 
 	def adapt_augumentation(self, overfitting):
-		delta = self.iterator.batch_size / self.augumentation_delta_images
+		delta = self.batch_size / self.augumentation_delta_images
 		direction = sgn(overfitting - self.overfitting_target)
 		probability = self.augumentation_probability + delta * direction
 		self.augumentation_probability = clamp(0.0, probability, self.augumentation_limit)
@@ -151,6 +174,12 @@ class CustomUpdater(StandardUpdater):
 
 	def apply_augumentation(self):
 		self.augumentation_pipeline.probability = self.augumentation_probability
+
+	def r1_regularization(self):
+		return self.r1_regularization_interval and self.iteration % self.r1_regularization_interval == 0
+
+	def path_length_regularization(self):
+		return self.path_length_regularization_interval and self.iteration % self.path_length_regularization_interval == 0
 
 	def load_states(self, filepath):
 		with HDF5File(filepath, "r") as hdf5:
@@ -173,27 +202,35 @@ class CustomUpdater(StandardUpdater):
 			for key, optimizer in dict(self.optimizers).items():
 				HDF5Serializer(optimizer_group.create_group(key)).save(optimizer)
 
+	@property
+	def batch_size(self):
+		return self.iterator.batch_size
+
+	@property
+	def group_size(self):
+		return self.batch_size if self.group is None else self.group
+
 	@staticmethod
 	def generator_logistic_loss(fake):
-		return mean(softplus(-fake))
+		return sum(softplus(-fake))
 
 	@staticmethod
 	def generator_least_squares_loss(fake):
-		return mean((fake - 1) ** 2)
+		return sum((fake - 1) ** 2)
 
 	@staticmethod
 	def discriminator_logistic_loss(real, fake):
-		return mean(softplus(-real)) + mean(softplus(fake))
+		return sum(softplus(-real)) + sum(softplus(fake))
 
 	@staticmethod
 	def discriminator_least_squares_loss(real, fake):
-		return mean((real - 1) ** 2) + mean(fake ** 2)
+		return sum((real - 1) ** 2) + sum(fake ** 2)
 
 	@staticmethod
-	def gradient_penalty(x, y, gamma):
+	def gradient_penalty(x, y):
 		gradient = grad([y], [x], enable_double_backprop=True)[0]
-		squared_norm = mean(batch_l2_norm_squared(gradient))
-		return gamma * squared_norm / 2
+		squared_norm = sum(batch_l2_norm_squared(gradient))
+		return squared_norm / 2
 
 	@staticmethod
 	def path_length(ws, x, mask):
@@ -243,7 +280,7 @@ class CustomTrainer(Trainer):
 
 	@property
 	def batch_size(self):
-		return self.updater.iterator.batch_size
+		return self.updater.group_size
 
 	@staticmethod
 	def save_snapshot(trainer):

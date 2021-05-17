@@ -36,6 +36,7 @@ def main(args):
 			dataset.preload(lambda: bar.update())
 	iterator = SerialIterator(dataset, args.batch, repeat=True, shuffle=True)
 	updater = CustomUpdater(generator, averaged_generator, discriminator, iterator, optimizers, args.ema, args.lsgan)
+	updater.enable_gradient_accumulation(4)
 	updater.enable_style_mixing(args.mix)
 	updater.enable_r1_regularization(args.gamma, args.r1)
 	updater.enable_path_length_regularization(args.decay, args.weight, args.pl)
