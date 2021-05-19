@@ -1,8 +1,8 @@
 from chainer import global_config
 from chainer.iterators import SerialIterator
-from stylegan.dataset import ImageDataset
+from stylegan.dataset import ImageDataset, MulticategoryImageDataset
 from stylegan.networks import Generator, Discriminator
-from stylegan.training import AdamTriple, CustomUpdater, CustomTrainer
+from stylegan.training import AdamSet, CustomUpdater, CustomTrainer
 from stylegan.augmentation import AugmentationPipeline
 from interface.args import dump_json, CustomArgumentParser
 from interface.argtypes import uint, natural, ufloat, positive, rate
@@ -19,23 +19,27 @@ def main(args):
 	global_config.autotune = True
 	global_config.cudnn_deterministic = False
 	print("Initializing models...")
-	generator = Generator(args.size, args.depth, args.levels, *args.channels)
-	discriminator = Discriminator(args.levels, args.channels[1], args.channels[0], args.group)
+	categories = len(args.dataset)
+	generator = Generator(args.size, args.depth, args.levels, *args.channels, categories)
+	discriminator = Discriminator(args.levels, args.channels[1], args.channels[0], args.group, categories, args.depth)
 	averaged_generator = generator.copy("copy")
 	generator.to_device(args.device)
 	discriminator.to_device(args.device)
 	averaged_generator.to_device(args.device)
-	optimizers = AdamTriple(args.alphas, args.betas[0], args.betas[1])
+	optimizers = AdamSet(args.alpha, args.betas[0], args.betas[1])
 	optimizers.setup(generator, discriminator)
 
 	mkdirs(args.dest)
 	dump_json(args, build_filepath(args.dest, "arguments", "json", args.force))
-	dataset = ImageDataset(args.dataset, generator.resolution)
+	if categories > 1:
+		dataset = MulticategoryImageDataset(args.dataset, generator.resolution)
+	else:
+		dataset = ImageDataset(args.dataset, generator.resolution)
 	if args.preload:
 		with chainer_like_tqdm("dataset", len(dataset)) as bar:
 			dataset.preload(lambda: bar.update())
 	iterator = SerialIterator(dataset, args.batch, repeat=True, shuffle=True)
-	updater = CustomUpdater(generator, averaged_generator, discriminator, iterator, optimizers, args.ema, args.lsgan)
+	updater = CustomUpdater(generator, averaged_generator, discriminator, iterator, optimizers, categories > 1, args.ema, args.lsgan)
 	updater.enable_gradient_accumulation(4)
 	updater.enable_style_mixing(args.mix)
 	updater.enable_r1_regularization(args.gamma, args.r1)
@@ -59,7 +63,7 @@ def main(args):
 def parse_args():
 	parser = CustomArgumentParser("")
 	group = parser.add_argument_group("training arguments", "")
-	group.add_argument("dataset", metavar="DATASET_DIR", help="dataset directory which stores images")
+	group.add_argument("dataset", metavar="DATASET_DIR", nargs="+", help="dataset directory which stores images")
 	group.add_argument("-p", "--preload", action="store_true", help="preload entire dataset into the memory")
 
 	group.add_argument("-s", "--snapshot", metavar="FILE", help="snapshot")
@@ -76,7 +80,7 @@ def parse_args():
 	group.add_argument("-i", "--mixing-rate", metavar="RATE", dest="mix", type=rate, default=0.5, help="")
 	group.add_argument("-a", "--ema-images", metavar="N", dest="ema", type=natural, default=10000, help="")
 
-	group.add_argument("-A", "--alphas", metavar="ALPHA", type=positive, nargs=3, default=(0.00002, 0.002, 0.002), help="Adam's coefficients of learning rates of mapper, generator, and discriminator")
+	group.add_argument("-A", "--alpha", metavar="ALPHA", type=positive, default=0.0025, help="Adam's coefficient of learning rates of mapper, generator, and discriminator")
 	group.add_argument("-B", "--betas", metavar=("BETA1", "BETA2"), type=rate, nargs=2, default=(0.0, 0.99), help="Adam's exponential decay rates of the 1st and 2nd order moments")
 	parser.add_argument("-u", "--print-interval", metavar="ITER", dest="print", type=uint, nargs=2, default=(5, 500), help="")
 	#parser.add_argument("-l", "--write-interval", metavar="ITER", dest="write", type=uint, nargs=4, default=(1000, 3000, 500, 500), help="")

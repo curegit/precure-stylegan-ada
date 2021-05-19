@@ -31,7 +31,7 @@ class ImageDataset(DatasetMixin):
 	def get_example(self, index):
 		return self.loaded_images[index] if self.preloaded else load_image(self.image_files[index], self.resolution)
 
-class LabeledImageDataset(DatasetMixin):
+class MulticategoryImageDataset(DatasetMixin):
 
 	def __init__(self, directories, resolution):
 		super().__init__()
@@ -48,6 +48,6 @@ class LabeledImageDataset(DatasetMixin):
 		for i, dataset in enumerate(self.datasets):
 			if index < len(dataset):
 				condition = eye(len(self.datasets), dtype=float32)[i]
-				return condition, dataset.get_example(index)
+				return dataset.get_example(index), condition
 			else:
 				index -= len(dataset)

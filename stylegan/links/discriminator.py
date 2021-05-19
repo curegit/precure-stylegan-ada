@@ -1,7 +1,7 @@
 from math import sqrt as root
 from numpy import array, sum, sinc, float32
 from chainer import Link, Chain, Sequential
-from chainer.functions import sqrt, mean, average_pooling_2d, convolution_2d, concat, broadcast_to, flatten, pad
+from chainer.functions import sqrt, mean, average_pooling_2d, convolution_2d, concat, broadcast_to, pad
 from stylegan.links.common import EqualizedLinear, EqualizedConvolution2D, LeakyRelu
 
 class FromRGB(Chain):
@@ -75,26 +75,17 @@ class ResidualBlock(Chain):
 
 class OutputBlock(Chain):
 
-	def __init__(self, in_channels, group_size=None, categories=1, depth=8):
+	def __init__(self, in_channels, group_size=None, conditional=False):
 		super().__init__()
-		self.in_channels = in_channels
-		self.categories = categories
 		with self.init_scope():
 			self.mbstd = MiniBatchStandardDeviation(group_size)
 			self.c1 = EqualizedConvolution2D(in_channels + 1, in_channels, ksize=3, stride=1, pad=1)
 			self.a1 = LeakyRelu()
 			self.c2 = EqualizedConvolution2D(in_channels, in_channels, ksize=4, stride=1, pad=0)
 			self.a2 = LeakyRelu()
-			self.fc = EqualizedLinear(in_channels, in_channels if categories > 1 else 1, gain=1)
-			if categories > 1:
-				self.co = EqualizedLinear(categories, in_channels)
-				self.cm = Sequential(LeakyRelu(), EqualizedLinear(in_channels, in_channels)).repeat(depth)
+			self.fc = EqualizedLinear(in_channels, in_channels if conditional else 1, gain=1)
 
-	def __call__(self, x, c=None):
+	def __call__(self, x):
 		h1 = self.a1(self.c1(self.mbstd(x)))
 		h2 = self.a2(self.c2(h1))
-		h3 = self.fc(h2)
-		if self.categories > 1:
-			return sum(h3 * self.cm(self.co(c)), axis=1) / sqrt(self.in_channels) # LR 0.01
-		else:
-			return flatten(h3)
+		return self.fc(h2)
