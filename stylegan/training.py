@@ -14,39 +14,58 @@ from utilities.math import identity, sgn, clamp, lerp
 from utilities.image import save_image
 from utilities.filesys import mkdirs, build_filepath
 
-class AdamTriple():
+class AdamSet():
 
-	def __init__(self, alphas, beta1, beta2):
-		self.mapper_optimizer = Adam(alphas[0], beta1, beta2, eps=1e-08)
-		self.synthesizer_optimizer = Adam(alphas[1], beta1, beta2, eps=1e-08)
-		self.discriminator_optimizer = Adam(alphas[2], beta1, beta2, eps=1e-08)
+	def __init__(self, alpha, beta1, beta2, conditional=False):
+		self.conditional = conditional
+		self.mapper_optimizer = Adam(alpha / 100, beta1, beta2, eps=1e-08)
+		self.synthesizer_optimizer = Adam(alpha, beta1, beta2, eps=1e-08)
+		self.discriminator_optimizer = Adam(alpha, beta1, beta2, eps=1e-08)
+		if conditional:
+			self.generator_embedder_optimizer = Adam(alpha, beta1, beta2, eps=1e-08)
+			self.discriminator_embedder_optimizer = Adam(alpha, beta1, beta2, eps=1e-08)
+			self.condition_mapper_optimizer = Adam(alpha / 100, beta1, beta2, eps=1e-08)
 
 	def __iter__(self):
 		yield "mapper", self.mapper_optimizer
 		yield "synthesizer", self.synthesizer_optimizer
 		yield "discriminator", self.discriminator_optimizer
+		if self.conditional:
+			yield "generator_embedder", self.generator_embedder_optimizer
+			yield "discriminator_embedder", self.discriminator_embedder_optimizer
+			yield "condition_mapper", self.condition_mapper_optimizer
 
 	def setup(self, generator, discriminator):
 		self.mapper_optimizer.setup(generator.mapper)
 		self.synthesizer_optimizer.setup(generator.synthesizer)
-		self.discriminator_optimizer.setup(discriminator)
+		self.discriminator_optimizer.setup(discriminator.main)
+		if self.conditional:
+			self.generator_embedder_optimizer.setup(generator.embedder)
+			self.discriminator_embedder_optimizer.setup(discriminator.embedder)
+			self.condition_mapper_optimizer.setup(discriminator.condition_mapper)
 
 	def update_generator(self):
 		self.mapper_optimizer.update()
 		self.synthesizer_optimizer.update()
+		if self.conditional:
+			self.generator_embedder_optimizer.update()
 
 	def update_discriminator(self):
 		self.discriminator_optimizer.update()
+		if self.conditional:
+			self.discriminator_embedder_optimizer.update()
+			self.condition_mapper_optimizer.update()
 
 class CustomUpdater(StandardUpdater):
 
-	def __init__(self, generator, averaged_generator, discriminator, iterator, optimizers, averaging_images=10000, lsgan=False):
+	def __init__(self, generator, averaged_generator, discriminator, iterator, optimizers, conditional=False, averaging_images=10000, lsgan=False):
 		super().__init__(iterator, dict(optimizers))
 		self.generator = generator
 		self.averaged_generator = averaged_generator
 		self.discriminator = discriminator
 		self.iterator = iterator
 		self.optimizers = optimizers
+		self.conditional = conditional
 		self.averaging_images = averaging_images
 		self.lsgan = lsgan
 		self.group = None
@@ -81,16 +100,26 @@ class CustomUpdater(StandardUpdater):
 		self.augumentation_delta_images = delta_images
 		self.augumentation_probability = initial_probability or self.augumentation_probability
 
-	def next_latents(self, n):
+	def generate_latents(self, n):
 		return self.generator.generate_latents(n)
+
+	def generate_conditions(self, n):
+		return self.generator.generate_conditions(n)
 
 	def next_latent_groups(self):
 		for _, n in range_batch(self.batch_size, self.group_size):
-			yield self.next_latents(n)
+			yield self.generate_latents(n), (self.generate_conditions(n) if self.conditional else None)
 
 	def next_real_groups(self):
 		for group in iter_batch(self.iterator.next(), self.group_size):
-			yield Variable(self.discriminator.xp.array(list(group)))
+			if self.conditional:
+				xs, cs = zip(*group)
+				x = self.discriminator.xp.array(list(xs))
+				c = self.discriminator.xp.array(list(cs))
+				yield Variable(x), Variable(c)
+			else:
+				x = self.discriminator.xp.array(group)
+				yield Variable(x), None
 
 	def update_core(self):
 		if self.augumentation:
@@ -106,11 +135,11 @@ class CustomUpdater(StandardUpdater):
 		accumulated_penalty = 0.0
 		accumulated_path_length = 0.0
 		self.generator.cleargrads()
-		for z in self.next_latent_groups():
+		for z, c in self.next_latent_groups():
 			group_size = z.shape[0]
-			mix = self.next_latents(group_size) if random.random() < self.style_mixing_rate else None
-			ws, x_fake = self.generator(z, random_mix=mix)
-			y_fake = self.discriminator(self.augumentation_pipeline(x_fake))
+			mix = self.generate_latents(group_size) if random.random() < self.style_mixing_rate else None
+			ws, x_fake = self.generator(z, c, random_mix=mix)
+			y_fake = self.discriminator(self.augumentation_pipeline(x_fake), c)
 			penalty = 0.0
 			if self.path_length_regularization():
 				masks = self.generator.generate_masks(group_size)
@@ -142,13 +171,13 @@ class CustomUpdater(StandardUpdater):
 		accumulated_penalty = 0.0
 		accumulated_rt = 0.0
 		self.discriminator.cleargrads()
-		for x_real, z in zip(self.next_real_groups(), self.next_latent_groups()):
+		for (x_real, c_real), (z, c) in zip(self.next_real_groups(), self.next_latent_groups()):
 			group_size = z.shape[0]
-			y_real = self.discriminator(self.augumentation_pipeline(x_real))
+			y_real = self.discriminator(self.augumentation_pipeline(x_real), c_real)
 			accumulated_rt += sum(sign(y_real - 0.5 if self.lsgan else y_real)).item() / self.batch_size
-			mix = self.next_latents(group_size) if random.random() < self.style_mixing_rate else None
-			_, x_fake = self.generator(z, random_mix=mix)
-			y_fake = self.discriminator(self.augumentation_pipeline(x_fake))
+			mix = self.generate_latents(group_size) if random.random() < self.style_mixing_rate else None
+			_, x_fake = self.generator(z, c, random_mix=mix)
+			y_fake = self.discriminator(self.augumentation_pipeline(x_fake), c)
 			x_fake.unchain_backward()
 			penalty = 0.0
 			if self.r1_regularization():
@@ -282,6 +311,10 @@ class CustomTrainer(Trainer):
 	def batch_size(self):
 		return self.updater.group_size
 
+	@property
+	def conditional(self):
+		return self.updater.conditional
+
 	@staticmethod
 	def save_snapshot(trainer):
 		filepath = build_filepath(trainer.states_out, f"snapshot-{trainer.iteration}", "hdf5", trainer.overwrite)
@@ -296,7 +329,8 @@ class CustomTrainer(Trainer):
 	def save_images(trainer):
 		for i, n in range_batch(trainer.number, trainer.batch_size):
 			z = trainer.updater.averaged_generator.generate_latents(n)
-			_, y = trainer.updater.averaged_generator(z)
+			c = trainer.updater.averaged_generator.generate_conditions(n) if trainer.conditional else None
+			_, y = trainer.updater.averaged_generator(z, c)
 			z.to_cpu()
 			y.to_cpu()
 			for j in range(n):

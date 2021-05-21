@@ -93,8 +93,9 @@ with tqdm(desc="generation", total=args.number, bar_format=bf, miniters=1, ascii
 	for i, n in range_batch(args.number, args.batch):
 		#mixing = mix > random()
 		z = generator.generate_latents(n)
+		c = generator.generate_conditions(n)
 		#mix_z = generator.generate_latent(n) if mixing else None
-		ws, y = generator(z)
+		ws, y = generator(z, c)
 		z.to_cpu()
 		y.to_cpu()
 		for j in range(n):
