@@ -122,7 +122,7 @@ class Generator(Chain):
 
 class Discriminator(Chain):
 
-	def __init__(self, levels=7, first_channels=16, last_channels=512, group_size=None, categories=1, depth=8):
+	def __init__(self, levels=7, first_channels=16, last_channels=512, categories=1, depth=8, group_size=None):
 		super().__init__()
 		in_channels = [first_channels] * (levels - 1)
 		out_channels = [last_channels] * (levels - 1)
@@ -134,7 +134,7 @@ class Discriminator(Chain):
 			self.main = Sequential(
 				FromRGB(first_channels),
 				Sequential(*[ResidualBlock(i, o) for i, o in zip(in_channels, out_channels)]),
-				OutputBlock(last_channels, group_size, categories > 1))
+				OutputBlock(last_channels, categories > 1, group_size))
 			if categories > 1:
 				self.embedder = EqualizedLinear(categories, last_channels, gain=1)
 				self.mapper = Sequential(EqualizedLinear(last_channels, last_channels), LeakyRelu()).repeat(depth)

@@ -75,7 +75,7 @@ class ResidualBlock(Chain):
 
 class OutputBlock(Chain):
 
-	def __init__(self, in_channels, group_size=None, conditional=False):
+	def __init__(self, in_channels, conditional=False, group_size=None):
 		super().__init__()
 		with self.init_scope():
 			self.mbstd = MiniBatchStandardDeviation(group_size)

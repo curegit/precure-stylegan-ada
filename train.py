@@ -21,7 +21,7 @@ def main(args):
 	print("Initializing models...")
 	categories = len(args.dataset)
 	generator = Generator(args.size, args.depth, args.levels, *args.channels, categories)
-	discriminator = Discriminator(args.levels, args.channels[1], args.channels[0], args.group, categories, args.depth)
+	discriminator = Discriminator(args.levels, args.channels[1], args.channels[0], categories, args.depth, args.group)
 	averaged_generator = generator.copy("copy")
 	generator.to_device(args.device)
 	discriminator.to_device(args.device)
