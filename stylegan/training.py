@@ -114,12 +114,12 @@ class CustomUpdater(StandardUpdater):
 		for group in iter_batch(self.iterator.next(), self.group_size):
 			if self.conditional:
 				xs, cs = zip(*group)
-				x = self.discriminator.xp.array(xs)
-				c = self.discriminator.xp.array(cs)
-				return Variable(x), Variable(c)
+				x = self.discriminator.xp.array(list(xs))
+				c = self.discriminator.xp.array(list(cs))
+				yield Variable(x), Variable(c)
 			else:
 				x = self.discriminator.xp.array(group)
-				return Variable(x), None
+				yield Variable(x), None
 
 	def update_core(self):
 		if self.augumentation:
@@ -139,7 +139,7 @@ class CustomUpdater(StandardUpdater):
 			group_size = z.shape[0]
 			mix = self.generate_latents(group_size) if random.random() < self.style_mixing_rate else None
 			ws, x_fake = self.generator(z, c, random_mix=mix)
-			y_fake = self.discriminator(self.augumentation_pipeline(x_fake))
+			y_fake = self.discriminator(self.augumentation_pipeline(x_fake), c)
 			penalty = 0.0
 			if self.path_length_regularization():
 				masks = self.generator.generate_masks(group_size)
@@ -175,7 +175,7 @@ class CustomUpdater(StandardUpdater):
 			group_size = z.shape[0]
 			y_real = self.discriminator(self.augumentation_pipeline(x_real), c_real)
 			accumulated_rt += sum(sign(y_real - 0.5 if self.lsgan else y_real)).item() / self.batch_size
-			mix = self.next_latents(group_size) if random.random() < self.style_mixing_rate else None
+			mix = self.generate_latents(group_size) if random.random() < self.style_mixing_rate else None
 			_, x_fake = self.generator(z, c, random_mix=mix)
 			y_fake = self.discriminator(self.augumentation_pipeline(x_fake), c)
 			x_fake.unchain_backward()

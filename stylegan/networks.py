@@ -109,12 +109,12 @@ class Generator(Chain):
 
 	@staticmethod
 	def load(filepath):
-		with HDF5File as hdf5:
+		with HDF5File(filepath, "r") as hdf5:
 			size = int(hdf5["size"][()])
 			depth = int(hdf5["depth"][()])
 			levels = int(hdf5["levels"][()])
-			first_channels = int(hdf5["size"][()])
-			last_channels = int(hdf5["size"][()])
+			first_channels = int(hdf5["first_channels"][()])
+			last_channels = int(hdf5["last_channels"][()])
 			categories = int(hdf5["categories"][()])
 			generator = Generator(size, depth, levels, first_channels, last_channels, categories)
 			HDF5Deserializer(hdf5["weights"]).load(generator)
@@ -143,5 +143,6 @@ class Discriminator(Chain):
 		if c is not None:
 			embedded = self.embedder(c)
 			normalized = embedded / sqrt(mean(embedded ** 2, axis=1, keepdims=True) + 1e-08)
+			c1 = self.mapper(normalized)
 		h = self.main(x)
-		return flatten(h) if c is None else sum(h * normalized, axis=1) / root(h.shape[1])
+		return flatten(h) if c is None else sum(h * c1, axis=1) / root(h.shape[1])
