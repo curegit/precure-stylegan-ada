@@ -1,28 +1,28 @@
 from math import sqrt as root
 from numpy import array, sum, sinc, float32
-from chainer import Link, Chain, Sequential
+from chainer import Chain
 from chainer.functions import sqrt, mean, average_pooling_2d, convolution_2d, concat, broadcast_to, pad
-from stylegan.links.common import EqualizedLinear, EqualizedConvolution2D, LeakyRelu
+from stylegan.layers.basic import LeakyRelu, EqualizedLinear, EqualizedConvolution2D
 
 class FromRGB(Chain):
 
 	def __init__(self, out_channels):
 		super().__init__()
 		with self.init_scope():
-			self.c = EqualizedConvolution2D(3, out_channels, ksize=1, stride=1, pad=0, gain=1)
-			self.a = LeakyRelu()
+			self.conv = EqualizedConvolution2D(3, out_channels, ksize=1, stride=1, pad=0)
+			self.act = LeakyRelu()
 
 	def __call__(self, x):
-		return self.a(self.c(x))
+		return self.act(self.conv(x))
 
-class Downsampler(Link):
+class Downsampler():
 
 	def __init__(self, lanczos=True, n=2):
-		super().__init__()
 		self.lanczos = lanczos
 		if lanczos:
 			self.n = n
-			ys = array([self.lanczos_kernel(i + 0.5, n) for i in range(-n, n)])
+			lanczos_kernel = lambda x: sinc(x) * sinc(x / n)
+			ys = array([lanczos_kernel(i + 0.5) for i in range(-n, n)])
 			ys = ys / sum(ys)
 			k = ys.reshape(1, n * 2) * ys.reshape(n * 2, 1)
 			self.w = array([[k]], dtype=float32)
@@ -33,18 +33,14 @@ class Downsampler(Link):
 			batch, channels, height, width = x.shape
 			h1 = x.reshape(batch * channels, 1, height, width)
 			h2 = pad(h1, ((0, 0), (0, 0), (p, p), (p, p)), mode="symmetric")
-			h3 = convolution_2d(h2, self.xp.asarray(self.w), stride=2)
+			h3 = convolution_2d(h2, x.xp.asarray(self.w), stride=2)
 			return h3.reshape(batch, channels, height // 2, width // 2)
 		else:
 			return average_pooling_2d(x, ksize=2, stride=2)
 
-	def lanczos_kernel(self, x, n):
-		return sinc(x) * sinc(x / n)
-
-class MiniBatchStandardDeviation(Link):
+class MiniBatchStandardDeviation():
 
 	def __init__(self, group_size=None):
-		super().__init__()
 		self.group_size = group_size
 
 	def __call__(self, x):
@@ -62,16 +58,18 @@ class ResidualBlock(Chain):
 	def __init__(self, in_channels, out_channels):
 		super().__init__()
 		with self.init_scope():
-			self.c1 = EqualizedConvolution2D(in_channels, in_channels, ksize=3, stride=1, pad=1)
-			self.a1 = LeakyRelu()
-			self.c2 = EqualizedConvolution2D(in_channels, out_channels, ksize=3, stride=1, pad=1)
-			self.a2 = LeakyRelu()
-			self.down = Downsampler(lanczos=False)
-			self.skip = Sequential(EqualizedConvolution2D(in_channels, out_channels, ksize=1, stride=1, pad=0, nobias=True), Downsampler())
+			self.conv1 = EqualizedConvolution2D(in_channels, in_channels, ksize=3, stride=1, pad=1)
+			self.act1 = LeakyRelu()
+			self.conv2 = EqualizedConvolution2D(in_channels, out_channels, ksize=3, stride=1, pad=1)
+			self.act2 = LeakyRelu()
+			self.pool = Downsampler(lanczos=False)
+			self.conv3 = EqualizedConvolution2D(in_channels, out_channels, ksize=1, stride=1, pad=0, nobias=True)
+			self.down = Downsampler()
 
 	def __call__(self, x):
-		h = self.a2(self.c2(self.a1(self.c1(x))))
-		return (self.skip(x) + self.down(h)) / root(2)
+		h = self.pool(self.act2(self.conv2(self.act1(self.conv1(x)))))
+		skip = self.down(self.conv3(x))
+		return (h + skip) / root(2)
 
 class OutputBlock(Chain):
 
@@ -79,13 +77,13 @@ class OutputBlock(Chain):
 		super().__init__()
 		with self.init_scope():
 			self.mbstd = MiniBatchStandardDeviation(group_size)
-			self.c1 = EqualizedConvolution2D(in_channels + 1, in_channels, ksize=3, stride=1, pad=1)
-			self.a1 = LeakyRelu()
-			self.c2 = EqualizedConvolution2D(in_channels, in_channels, ksize=4, stride=1, pad=0)
-			self.a2 = LeakyRelu()
-			self.fc = EqualizedLinear(in_channels, in_channels if conditional else 1, gain=1)
+			self.conv1 = EqualizedConvolution2D(in_channels + 1, in_channels, ksize=3, stride=1, pad=1)
+			self.act1 = LeakyRelu()
+			self.conv2 = EqualizedConvolution2D(in_channels, in_channels, ksize=4, stride=1, pad=0)
+			self.act2 = LeakyRelu()
+			self.linear = EqualizedLinear(in_channels, in_channels if conditional else 1, gain=1)
 
 	def __call__(self, x):
-		h1 = self.a1(self.c1(self.mbstd(x)))
-		h2 = self.a2(self.c2(h1))
-		return self.fc(h2)
+		h1 = self.act1(self.conv1(self.mbstd(x)))
+		h2 = self.act2(self.conv2(h1))
+		return self.linear(h2)

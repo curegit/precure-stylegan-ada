@@ -3,17 +3,17 @@ from numpy import array, pad as padded, float32
 from chainer import Parameter, Link, Chain
 from chainer.functions import sqrt, sum, convolution_2d, broadcast_to, depth2space, pad
 from chainer.initializers import Zero, One, Normal
-from stylegan.links.common import EqualizedLinear, LeakyRelu
+from stylegan.layers.basic import LeakyRelu, EqualizedLinear
 
 class StyleAffineTransformation(Chain):
 
 	def __init__(self, size, channels):
 		super().__init__()
 		with self.init_scope():
-			self.s = EqualizedLinear(size, channels, initial_bias=One(), gain=1)
+			self.linear = EqualizedLinear(size, channels, initial_bias=One(), gain=1)
 
 	def __call__(self, w):
-		return self.s(w)
+		return self.linear(w)
 
 class WeightModulatedConvolution(Link):
 
@@ -22,7 +22,7 @@ class WeightModulatedConvolution(Link):
 		self.demod = demod
 		self.ksize = 1 if pointwise else 3
 		self.pad = 0 if pointwise else 1
-		self.c = gain * root(1 / (in_channels * self.ksize ** 2))
+		self.c = gain / root(in_channels * self.ksize ** 2)
 		with self.init_scope():
 			self.w = Parameter(shape=(out_channels, in_channels, self.ksize, self.ksize), initializer=Normal(1.0))
 			self.b = Parameter(shape=out_channels, initializer=Zero())
@@ -30,7 +30,7 @@ class WeightModulatedConvolution(Link):
 	def __call__(self, x, y):
 		out_channels = self.b.shape[0]
 		batch, in_channels, height, width = x.shape
-		modulated_w = self.w * y.reshape(batch, 1, in_channels, 1, 1)
+		modulated_w = self.c * self.w * y.reshape(batch, 1, in_channels, 1, 1)
 		w = modulated_w / sqrt(sum(modulated_w ** 2, axis=(2, 3, 4), keepdims=True) + 1e-08) if self.demod else modulated_w
 		grouped_w = w.reshape(batch * out_channels, in_channels, self.ksize, self.ksize)
 		grouped_x = x.reshape(1, batch * in_channels, height, width)
@@ -43,17 +43,16 @@ class NoiseAdder(Link):
 	def __init__(self):
 		super().__init__()
 		with self.init_scope():
-			self.s = Parameter(shape=1, initializer=Zero())
+			self.scale = Parameter(shape=1, initializer=Zero())
 
 	def __call__(self, x):
 		batch, _, height, width = x.shape
 		noise = self.xp.random.normal(size=(batch, 1, height, width)).astype(self.xp.float32)
-		return x + self.s * noise
+		return x + self.scale * noise
 
-class BicubicUpsampler(Link):
+class BicubicUpsampler():
 
 	def __init__(self, b=0.0, c=0.5):
-		super().__init__()
 		self.b, self.c = b, c
 		s = array([self.kernel(i + 0.25) for i in range(-2, 2)])
 		e = array([self.kernel(i + 0.75) for i in range(-2, 2)])
@@ -67,7 +66,7 @@ class BicubicUpsampler(Link):
 		batch, channels, height, width = x.shape
 		h1 = x.reshape(batch * channels, 1, height, width)
 		h2 = pad(h1, ((0, 0), (0, 0), (2, 2), (2, 2)), mode="symmetric")
-		h3 = convolution_2d(h2, self.xp.asarray(self.w))
+		h3 = convolution_2d(h2, x.xp.asarray(self.w))
 		h4 = depth2space(h3, 2)
 		return h4.reshape(batch, channels, height * 2, width * 2)
 
@@ -85,32 +84,33 @@ class ToRGB(Chain):
 	def __init__(self, in_channels):
 		super().__init__()
 		with self.init_scope():
-			self.w = WeightModulatedConvolution(in_channels, 3, pointwise=True, demod=False, gain=1)
+			self.wmconv = WeightModulatedConvolution(in_channels, 3, pointwise=True, demod=False, gain=1)
 
 	def __call__(self, x, y):
-		return self.w(x, y)
+		return self.wmconv(x, y)
 
 class InitialSkipArchitecture(Chain):
 
 	def __init__(self, size, in_channels, out_channels):
 		super().__init__()
+		self.c = 1 / root(4 * 4)
 		with self.init_scope():
-			self.c1 = Parameter(shape=(in_channels, 4, 4), initializer=Normal(1.0))
-			self.s1 = StyleAffineTransformation(size, in_channels)
-			self.w1 = WeightModulatedConvolution(in_channels, out_channels)
-			self.n1 = NoiseAdder()
-			self.a1 = LeakyRelu()
-			self.s2 = StyleAffineTransformation(size, out_channels)
-			self.trgb = ToRGB(out_channels)
+			self.const = Parameter(shape=(in_channels, 4, 4), initializer=Normal(1.0))
+			self.style1 = StyleAffineTransformation(size, in_channels)
+			self.wmconv = WeightModulatedConvolution(in_channels, out_channels)
+			self.noise = NoiseAdder()
+			self.act = LeakyRelu()
+			self.style2 = StyleAffineTransformation(size, out_channels)
+			self.torgb = ToRGB(out_channels)
 
 	def __call__(self, w):
 		batch = w.shape[0]
-		h1 = self.c1.reshape(1, *self.c1.shape)
-		h2 = broadcast_to(h1, (batch, *self.c1.shape))
-		h3 = self.w1(h2, self.s1(w))
-		h4 = self.n1(h3)
-		h5 = self.a1(h4)
-		return h5, self.trgb(h5, self.s2(w))
+		h1 = self.c * self.const.reshape(1, *self.const.shape)
+		h2 = broadcast_to(h1, (batch, *self.const.shape))
+		h3 = self.wmconv(h2, self.style1(w))
+		h4 = self.noise(h3)
+		h5 = self.act(h4)
+		return h5, self.torgb(h5, self.style2(w))
 
 class SkipArchitecture(Chain):
 
@@ -118,24 +118,24 @@ class SkipArchitecture(Chain):
 		super().__init__()
 		with self.init_scope():
 			self.up = BicubicUpsampler()
-			self.s1 = StyleAffineTransformation(size, in_channels)
-			self.w1 = WeightModulatedConvolution(in_channels, out_channels)
-			self.n1 = NoiseAdder()
-			self.a1 = LeakyRelu()
-			self.s2 = StyleAffineTransformation(size, out_channels)
-			self.w2 = WeightModulatedConvolution(out_channels, out_channels)
-			self.n2 = NoiseAdder()
-			self.a2 = LeakyRelu()
-			self.s3 = StyleAffineTransformation(size, out_channels)
-			self.trgb = ToRGB(out_channels)
+			self.style1 = StyleAffineTransformation(size, in_channels)
+			self.wmconv1 = WeightModulatedConvolution(in_channels, out_channels)
+			self.noise1 = NoiseAdder()
+			self.act1 = LeakyRelu()
+			self.style2 = StyleAffineTransformation(size, out_channels)
+			self.wmconv2 = WeightModulatedConvolution(out_channels, out_channels)
+			self.noise2 = NoiseAdder()
+			self.act2 = LeakyRelu()
+			self.style3 = StyleAffineTransformation(size, out_channels)
+			self.torgb = ToRGB(out_channels)
 			self.skip = BicubicUpsampler(1, 0)
 
 	def __call__(self, x, y, w):
 		h1 = self.up(x)
-		h2 = self.w1(h1, self.s1(w))
-		h3 = self.n1(h2)
-		h4 = self.a1(h3)
-		h5 = self.w2(h4, self.s2(w))
-		h6 = self.n2(h5)
-		h7 = self.a2(h6)
-		return h7, self.skip(y) + self.trgb(h7, self.s3(w))
+		h2 = self.wmconv1(h1, self.style1(w))
+		h3 = self.noise1(h2)
+		h4 = self.act1(h3)
+		h5 = self.wmconv2(h4, self.style2(w))
+		h6 = self.noise2(h5)
+		h7 = self.act2(h6)
+		return h7, self.skip(y) + self.torgb(h7, self.style3(w))

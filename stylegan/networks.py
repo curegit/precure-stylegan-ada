@@ -4,9 +4,9 @@ from h5py import File as HDF5File
 from chainer import Variable, Chain, ChainList, Sequential
 from chainer.functions import sqrt, sum, mean, concat, flatten
 from chainer.serializers import HDF5Serializer, HDF5Deserializer
-from stylegan.links.common import EqualizedLinear, LeakyRelu
-from stylegan.links.generator import InitialSkipArchitecture, SkipArchitecture
-from stylegan.links.discriminator import FromRGB, ResidualBlock, OutputBlock
+from stylegan.layers.basic import LeakyRelu, EqualizedLinear
+from stylegan.layers.generator import InitialSkipArchitecture, SkipArchitecture
+from stylegan.layers.discriminator import FromRGB, ResidualBlock, OutputBlock
 from utilities.math import identity, lerp
 
 class Mapper(Chain):
@@ -132,7 +132,7 @@ class Discriminator(Chain):
 		with self.init_scope():
 			self.main = Sequential(
 				FromRGB(first_channels),
-				Sequential(*[ResidualBlock(i, o) for i, o in zip(in_channels, out_channels)]),
+				*[ResidualBlock(i, o) for i, o in zip(in_channels, out_channels)],
 				OutputBlock(last_channels, categories > 1, group_size))
 			if categories > 1:
 				self.embedder = EqualizedLinear(categories, last_channels, gain=1)
