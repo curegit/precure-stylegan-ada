@@ -34,7 +34,7 @@ def main(args):
 	if categories > 1:
 		dataset = MulticategoryImageDataset(args.dataset, generator.resolution)
 	else:
-		dataset = ImageDataset(args.dataset, generator.resolution)
+		dataset = ImageDataset(args.dataset[0], generator.resolution)
 	if args.preload:
 		with chainer_like_tqdm("dataset", len(dataset)) as bar:
 			dataset.preload(lambda: bar.update())
