@@ -5,6 +5,35 @@ from chainer.functions import sqrt, sum, convolution_2d, broadcast_to, depth2spa
 from chainer.initializers import Zero, One, Normal
 from stylegan.layers.basic import LeakyRelu, EqualizedLinear
 
+class BicubicUpsampler():
+
+	def __init__(self, b=0.0, c=0.5):
+		self.b, self.c = b, c
+		s = array([self.kernel(i + 0.25) for i in range(-2, 2)])
+		e = array([self.kernel(i + 0.75) for i in range(-2, 2)])
+		k1 = padded(s.reshape(1, 4) * s.reshape(4, 1), ((0, 1), (0, 1)))
+		k2 = padded(e.reshape(1, 4) * s.reshape(4, 1), ((0, 1), (1, 0)))
+		k3 = padded(s.reshape(1, 4) * e.reshape(4, 1), ((1, 0), (0, 1)))
+		k4 = padded(e.reshape(1, 4) * e.reshape(4, 1), ((1, 0), (1, 0)))
+		self.w = array([[k1], [k2], [k3], [k4]], dtype=float32)
+
+	def __call__(self, x):
+		batch, channels, height, width = x.shape
+		h1 = x.reshape(batch * channels, 1, height, width)
+		h2 = pad(h1, ((0, 0), (0, 0), (2, 2), (2, 2)), mode="symmetric")
+		h3 = convolution_2d(h2, x.xp.asarray(self.w))
+		h4 = depth2space(h3, 2)
+		return h4.reshape(batch, channels, height * 2, width * 2)
+
+	def kernel(self, x):
+		b, c = self.b, self.c
+		if abs(x) < 1:
+			return 1 / 6 * ((12 - 9 * b - 6 * c) * abs(x) ** 3 + (-18 + 12 * b + 6 * c) * abs(x) ** 2 + (6 - 2 * b))
+		elif 1 <= abs(x) < 2:
+			return 1 / 6 * ((-b - 6 * c) * abs(x) ** 3 + (6 * b + 30 * c) * abs(x) ** 2 + (-12 * b - 48 * c) * abs(x) + (8 * b + 24 * c))
+		else:
+			return 0.0
+
 class StyleAffineTransformation(Chain):
 
 	def __init__(self, size, channels):
@@ -49,35 +78,6 @@ class NoiseAdder(Link):
 		batch, _, height, width = x.shape
 		noise = self.xp.random.normal(size=(batch, 1, height, width)).astype(self.xp.float32)
 		return x + self.scale * noise
-
-class BicubicUpsampler():
-
-	def __init__(self, b=0.0, c=0.5):
-		self.b, self.c = b, c
-		s = array([self.kernel(i + 0.25) for i in range(-2, 2)])
-		e = array([self.kernel(i + 0.75) for i in range(-2, 2)])
-		k1 = padded(s.reshape(1, 4) * s.reshape(4, 1), ((0, 1), (0, 1)))
-		k2 = padded(e.reshape(1, 4) * s.reshape(4, 1), ((0, 1), (1, 0)))
-		k3 = padded(s.reshape(1, 4) * e.reshape(4, 1), ((1, 0), (0, 1)))
-		k4 = padded(e.reshape(1, 4) * e.reshape(4, 1), ((1, 0), (1, 0)))
-		self.w = array([[k1], [k2], [k3], [k4]], dtype=float32)
-
-	def __call__(self, x):
-		batch, channels, height, width = x.shape
-		h1 = x.reshape(batch * channels, 1, height, width)
-		h2 = pad(h1, ((0, 0), (0, 0), (2, 2), (2, 2)), mode="symmetric")
-		h3 = convolution_2d(h2, x.xp.asarray(self.w))
-		h4 = depth2space(h3, 2)
-		return h4.reshape(batch, channels, height * 2, width * 2)
-
-	def kernel(self, x):
-		b, c = self.b, self.c
-		if abs(x) < 1:
-			return 1 / 6 * ((12 - 9 * b - 6 * c) * abs(x) ** 3 + (-18 + 12 * b + 6 * c) * abs(x) ** 2 + (6 - 2 * b))
-		elif 1 <= abs(x) < 2:
-			return 1 / 6 * ((-b - 6 * c) * abs(x) ** 3 + (6 * b + 30 * c) * abs(x) ** 2 + (-12 * b - 48 * c) * abs(x) + (8 * b + 24 * c))
-		else:
-			return 0.0
 
 class ToRGB(Chain):
 

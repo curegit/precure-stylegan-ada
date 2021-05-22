@@ -4,17 +4,6 @@ from chainer import Chain
 from chainer.functions import sqrt, mean, average_pooling_2d, convolution_2d, concat, broadcast_to, pad
 from stylegan.layers.basic import LeakyRelu, EqualizedLinear, EqualizedConvolution2D
 
-class FromRGB(Chain):
-
-	def __init__(self, out_channels):
-		super().__init__()
-		with self.init_scope():
-			self.conv = EqualizedConvolution2D(3, out_channels, ksize=1, stride=1, pad=0)
-			self.act = LeakyRelu()
-
-	def __call__(self, x):
-		return self.act(self.conv(x))
-
 class Downsampler():
 
 	def __init__(self, lanczos=True, n=2):
@@ -52,6 +41,17 @@ class MiniBatchStandardDeviation():
 		deviation = mean(sqrt(variance + 1e-08), axis=(2, 3, 4), keepdims=True)
 		deviation_map = broadcast_to(deviation, (groups, group_size, 1, height, width)).reshape(batch, 1, height, width)
 		return concat((x, deviation_map), axis=1)
+
+class FromRGB(Chain):
+
+	def __init__(self, out_channels):
+		super().__init__()
+		with self.init_scope():
+			self.conv = EqualizedConvolution2D(3, out_channels, ksize=1, stride=1, pad=0)
+			self.act = LeakyRelu()
+
+	def __call__(self, x):
+		return self.act(self.conv(x))
 
 class ResidualBlock(Chain):
 
