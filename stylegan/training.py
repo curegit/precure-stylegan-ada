@@ -118,7 +118,7 @@ class CustomUpdater(StandardUpdater):
 				c = self.discriminator.xp.array(list(cs))
 				yield Variable(x), Variable(c)
 			else:
-				x = self.discriminator.xp.array(group)
+				x = self.discriminator.xp.array(list(group))
 				yield Variable(x), None
 
 	def update_core(self):
