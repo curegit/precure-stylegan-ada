@@ -3,7 +3,7 @@ from numpy import array, pad as padded, float32
 from chainer import Parameter, Link, Chain
 from chainer.functions import sqrt, sum, convolution_2d, broadcast_to, depth2space, pad
 from chainer.initializers import Zero, One, Normal
-from stylegan.links.common import GaussianDistribution, EqualizedLinear, LeakyRelu
+from stylegan.links.common import EqualizedLinear, LeakyRelu
 
 class StyleAffineTransformation(Chain):
 
@@ -38,17 +38,17 @@ class WeightModulatedConvolution(Link):
 		h = convolution_2d(padded_grouped_x, grouped_w, stride=1, pad=0, groups=batch)
 		return h.reshape(batch, out_channels, height, width) + self.b.reshape(1, out_channels, 1, 1)
 
-class NoiseAdder(Chain):
+class NoiseAdder(Link):
 
 	def __init__(self):
 		super().__init__()
 		with self.init_scope():
-			self.g = GaussianDistribution()
 			self.s = Parameter(shape=1, initializer=Zero())
 
 	def __call__(self, x):
-		b, _, h, w = x.shape
-		return x + self.s * self.g(b, 1, h, w)
+		batch, _, height, width = x.shape
+		noise = self.xp.random.normal(size=(batch, 1, height, width)).astype(self.xp.float32)
+		return x + self.s * noise
 
 class BicubicUpsampler(Link):
 

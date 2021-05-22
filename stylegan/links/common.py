@@ -4,18 +4,6 @@ from chainer.links import Linear, Convolution2D
 from chainer.functions import gaussian, leaky_relu, broadcast_to
 from chainer.initializers import Normal
 
-class GaussianDistribution(Link):
-
-	def __init__(self, mean=0.0, sd=1.0):
-		super().__init__()
-		self.mean = mean
-		self.ln_var = log(sd ** 2)
-
-	def __call__(self, *shape):
-		mean = self.xp.array(self.mean, dtype=self.xp.float32)
-		ln_var = self.xp.array(self.ln_var, dtype=self.xp.float32)
-		return gaussian(broadcast_to(mean, shape), broadcast_to(ln_var, shape))
-
 class EqualizedLinear(Chain):
 
 	def __init__(self, in_size, out_size, initial_bias=None, gain=sqrt(2)):
