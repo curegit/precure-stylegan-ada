@@ -5,6 +5,16 @@ from chainer.functions import sqrt, sum, convolution_2d, broadcast_to, depth2spa
 from chainer.initializers import Zero, One, Normal
 from stylegan.layers.basic import LeakyRelu, EqualizedLinear
 
+class LearnableConstant(Link):
+
+	def __init__(self, channels):
+		super().__init__()
+		with self.init_scope():
+			self.c = Parameter(shape=(channels, 4, 4), initializer=Normal(1.0))
+
+	def __call__(self, batch):
+		return broadcast_to(self.c, (batch, *self.c.shape))
+
 class BicubicUpsampler():
 
 	def __init__(self, b=0.0, c=0.5):
@@ -72,12 +82,12 @@ class NoiseAdder(Link):
 	def __init__(self):
 		super().__init__()
 		with self.init_scope():
-			self.scale = Parameter(shape=1, initializer=Zero())
+			self.s = Parameter(shape=1, initializer=Zero())
 
 	def __call__(self, x):
 		batch, _, height, width = x.shape
 		noise = self.xp.random.normal(size=(batch, 1, height, width)).astype(self.xp.float32)
-		return x + self.scale * noise
+		return x + self.s * noise
 
 class ToRGB(Chain):
 
@@ -93,9 +103,8 @@ class InitialSkipArchitecture(Chain):
 
 	def __init__(self, size, in_channels, out_channels):
 		super().__init__()
-		self.c = 1 / root(4 * 4)
 		with self.init_scope():
-			self.const = Parameter(shape=(in_channels, 4, 4), initializer=Normal(1.0))
+			self.const = LearnableConstant(in_channels)
 			self.style1 = StyleAffineTransformation(size, in_channels)
 			self.wmconv = WeightModulatedConvolution(in_channels, out_channels)
 			self.noise = NoiseAdder()
@@ -104,13 +113,11 @@ class InitialSkipArchitecture(Chain):
 			self.torgb = ToRGB(out_channels)
 
 	def __call__(self, w):
-		batch = w.shape[0]
-		h1 = self.c * self.const.reshape(1, *self.const.shape)
-		h2 = broadcast_to(h1, (batch, *self.const.shape))
-		h3 = self.wmconv(h2, self.style1(w))
-		h4 = self.noise(h3)
-		h5 = self.act(h4)
-		return h5, self.torgb(h5, self.style2(w))
+		h1 = self.const(w.shape[0])
+		h2 = self.wmconv(h1, self.style1(w))
+		h3 = self.noise(h2)
+		h4 = self.act(h3)
+		return h4, self.torgb(h4, self.style2(w))
 
 class SkipArchitecture(Chain):
 
