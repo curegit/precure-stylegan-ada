@@ -36,11 +36,10 @@ class BicubicUpsampler():
 		return h4.reshape(batch, channels, height * 2, width * 2)
 
 	def kernel(self, x):
-		b, c = self.b, self.c
 		if abs(x) < 1:
-			return 1 / 6 * ((12 - 9 * b - 6 * c) * abs(x) ** 3 + (-18 + 12 * b + 6 * c) * abs(x) ** 2 + (6 - 2 * b))
+			return 1 / 6 * ((12 - 9 * self.b - 6 * self.c) * abs(x) ** 3 + (-18 + 12 * self.b + 6 * self.c) * abs(x) ** 2 + (6 - 2 * self.b))
 		elif 1 <= abs(x) < 2:
-			return 1 / 6 * ((-b - 6 * c) * abs(x) ** 3 + (6 * b + 30 * c) * abs(x) ** 2 + (-12 * b - 48 * c) * abs(x) + (8 * b + 24 * c))
+			return 1 / 6 * ((-self.b - 6 * self.c) * abs(x) ** 3 + (6 * self.b + 30 * self.c) * abs(x) ** 2 + (-12 * self.b - 48 * self.c) * abs(x) + (8 * self.b + 24 * self.c))
 		else:
 			return 0.0
 
