@@ -26,7 +26,7 @@ def main(args):
 	generator.to_device(args.device)
 	discriminator.to_device(args.device)
 	averaged_generator.to_device(args.device)
-	optimizers = AdamSet(args.alpha, args.betas[0], args.betas[1])
+	optimizers = AdamSet(args.alpha, args.betas[0], args.betas[1], categories > 1)
 	optimizers.setup(generator, discriminator)
 
 	mkdirs(args.dest)
