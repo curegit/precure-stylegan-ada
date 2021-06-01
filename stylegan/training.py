@@ -42,7 +42,7 @@ class AdamSet():
 		if self.conditional:
 			self.generator_embedder_optimizer.setup(generator.embedder)
 			self.discriminator_embedder_optimizer.setup(discriminator.embedder)
-			self.condition_mapper_optimizer.setup(discriminator.condition_mapper)
+			self.condition_mapper_optimizer.setup(discriminator.mapper)
 
 	def update_generator(self):
 		self.mapper_optimizer.update()
