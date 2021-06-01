@@ -1,5 +1,5 @@
 from math import sqrt as root
-from numpy import array, sum, sinc, float32
+from numpy import array, sinc, float32
 from chainer import Chain
 from chainer.functions import sqrt, mean, average_pooling_2d, convolution_2d, concat, broadcast_to, pad
 from stylegan.layers.basic import LeakyRelu, EqualizedLinear, EqualizedConvolution2D
@@ -10,11 +10,10 @@ class Downsampler():
 		self.lanczos = lanczos
 		if lanczos:
 			self.n = n
-			lanczos_kernel = lambda x: sinc(x) * sinc(x / n)
-			ys = array([lanczos_kernel(i + 0.5) for i in range(-n, n)])
-			ys = ys / sum(ys)
+			kernel = lambda x: sinc(x) * sinc(x / n)
+			ys = array([kernel(i + 0.5) for i in range(-n, n)])
 			k = ys.reshape(1, n * 2) * ys.reshape(n * 2, 1)
-			self.w = array([[k]], dtype=float32)
+			self.w = array([[k / k.sum()]], dtype=float32)
 
 	def __call__(self, x):
 		if self.lanczos:
@@ -27,7 +26,7 @@ class Downsampler():
 		else:
 			return average_pooling_2d(x, ksize=2, stride=2)
 
-class MiniBatchStandardDeviation():
+class MinibatchStandardDeviation():
 
 	def __init__(self, group_size=None):
 		self.group_size = group_size
@@ -76,7 +75,7 @@ class OutputBlock(Chain):
 	def __init__(self, in_channels, conditional=False, group_size=None):
 		super().__init__()
 		with self.init_scope():
-			self.mbstd = MiniBatchStandardDeviation(group_size)
+			self.mbstd = MinibatchStandardDeviation(group_size)
 			self.conv1 = EqualizedConvolution2D(in_channels + 1, in_channels, ksize=3, stride=1, pad=1)
 			self.act1 = LeakyRelu()
 			self.conv2 = EqualizedConvolution2D(in_channels, in_channels, ksize=4, stride=1, pad=0)

@@ -21,7 +21,7 @@ class EqualizedLinear(Link):
 			self.b = None if nobias else Parameter(shape=out_size, initializer=initial_bias)
 
 	def __call__(self, x):
-		return linear(x, self.c * self.w, self.b)
+		return linear(self.c * x, self.w, self.b)
 
 class EqualizedConvolution2D(Link):
 
@@ -35,4 +35,4 @@ class EqualizedConvolution2D(Link):
 			self.b = None if nobias else Parameter(shape=out_channels, initializer=initial_bias)
 
 	def __call__(self, x):
-		return convolution_2d(x, self.c * self.w, self.b, self.stride, self.pad)
+		return convolution_2d(self.c * x, self.w, self.b, self.stride, self.pad)

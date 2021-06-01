@@ -1,7 +1,6 @@
-from math import sqrt as root
 from numpy import array, pad as padded, float32
 from chainer import Parameter, Link, Chain
-from chainer.functions import sqrt, sum, convolution_2d, broadcast_to, depth2space, pad
+from chainer.functions import sqrt, convolution_2d, broadcast_to, depth2space, pad
 from chainer.initializers import Zero, One, Normal
 from stylegan.layers.basic import LeakyRelu, EqualizedLinear
 
@@ -19,12 +18,12 @@ class BicubicUpsampler():
 
 	def __init__(self, b=0.0, c=0.5):
 		self.b, self.c = b, c
-		s = array([self.kernel(i + 0.25) for i in range(-2, 2)])
-		e = array([self.kernel(i + 0.75) for i in range(-2, 2)])
-		k1 = padded(s.reshape(1, 4) * s.reshape(4, 1), ((0, 1), (0, 1)))
-		k2 = padded(e.reshape(1, 4) * s.reshape(4, 1), ((0, 1), (1, 0)))
-		k3 = padded(s.reshape(1, 4) * e.reshape(4, 1), ((1, 0), (0, 1)))
-		k4 = padded(e.reshape(1, 4) * e.reshape(4, 1), ((1, 0), (1, 0)))
+		ys1 = array([self.kernel(i + 0.25) for i in range(-2, 2)])
+		ys2 = array([self.kernel(i + 0.75) for i in range(-2, 2)])
+		k1 = padded(ys1.reshape(1, 4) * ys1.reshape(4, 1), ((0, 1), (0, 1)))
+		k2 = padded(ys2.reshape(1, 4) * ys1.reshape(4, 1), ((0, 1), (1, 0)))
+		k3 = padded(ys1.reshape(1, 4) * ys2.reshape(4, 1), ((1, 0), (0, 1)))
+		k4 = padded(ys2.reshape(1, 4) * ys2.reshape(4, 1), ((1, 0), (1, 0)))
 		self.w = array([[k1], [k2], [k3], [k4]], dtype=float32)
 
 	def __call__(self, x):
@@ -55,12 +54,11 @@ class StyleAffineTransformation(Chain):
 
 class WeightModulatedConvolution(Link):
 
-	def __init__(self, in_channels, out_channels, pointwise=False, demod=True, gain=root(2)):
+	def __init__(self, in_channels, out_channels, pointwise=False, demod=True):
 		super().__init__()
 		self.demod = demod
 		self.ksize = 1 if pointwise else 3
 		self.pad = 0 if pointwise else 1
-		self.c = gain / root(in_channels * self.ksize ** 2)
 		with self.init_scope():
 			self.w = Parameter(shape=(out_channels, in_channels, self.ksize, self.ksize), initializer=Normal(1.0))
 			self.b = Parameter(shape=out_channels, initializer=Zero())
@@ -68,11 +66,11 @@ class WeightModulatedConvolution(Link):
 	def __call__(self, x, y):
 		out_channels = self.b.shape[0]
 		batch, in_channels, height, width = x.shape
-		modulated_w = self.c * self.w * y.reshape(batch, 1, in_channels, 1, 1)
-		w = modulated_w / sqrt(sum(modulated_w ** 2, axis=(2, 3, 4), keepdims=True) + 1e-08) if self.demod else modulated_w
+		modulated_w = self.w * y.reshape(batch, 1, in_channels, 1, 1)
+		w = modulated_w / sqrt((modulated_w ** 2).sum(axis=(2, 3, 4), keepdims=True) + 1e-08) if self.demod else modulated_w
 		grouped_w = w.reshape(batch * out_channels, in_channels, self.ksize, self.ksize)
 		grouped_x = x.reshape(1, batch * in_channels, height, width)
-		padded_grouped_x = pad(grouped_x, ((0, 0), (0, 0), (self.pad, self.pad), (self.pad, self.pad)), mode="edge")
+		padded_grouped_x = pad(grouped_x, ((0, 0), (0, 0), (self.pad, self.pad), (self.pad, self.pad)), mode="edge") if self.pad else grouped_x
 		h = convolution_2d(padded_grouped_x, grouped_w, stride=1, pad=0, groups=batch)
 		return h.reshape(batch, out_channels, height, width) + self.b.reshape(1, out_channels, 1, 1)
 
@@ -93,7 +91,7 @@ class ToRGB(Chain):
 	def __init__(self, in_channels):
 		super().__init__()
 		with self.init_scope():
-			self.wmconv = WeightModulatedConvolution(in_channels, 3, pointwise=True, demod=False, gain=1)
+			self.wmconv = WeightModulatedConvolution(in_channels, 3, pointwise=True, demod=False)
 
 	def __call__(self, x, y):
 		return self.wmconv(x, y)
