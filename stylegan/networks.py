@@ -2,7 +2,7 @@ from math import sqrt as root
 from random import randint
 from h5py import File as HDF5File
 from chainer import Variable, Chain, ChainList, Sequential
-from chainer.functions import sqrt, mean, concat
+from chainer.functions import sqrt, sum, mean, concat
 from chainer.serializers import HDF5Serializer, HDF5Deserializer
 from stylegan.layers.basic import LeakyRelu, EqualizedLinear
 from stylegan.layers.generator import InitialSkipArchitecture, SkipArchitecture
@@ -153,4 +153,4 @@ class Discriminator(Chain):
 			c1 = self.mapper(normalized)
 		h = self.main(x)
 		batch, channels = h.shape
-		return h.reshape(batch) if c is None else (h * c1).sum(axis=1) / root(channels)
+		return h.reshape(batch) if c is None else sum(h * c1, axis=1) / root(channels)

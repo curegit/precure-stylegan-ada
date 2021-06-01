@@ -1,6 +1,6 @@
 from numpy import array, pad as padded, float32
 from chainer import Parameter, Link, Chain
-from chainer.functions import sqrt, convolution_2d, broadcast_to, depth2space, pad
+from chainer.functions import sqrt, sum, convolution_2d, broadcast_to, depth2space, pad
 from chainer.initializers import Zero, One, Normal
 from stylegan.layers.basic import LeakyRelu, EqualizedLinear
 
@@ -67,7 +67,7 @@ class WeightModulatedConvolution(Link):
 		out_channels = self.b.shape[0]
 		batch, in_channels, height, width = x.shape
 		modulated_w = self.w * y.reshape(batch, 1, in_channels, 1, 1)
-		w = modulated_w / sqrt((modulated_w ** 2).sum(axis=(2, 3, 4), keepdims=True) + 1e-08) if self.demod else modulated_w
+		w = modulated_w / sqrt(sum(modulated_w ** 2, axis=(2, 3, 4), keepdims=True) + 1e-08) if self.demod else modulated_w
 		grouped_w = w.reshape(batch * out_channels, in_channels, self.ksize, self.ksize)
 		grouped_x = x.reshape(1, batch * in_channels, height, width)
 		padded_grouped_x = pad(grouped_x, ((0, 0), (0, 0), (self.pad, self.pad), (self.pad, self.pad)), mode="edge") if self.pad else grouped_x
