@@ -7,9 +7,9 @@ from stylegan.manipulations.filtering import Filtering
 
 class AugmentationPipeline(Chain):
 
-	def __init__(self, probability=0.5, pixel=1.0, geometric=1.0, color=1.0, filtering=1.0, noise=1.0):
+	def __init__(self, pixel=1.0, geometric=1.0, color=1.0, filtering=1.0, noise=1.0):
 		super().__init__()
-		self.probability = probability
+		self.probability = 1.0
 		with self.init_scope():
 			self.manipulations = ChainList(*[
 				Mirror(probability_multiplier=pixel),

@@ -29,8 +29,6 @@ def main(args):
 	optimizers = AdamSet(args.alpha, args.betas[0], args.betas[1], categories > 1)
 	optimizers.setup(generator, discriminator)
 
-	mkdirs(args.dest)
-	dump_json(args, build_filepath(args.dest, "arguments", "json", args.force))
 	if categories > 1:
 		dataset = MulticategoryImageDataset(args.dataset, generator.resolution)
 	else:
@@ -45,19 +43,22 @@ def main(args):
 	updater.enable_style_mixing(args.mix)
 	updater.enable_r1_regularization(args.gamma, args.r1)
 	updater.enable_path_length_regularization(args.decay, args.weight, args.pl)
-
 	if args.ada:
 		pipeline = AugmentationPipeline(args.pixel, args.geometric, args.color, args.filtering, args.noise)
 		pipeline.to_device(args.device)
 		updater.enable_adaptive_augumentation(pipeline, args.target, args.limit, args.delta)
-
 	if args.snapshot is not None:
 		updater.load_states(args.snapshot)
+	mkdirs(args.dest)
+	dump_json(args, build_filepath(args.dest, "arguments", "json", args.force))
 	trainer = CustomTrainer(updater, args.epoch, args.dest, args.force)
-	trainer.hook_state_save(1000)
-	trainer.hook_image_generation(1000, 32)
-	trainer.enable_reports(500)
-	trainer.enable_progress_bar(1)
+	if args.save != 0:
+		trainer.hook_state_save(args.save)
+		trainer.hook_image_generation(args.save, args.number)
+	if args.print != 0:
+		trainer.enable_reports(args.print)
+	if not args.nobar:
+		trainer.enable_progress_bar(1)
 	trainer.run()
 	averaged_generator.save(build_filepath(args.dest, "generator", "hdf5", args.force))
 	updater.save_states(build_filepath(args.dest, "snapshot", "hdf5", args.force))
@@ -96,8 +97,9 @@ def parse_args():
 
 	group.add_argument("-R", "--alpha", metavar="ALPHA", type=positive, default=0.0025, help="Adam's coefficient of learning rates of mapper, generator, and discriminator")
 	group.add_argument("-B", "--betas", metavar=("BETA1", "BETA2"), type=rate, nargs=2, default=(0.0, 0.99), help="Adam's exponential decay rates of the 1st and 2nd order moments")
-	parser.add_argument("-u", "--print-interval", metavar="ITER", dest="print", type=uint, nargs=2, default=(5, 500), help="")
-	#parser.add_argument("-l", "--write-interval", metavar="ITER", dest="write", type=uint, nargs=4, default=(1000, 3000, 500, 500), help="")
+	parser.add_argument("-O", "--no-progress-bar", dest="nobar", action="store_true", help="")
+	parser.add_argument("-U", "--print-interval", metavar="ITER", dest="print", type=uint, default=(5, 500), help="")
+	parser.add_argument("-S", "--save-interval", metavar="ITER", dest="save", type=uint, nargs=4, default=(1000, 3000, 500, 500), help="")
 	return parser.add_output_args(default_dest="results").add_model_args().add_evaluation_args().parse_args()
 
 if __name__ == "__main__":
