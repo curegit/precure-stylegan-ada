@@ -40,7 +40,8 @@ def main(args):
 			dataset.preload(lambda: bar.update())
 	iterator = SerialIterator(dataset, args.batch, repeat=True, shuffle=True)
 	updater = CustomUpdater(generator, averaged_generator, discriminator, iterator, optimizers, categories > 1, args.ema, args.lsgan)
-	updater.enable_gradient_accumulation(4)
+	if args.accum is not None:
+		updater.enable_gradient_accumulation(args.accum)
 	updater.enable_style_mixing(args.mix)
 	updater.enable_r1_regularization(args.gamma, args.r1)
 	updater.enable_path_length_regularization(args.decay, args.weight, args.pl)
@@ -67,6 +68,7 @@ def parse_args():
 	group.add_argument("-p", "--preload", action="store_true", help="preload entire dataset into the memory")
 
 	group.add_argument("-s", "--snapshot", metavar="FILE", help="snapshot")
+	group.add_argument("-a", "--gradient-accum", dest="accum", type=natural, help="partial batch size")
 	group.add_argument("-g", "--group-size", dest="group", type=uint, default=4, help="set 0 to use entire batch")
 
 	group.add_argument("-e", "--epoch", type=natural, default=1, help="")
