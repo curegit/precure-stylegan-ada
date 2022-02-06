@@ -3,10 +3,12 @@ from numpy import ones, sqrt, where, float32
 from numpy.fft import fftfreq
 from numpy.random import uniform, lognormal
 from chainer.functions import fft, ifft
+from stylegan.manipulations.base import Manipulation
 
-class Filtering():
+class Filtering(Manipulation):
 
 	def __init__(self, sigma=1.0, probability_multiplier=1.0):
+		super().__init__()
 		self.sigma = sigma * log(2)
 		self.probability_multiplier = probability_multiplier
 		self.band1_probability = 1.0
@@ -15,8 +17,8 @@ class Filtering():
 		self.band4_probability = 1.0
 
 	def __call__(self, x, p):
-		probability = self.probability_multiplier * p
-		if probability <= 0:
+		p *= self.probability_multiplier
+		if p <= 0:
 			return x
 		batch, channels, height, width = x.shape
 		fw = abs(fftfreq(width, 1 / width))
@@ -26,7 +28,7 @@ class Filtering():
 		aw = ones((batch, width), dtype=float32)
 		ah = ones((batch, height), dtype=float32)
 		if self.band1_probability > 0:
-			condition = uniform(size=batch) < probability * self.band1_probability
+			condition = uniform(size=batch) < p * self.band1_probability
 			amplification = sqrt(lognormal(sigma=self.sigma, size=batch))
 			a = where(condition, amplification, 1.0).reshape(batch, 1)
 			bw = (0 < fw) & (fw <= width / 2 / 8)
@@ -34,7 +36,7 @@ class Filtering():
 			aw *= where(bw, ow * a, ow) / ((10 * a + 1 + 1 + 1) / 13)
 			ah *= where(bh, oh * a, oh) / ((10 * a + 1 + 1 + 1) / 13)
 		if self.band2_probability > 0:
-			condition = uniform(size=batch) < probability * self.band2_probability
+			condition = uniform(size=batch) < p * self.band2_probability
 			amplification = sqrt(lognormal(sigma=self.sigma, size=batch))
 			a = where(condition, amplification, 1.0).reshape(batch, 1)
 			bw = (width / 2 / 8 < fw) & (fw <= width / 2 / 4)
@@ -42,7 +44,7 @@ class Filtering():
 			aw *= where(bw, ow * a, ow) / ((10 + a + 1 + 1) / 13)
 			ah *= where(bh, oh * a, oh) / ((10 + a + 1 + 1) / 13)
 		if self.band3_probability > 0:
-			condition = uniform(size=batch) < probability * self.band3_probability
+			condition = uniform(size=batch) < p * self.band3_probability
 			amplification = sqrt(lognormal(sigma=self.sigma, size=batch))
 			a = where(condition, amplification, 1.0).reshape(batch, 1)
 			bw = (width / 2 / 4 < fw) & (fw <= width / 2 / 2)
@@ -50,7 +52,7 @@ class Filtering():
 			aw *= where(bw, ow * a, ow) / ((10 + 1 + a + 1) / 13)
 			ah *= where(bh, oh * a, oh) / ((10 + 1 + a + 1) / 13)
 		if self.band4_probability > 0:
-			condition = uniform(size=batch) < probability * self.band4_probability
+			condition = uniform(size=batch) < p * self.band4_probability
 			amplification = sqrt(lognormal(sigma=self.sigma, size=batch))
 			a = where(condition, amplification, 1.0).reshape(batch, 1)
 			bw = (width / 2 / 2 < fw) & (fw <= width / 2)

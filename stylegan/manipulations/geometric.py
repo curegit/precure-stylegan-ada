@@ -1,8 +1,8 @@
 from math import sqrt, log, sin, cos, pi
 from numpy import array, eye, stack, float32
 from numpy.random import uniform, normal, lognormal
-from chainer import Link
 from chainer.functions import sum, pad
+from stylegan.manipulations.base import Manipulation
 
 indentity = eye(3, dtype=float32)
 
@@ -24,15 +24,19 @@ def inverse_rotation(theta):
 def inverse_scaling(s, t):
 	return scaling(1 / s, 1 / t)
 
-class AffineTransformation(Link):
+class AffineTransformation(Manipulation):
 
-	def __init__(self, translation=0.125, rotation=360, scale=0.2):
+	def __init__(self, translation=0.125, rotation=360, scale=0.2, probability_multiplier=1.0):
 		super().__init__()
 		self.translation = translation
 		self.rotation = rotation / 360 * pi
 		self.scale = scale * log(2)
+		self.probability_multiplier = probability_multiplier
 
 	def __call__(self, x, p=1.0):
+		p *= self.probability_multiplier
+		if p <= 0:
+			return x
 		batch, _, height, width = x.shape
 		centering = inverse_translation(-height / 2 + 0.5, -width / 2 + 0.5)
 		affine = indentity @ centering

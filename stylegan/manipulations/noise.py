@@ -4,11 +4,15 @@ from stylegan.manipulations.base import Manipulation
 
 class AdditiveNoise(Manipulation):
 
-	def __init__(self, sd=0.05):
+	def __init__(self, sd=0.05, probability_multiplier=1.0):
 		super().__init__()
 		self.sd = sd
+		self.probability_multiplier = probability_multiplier
 
 	def __call__(self, x, p):
+		p *= self.probability_multiplier
+		if p <= 0:
+			return x
 		batch = x.shape[0]
 		normal = self.xp.random.normal(scale=self.sd, size=batch).astype(self.xp.float32)
 		half_normal = self.xp.absolute(normal)
@@ -19,13 +23,17 @@ class AdditiveNoise(Manipulation):
 
 class Cutout(Manipulation):
 
-	def __init__(self, width=0.5, height=0.5, fill=0.5):
+	def __init__(self, width=0.5, height=0.5, fill=0.5, probability_multiplier=1.0):
 		super().__init__()
 		self.width = width
 		self.height = height
 		self.fill = fill
+		self.probability_multiplier = probability_multiplier
 
 	def __call__(self, x, p):
+		p *= self.probability_multiplier
+		if p <= 0:
+			return x
 		batch, _, height, width = x.shape
 		horizontal_center = self.xp.random.uniform(size=(batch, 1)) * width
 		vertical_center = self.xp.random.uniform(size=(batch, 1)) * height
