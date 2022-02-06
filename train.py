@@ -46,9 +46,10 @@ def main(args):
 	updater.enable_r1_regularization(args.gamma, args.r1)
 	updater.enable_path_length_regularization(args.decay, args.weight, args.pl)
 
-	pipeline = AugmentationPipeline()
-	pipeline.to_device(args.device)
-	updater.enable_adaptive_augumentation(pipeline)
+	if args.ada:
+		pipeline = AugmentationPipeline(args.pixel, args.geometric, args.color, args.filtering, args.noise)
+		pipeline.to_device(args.device)
+		updater.enable_adaptive_augumentation(pipeline, args.target, args.limit, args.delta)
 
 	if args.snapshot is not None:
 		updater.load_states(args.snapshot)
@@ -78,11 +79,22 @@ def parse_args():
 	group.add_argument("-w", "--pl-weight", dest="weight", type=ufloat, default=2, help="")
 	group.add_argument("-l", "--pl-interval", dest="pl", type=natural, default=8, help="")
 
+	group.add_argument("-A", "--ada", action="store_true", help="")
+	group.add_argument("-T", "--target", metavar="RATE", type=rate, default=0.6, help="")
+	group.add_argument("-M", "--limit", metavar="RATE", type=rate, default=0.8, help="")
+	group.add_argument("-D", "--delta", metavar="N", type=natural, default=500000, help="")
+
+	group.add_argument("-I", "--pixel", metavar="P", type=rate, default=1.0, help="")
+	group.add_argument("-G", "--geometric", metavar="P", type=rate, default=1.0, help="")
+	group.add_argument("-C", "--color", metavar="P", type=rate, default=1.0, help="")
+	group.add_argument("-F", "--filtering", metavar="P", type=rate, default=1.0, help="")
+	group.add_argument("-N", "--noise", metavar="P", type=rate, default=1.0, help="")
+
 	group.add_argument("-L", "--lsgan", "--least-squares", action="store_true", help="")
 	group.add_argument("-i", "--mixing-rate", metavar="RATE", dest="mix", type=rate, default=0.5, help="")
 	group.add_argument("-a", "--ema-images", metavar="N", dest="ema", type=natural, default=10000, help="")
 
-	group.add_argument("-A", "--alpha", metavar="ALPHA", type=positive, default=0.0025, help="Adam's coefficient of learning rates of mapper, generator, and discriminator")
+	group.add_argument("-R", "--alpha", metavar="ALPHA", type=positive, default=0.0025, help="Adam's coefficient of learning rates of mapper, generator, and discriminator")
 	group.add_argument("-B", "--betas", metavar=("BETA1", "BETA2"), type=rate, nargs=2, default=(0.0, 0.99), help="Adam's exponential decay rates of the 1st and 2nd order moments")
 	parser.add_argument("-u", "--print-interval", metavar="ITER", dest="print", type=uint, nargs=2, default=(5, 500), help="")
 	#parser.add_argument("-l", "--write-interval", metavar="ITER", dest="write", type=uint, nargs=4, default=(1000, 3000, 500, 500), help="")
