@@ -62,7 +62,7 @@ class ResidualBlock(Chain):
 			self.conv2 = EqualizedConvolution2D(in_channels, out_channels, ksize=3, stride=1, pad=1)
 			self.act2 = LeakyRelu()
 			self.pool = Downsampler(lanczos=False)
-			self.conv3 = EqualizedConvolution2D(in_channels, out_channels, ksize=1, stride=1, pad=0, nobias=True, gain=1)
+			self.conv3 = EqualizedConvolution2D(in_channels, out_channels, ksize=1, stride=1, pad=0, nobias=True)
 			self.down = Downsampler()
 
 	def __call__(self, x):
