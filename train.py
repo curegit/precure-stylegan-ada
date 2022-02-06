@@ -95,6 +95,8 @@ def parse_args():
 	group.add_argument("-i", "--mixing-rate", metavar="RATE", dest="mix", type=rate, default=0.5, help="")
 	group.add_argument("-a", "--ema-images", metavar="N", dest="ema", type=natural, default=10000, help="")
 
+	group.add_argument("-n", "--number", type=uint, default=32, help="the number of middle images to generate")
+
 	group.add_argument("-R", "--alpha", metavar="ALPHA", type=positive, default=0.002, help="Adam's coefficient of learning rates of mapper, generator, and discriminator")
 	group.add_argument("-B", "--betas", metavar=("BETA1", "BETA2"), type=rate, nargs=2, default=(0.0, 0.99), help="Adam's exponential decay rates of the 1st and 2nd order moments")
 	parser.add_argument("-O", "--no-progress-bar", dest="nobar", action="store_true", help="")
