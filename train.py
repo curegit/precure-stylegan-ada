@@ -98,8 +98,8 @@ def parse_args():
 	group.add_argument("-R", "--alpha", metavar="ALPHA", type=positive, default=0.002, help="Adam's coefficient of learning rates of mapper, generator, and discriminator")
 	group.add_argument("-B", "--betas", metavar=("BETA1", "BETA2"), type=rate, nargs=2, default=(0.0, 0.99), help="Adam's exponential decay rates of the 1st and 2nd order moments")
 	parser.add_argument("-O", "--no-progress-bar", dest="nobar", action="store_true", help="")
-	parser.add_argument("-U", "--print-interval", metavar="ITER", dest="print", type=uint, default=(5, 500), help="")
-	parser.add_argument("-S", "--save-interval", metavar="ITER", dest="save", type=uint, nargs=4, default=(1000, 3000, 500, 500), help="")
+	parser.add_argument("-U", "--print-interval", metavar="ITER", dest="print", type=uint, default=1000, help="")
+	parser.add_argument("-S", "--save-interval", metavar="ITER", dest="save", type=uint, default=2000, help="")
 	return parser.add_output_args(default_dest="results").add_model_args().add_evaluation_args().parse_args()
 
 if __name__ == "__main__":
