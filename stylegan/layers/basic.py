@@ -1,7 +1,19 @@
-from math import sqrt
+from math import sqrt, log
 from chainer import Parameter, Link
-from chainer.functions import leaky_relu, linear, convolution_2d
+from chainer.functions import gaussian, leaky_relu, linear, convolution_2d, broadcast_to
 from chainer.initializers import Zero, Normal
+
+class GaussianDistribution():
+
+	def __init__(self, link, mean=0.0, sd=1.0):
+		self.link = link
+		self.mean = mean
+		self.ln_var = log(sd ** 2)
+
+	def __call__(self, *shape):
+		mean = self.link.xp.array(self.mean, dtype=self.link.xp.float32)
+		ln_var = self.link.xp.array(self.ln_var, dtype=self.link.xp.float32)
+		return gaussian(broadcast_to(mean, shape), broadcast_to(ln_var, shape))
 
 class LeakyRelu():
 

@@ -4,7 +4,7 @@ from h5py import File as HDF5File
 from chainer import Variable, Chain, ChainList, Sequential
 from chainer.functions import sqrt, sum, mean, concat
 from chainer.serializers import HDF5Serializer, HDF5Deserializer
-from stylegan.layers.basic import LeakyRelu, EqualizedLinear
+from stylegan.layers.basic import GaussianDistribution, LeakyRelu, EqualizedLinear
 from stylegan.layers.generator import InitialSkipArchitecture, SkipArchitecture
 from stylegan.layers.discriminator import FromRGB, ResidualBlock, OutputBlock
 from utilities.math import identity, lerp
@@ -56,6 +56,7 @@ class Generator(Chain):
 		self.resolution = (2 * 2 ** levels, 2 * 2 ** levels)
 		self.labels = [f"Category {i}" for i in range(categories)]
 		with self.init_scope():
+			self.sampler = GaussianDistribution(self)
 			self.mapper = Mapper(size, depth, categories > 1)
 			self.synthesizer = Synthesizer(size, levels, first_channels, last_channels)
 			if categories > 1:
@@ -84,7 +85,7 @@ class Generator(Chain):
 		return ws, self.synthesizer(ws)
 
 	def generate_latents(self, batch):
-		return Variable(self.xp.random.normal(size=(batch, self.size)).astype(self.xp.float32))
+		return self.sampler(batch, self.size)
 
 	def generate_conditions(self, batch, category=None):
 		if category is None:
@@ -93,7 +94,7 @@ class Generator(Chain):
 			return Variable(self.xp.eye(self.categories, dtype=self.xp.float32)[[category] * batch])
 
 	def generate_masks(self, batch):
-		return Variable(self.xp.random.normal(size=(batch, 3, *self.resolution)).astype(self.xp.float32)) / root(self.resolution[0] * self.resolution[1])
+		return self.sampler(batch, 3, *self.resolution) / root(self.resolution[0] * self.resolution[1])
 
 	def calculate_mean_w(self, n=50000):
 		return mean(self.mapper(self.generate_latents(n)), axis=0)

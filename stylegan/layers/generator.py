@@ -2,7 +2,7 @@ from numpy import array, pad as padded, float32
 from chainer import Parameter, Link, Chain
 from chainer.functions import sqrt, sum, convolution_2d, broadcast_to, depth2space, pad
 from chainer.initializers import Zero, One, Normal
-from stylegan.layers.basic import LeakyRelu, EqualizedLinear
+from stylegan.layers.basic import GaussianDistribution, LeakyRelu, EqualizedLinear
 
 class LearnableConstant(Link):
 
@@ -79,12 +79,12 @@ class NoiseAdder(Link):
 	def __init__(self):
 		super().__init__()
 		with self.init_scope():
+			self.sampler = GaussianDistribution(self)
 			self.s = Parameter(shape=1, initializer=Zero())
 
 	def __call__(self, x):
 		batch, _, height, width = x.shape
-		noise = self.xp.random.normal(size=(batch, 1, height, width)).astype(self.xp.float32)
-		return x + self.s * noise
+		return x + self.s * self.sampler(batch, 1, height, width)
 
 class ToRGB(Chain):
 
