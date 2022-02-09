@@ -13,9 +13,9 @@ def print_model_args(args, generator):
 
 def print_training_args(args):
 	if args.accum is None:
-		print(f"Batch size: {args.batch} (Group size: {args.batch if args.group == 0 else args.group})")
+		print(f"Batch size: {args.batch} (Group size: {'entire batch' if args.group == 0 else args.group})")
 	else:
-		print(f"Batch size: {args.accum}/{args.batch} (Group size: {args.accum if args.group == 0 else args.group})")
+		print(f"Accum/batch size: {args.accum}/{args.batch} (Group size: {'entire accum/batch' if args.group == 0 else args.group})")
 	print(f"Style-mixing rate: {args.mix * 100}%")
 	if args.gamma > 0 and args.r1 > 1:
 		print(f"R1 regularization: coefficient = {args.gamma} (every {args.r1} iterations)")
