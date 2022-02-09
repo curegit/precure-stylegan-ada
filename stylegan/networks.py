@@ -54,7 +54,7 @@ class Generator(Chain):
 		self.last_channels = last_channels
 		self.categories = categories
 		self.resolution = (2 * 2 ** levels, 2 * 2 ** levels)
-		self.labels = [f"Category {i}" for i in range(categories)]
+		self.labels = [f"cat{i}" for i in range(categories)]
 		with self.init_scope():
 			self.sampler = GaussianDistribution(self)
 			self.mapper = Mapper(size, depth, categories > 1)
