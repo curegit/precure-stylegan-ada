@@ -23,6 +23,7 @@ class CustomArgumentParser(ArgumentParser):
 		group.add_argument("-z", "--size", metavar="", type=natural, default=512, help="")
 		group.add_argument("-x", "--levels", metavar="", type=natural, default=7, help="")
 		group.add_argument("-c", "--channels", metavar="", type=natural, nargs=2, default=(512, 16), help="")
+		group.add_argument("-K", "--labels", metavar="CLASS", nargs="+", help="")
 		return self
 
 	def add_evaluation_args(self, include_batch=True):

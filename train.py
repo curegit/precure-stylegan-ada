@@ -32,6 +32,10 @@ def main(args):
 		dataset = ImageDataset(args.dataset[0], generator.resolution)
 	print(f"Dataset size: {len(dataset)} images")
 	print(f"Dataset classes: {categories if categories > 1 else '1 (unconditional)'}")
+	if categories > 1:
+		generator.embed_labels(args.labels)
+		for i, l in enumerate(generator.labels):
+			print(f"- class {i}: {l}")
 	if args.preload and args.nobar:
 		dataset.preload()
 	elif args.preload:
