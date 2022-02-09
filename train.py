@@ -6,13 +6,9 @@ from stylegan.training import AdamSet, CustomUpdater, CustomTrainer
 from stylegan.augmentation import AugmentationPipeline
 from interface.args import dump_json, CustomArgumentParser
 from interface.argtypes import uint, natural, ufloat, positive, rate
+from interface.stdout import chainer_like_tqdm, print_model_args, print_training_args
 from utilities.stdio import eprint
 from utilities.filesys import mkdirs, build_filepath
-
-from tqdm import tqdm
-bf = "{desc} [{bar}] {percentage:5.1f}%"
-def chainer_like_tqdm(desc, total):
-	return tqdm(desc=desc, total=total, bar_format=bf, miniters=1, ascii=".#", ncols=70)
 
 def main(args):
 	global_config.train = True
@@ -26,28 +22,39 @@ def main(args):
 	generator.to_device(args.device)
 	discriminator.to_device(args.device)
 	averaged_generator.to_device(args.device)
+	print_model_args(args, generator)
 	optimizers = AdamSet(args.alpha, args.betas[0], args.betas[1], categories > 1)
 	optimizers.setup(generator, discriminator)
-
+	print("Preparing dataset...")
 	if categories > 1:
 		dataset = MulticategoryImageDataset(args.dataset, generator.resolution)
 	else:
 		dataset = ImageDataset(args.dataset[0], generator.resolution)
-	if args.preload:
+	print(f"Dataset size: {len(dataset)} images")
+	print(f"Dataset classes: {categories if categories > 1 else '1 (unconditional)'}")
+	if args.preload and args.nobar:
+		dataset.preload()
+	elif args.preload:
 		with chainer_like_tqdm("dataset", len(dataset)) as bar:
 			dataset.preload(lambda: bar.update())
+	print("Setting up training....")
+	print_training_args(args)
 	iterator = SerialIterator(dataset, args.batch, repeat=True, shuffle=True)
 	updater = CustomUpdater(generator, averaged_generator, discriminator, iterator, optimizers, categories > 1, args.ema, args.lsgan)
 	if args.accum is not None:
 		updater.enable_gradient_accumulation(args.accum)
 	updater.enable_style_mixing(args.mix)
-	updater.enable_r1_regularization(args.gamma, args.r1)
-	updater.enable_path_length_regularization(args.decay, args.weight, args.pl)
+	if args.gamma > 0:
+		updater.enable_r1_regularization(args.gamma, args.r1)
+	if args.weight > 0:
+		updater.enable_path_length_regularization(args.decay, args.weight, args.pl)
 	if args.ada:
+		print("Enabling ADA...")
 		pipeline = AugmentationPipeline(args.pixel, args.geometric, args.color, args.filtering, args.noise)
 		pipeline.to_device(args.device)
 		updater.enable_adaptive_augumentation(pipeline, args.target, args.limit, args.delta)
 	if args.snapshot is not None:
+		print("Loading snapshot....")
 		updater.load_states(args.snapshot)
 	mkdirs(args.dest)
 	dump_json(args, build_filepath(args.dest, "arguments", "json", args.force))
@@ -88,8 +95,8 @@ def parse_args():
 	group.add_argument("-p", "--preload", action="store_true", help="preload entire dataset into the memory")
 
 	group.add_argument("-s", "--snapshot", metavar="FILE", help="snapshot")
-	group.add_argument("-k", "--gradient-accum", dest="accum", type=natural, help="partial batch size")
-	group.add_argument("-g", "--group-size", dest="group", type=uint, default=4, help="set 0 to use entire batch")
+	group.add_argument("-k", "--accum", dest="accum", type=natural, help="partial batch size")
+	group.add_argument("-g", "--group", dest="group", type=uint, default=0, help="set 0 to use entire batch")
 
 	group.add_argument("-e", "--epoch", type=natural, default=1, help="")
 	group.add_argument("-r", "--r1-gamma", dest="gamma", type=ufloat, default=10, help="")
