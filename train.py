@@ -63,6 +63,24 @@ def main(args):
 	averaged_generator.save(build_filepath(args.dest, "generator", "hdf5", args.force))
 	updater.save_states(build_filepath(args.dest, "snapshot", "hdf5", args.force))
 
+def check_args(args):
+	if args.accum is None:
+		if args.group == 0:
+			return args
+		if args.batch % args.group == 0:
+			return args
+		eprint("Batch size is not divisible by group size!")
+	else:
+		if args.group == 0:
+			return args
+		if args.accum % args.group == 0:
+			if (args.batch % args.accum) % args.group == 0:
+				return args
+			eprint("Last accumulation size is not divisible by group size!")
+		else:
+			eprint("Accumulation size is not divisible by group size!")
+	raise RuntimeError("Incompatible grouping configuration")
+
 def parse_args():
 	parser = CustomArgumentParser("")
 	group = parser.add_argument_group("training arguments", "")
@@ -106,7 +124,7 @@ def parse_args():
 
 if __name__ == "__main__":
 	try:
-		main(parse_args())
+		main(check_args(parse_args()))
 	except KeyboardInterrupt:
 		eprint("KeyboardInterrupt")
 		exit(1)
