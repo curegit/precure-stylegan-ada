@@ -99,6 +99,10 @@ class Generator(Chain):
 	def calculate_mean_w(self, n=50000):
 		return mean(self.mapper(self.generate_latents(n)), axis=0)
 
+	@property
+	def conditional(self):
+		return self.categories > 1
+
 	def embed_labels(self, labels):
 		for i, l in enumerate(labels):
 			self.labels[i] = str(l)

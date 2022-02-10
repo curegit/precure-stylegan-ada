@@ -44,7 +44,7 @@ def main(args):
 	print("Setting up training....")
 	print_training_args(args)
 	iterator = SerialIterator(dataset, args.batch, repeat=True, shuffle=True)
-	updater = CustomUpdater(generator, averaged_generator, discriminator, iterator, optimizers, categories > 1, args.ema, args.lsgan)
+	updater = CustomUpdater(generator, averaged_generator, discriminator, iterator, optimizers, args.ema, args.lsgan)
 	if args.accum is not None:
 		updater.enable_gradient_accumulation(args.accum)
 	updater.enable_style_mixing(args.mix)

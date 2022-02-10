@@ -58,14 +58,14 @@ class AdamSet():
 
 class CustomUpdater(StandardUpdater):
 
-	def __init__(self, generator, averaged_generator, discriminator, iterator, optimizers, conditional=False, averaging_images=10000, lsgan=False):
+	def __init__(self, generator, averaged_generator, discriminator, iterator, optimizers, averaging_images=10000, lsgan=False):
 		super().__init__(iterator, dict(optimizers))
 		self.generator = generator
 		self.averaged_generator = averaged_generator
 		self.discriminator = discriminator
 		self.iterator = iterator
 		self.optimizers = optimizers
-		self.conditional = conditional
+		self.conditional = generator.conditional
 		self.averaging_images = averaging_images
 		self.lsgan = lsgan
 		self.group = None
