@@ -75,6 +75,15 @@ def main(args):
 	updater.save_states(build_filepath(args.dest, "snapshot", "hdf5", args.force))
 
 def check_args(args):
+	if len(args.dataset) == 1 and args.labels:
+		eprint("Unconditional model cannot have labels!")
+		raise RuntimeError("Label error")
+	if len(args.dataset) > 1 and args.labels and len(args.labels) != len(args.dataset):
+		eprint("You must provide the same number of data classes and labels!")
+		raise RuntimeError("Label error")
+	if args.labels and len(args.labels) != len(set(args.labels)):
+		eprint("Labels are not unique!")
+		raise RuntimeError("Label error")
 	if args.accum is None:
 		if args.group == 0:
 			return args
@@ -99,6 +108,7 @@ def parse_args():
 	group.add_argument("-p", "--preload", action="store_true", help="preload entire dataset into the memory")
 
 	group.add_argument("-s", "--snapshot", metavar="FILE", help="snapshot")
+	group.add_argument("-b", "--batch", type=natural, default=16, help="batch")
 	group.add_argument("-k", "--accum", dest="accum", type=natural, help="partial batch size")
 	group.add_argument("-g", "--group", dest="group", type=uint, default=0, help="set 0 to use entire batch")
 
@@ -131,7 +141,7 @@ def parse_args():
 	parser.add_argument("-O", "--no-progress-bar", dest="nobar", action="store_true", help="")
 	parser.add_argument("-U", "--print-interval", metavar="ITER", dest="print", type=uint, default=1000, help="")
 	parser.add_argument("-S", "--save-interval", metavar="ITER", dest="save", type=uint, default=2000, help="")
-	return parser.add_output_args(default_dest="results").add_model_args().add_evaluation_args().parse_args()
+	return parser.add_output_args(default_dest="results").add_model_args().add_evaluation_args(include_batch=False).parse_args()
 
 if __name__ == "__main__":
 	try:
