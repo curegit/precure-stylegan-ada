@@ -52,6 +52,11 @@ def main(args):
 		updater.enable_path_length_regularization(args.decay, args.weight, args.pl)
 	if args.ada:
 		print("Enabling ADA...")
+		print(f"- pixel: {args.pixel * 100}%")
+		print(f"- geometric: {args.geometric * 100}%")
+		print(f"- color: {args.color * 100}%")
+		print(f"- filtering: {args.filtering * 100}%")
+		print(f"- noise: {args.noise * 100}%")
 		pipeline = AugmentationPipeline(args.pixel, args.geometric, args.color, args.filtering, args.noise)
 		pipeline.to_device(args.device)
 		updater.enable_adaptive_augumentation(pipeline, args.target, args.limit, args.delta)
