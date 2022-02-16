@@ -5,11 +5,17 @@ bar_format = "{desc} [{bar}] {percentage:5.1f}%"
 def chainer_like_tqdm(desc, total):
 	return tqdm(desc=desc, total=total, bar_format=bar_format, miniters=1, ascii=".#", ncols=70)
 
-def print_model_args(args, generator):
+def print_model_args(generator):
 	h, w = generator.resolution
-	print(f"Multilayer perceptron: {args.size}x{args.depth}")
-	print(f"CNN layers: {args.levels} levels (output = {w}x{h})")
-	print(f"CNN channels: {args.channels[0]} (initial) -> {args.channels[1]} (final)")
+	print(f"Multilayer perceptron: {generator.size}x{generator.depth}")
+	print(f"CNN layers: {generator.levels} levels (output = {w}x{h})")
+	print(f"CNN channels: {generator.first_channels} (initial) -> {generator.last_channels} (final)")
+
+def print_data_classes(generator):
+	print(f"Data classes: {generator.categories if generator.conditional > 1 else '1 (unconditional)'}")
+	if generator.conditional > 1:
+		for i, l in enumerate(generator.labels):
+			print(f"- class {i}: {l}")
 
 def print_training_args(args):
 	if args.accum is None:

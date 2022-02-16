@@ -11,6 +11,10 @@ class CustomArgumentParser(ArgumentParser):
 	def __init__(self, description):
 		super().__init__(allow_abbrev=False, description=description, formatter_class=ArgumentDefaultsHelpFormatter)
 
+	def require_generator(self):
+		self.add_argument("generator", metavar="GEN_FILE", help="HDF5 file of a serialized trained generator")
+		return self
+
 	def add_output_args(self, default_dest):
 		group = self.add_argument_group("output")
 		group.add_argument("-f", "--force", action="store_true", help="allow overwrite existing files")
@@ -33,9 +37,10 @@ class CustomArgumentParser(ArgumentParser):
 		return self
 
 	def add_generation_args(self):
-		self.add_argument("-n", "--number", type=uint, default=10, help="the number of middle images to generate")
-		self.add_argument("-g", "--generator", metavar="FILE", help="HDF5 file of serialized trained model to load")
-		self.add_argument("-l", "--latent", "--center", metavar="FILE", dest="center", help="")
-		self.add_argument("-e", "--deviation", "--sd", metavar="SIGMA", dest="sd", type=positive, default=1.0, help="")
-		self.add_argument("-t", "--truncation-trick", "--psi", metavar="PSI", dest="psi", type=ufloat, help="")
+		group = self.add_argument_group("generation")
+		group.add_argument("-n", "--number", type=uint, default=10, help="the number of middle images to generate")
+		group.add_argument("-E", "--label", metavar="L", dest="label", help="")
+		group.add_argument("-l", "--latent", "--center", metavar="FILE", dest="center", help="")
+		group.add_argument("-e", "--deviation", "--sd", metavar="SIGMA", dest="sd", type=positive, default=1.0, help="")
+		group.add_argument("-t", "--truncation-trick", "--psi", metavar="PSI", dest="psi", type=ufloat, default=1.0, help="")
 		return self

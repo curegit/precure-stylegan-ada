@@ -6,7 +6,7 @@ from stylegan.training import AdamSet, CustomUpdater, CustomTrainer
 from stylegan.augmentation import AugmentationPipeline
 from interface.args import dump_json, CustomArgumentParser
 from interface.argtypes import uint, natural, ufloat, positive, rate
-from interface.stdout import chainer_like_tqdm, print_model_args, print_training_args
+from interface.stdout import chainer_like_tqdm, print_model_args, print_data_classes, print_training_args
 from utilities.stdio import eprint
 from utilities.filesys import mkdirs, build_filepath
 
@@ -22,7 +22,7 @@ def main(args):
 	generator.to_device(args.device)
 	discriminator.to_device(args.device)
 	averaged_generator.to_device(args.device)
-	print_model_args(args, generator)
+	print_model_args(generator)
 	optimizers = AdamSet(args.alpha, args.betas[0], args.betas[1], categories > 1)
 	optimizers.setup(generator, discriminator)
 	print("Preparing dataset...")
@@ -34,8 +34,7 @@ def main(args):
 	print(f"Dataset classes: {categories if categories > 1 else '1 (unconditional)'}")
 	if categories > 1:
 		generator.embed_labels(args.labels)
-		for i, l in enumerate(generator.labels):
-			print(f"- class {i}: {l}")
+	print_data_classes(generator)
 	if args.preload and args.nobar:
 		dataset.preload()
 	elif args.preload:
