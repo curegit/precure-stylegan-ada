@@ -31,7 +31,6 @@ def main(args):
 	else:
 		dataset = ImageDataset(args.dataset[0], generator.resolution)
 	print(f"Dataset size: {len(dataset)} images")
-	print(f"Dataset classes: {categories if categories > 1 else '1 (unconditional)'}")
 	if categories > 1:
 		generator.embed_labels(args.labels)
 	print_data_classes(generator)
@@ -70,6 +69,7 @@ def main(args):
 	if not args.nobar:
 		trainer.enable_progress_bar(1)
 	trainer.run()
+	print("Saving results...")
 	averaged_generator.save(build_filepath(args.dest, "generator", "hdf5", args.force))
 	updater.save_states(build_filepath(args.dest, "snapshot", "hdf5", args.force))
 
