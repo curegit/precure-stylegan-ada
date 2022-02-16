@@ -16,7 +16,7 @@ class Mapper(Chain):
 		with self.init_scope():
 			self.mlp = Sequential(
 				EqualizedLinear(size * 2 if conditional else size, size), LeakyRelu(),
-				*([EqualizedLinear(size, size), LeakyRelu()] * (depth - 1)))
+				*[l for b in [[EqualizedLinear(size, size), LeakyRelu()] for _ in range(depth - 1)] for l in b])
 
 	def __call__(self, z, c=None):
 		h1 = z / sqrt(mean(z ** 2, axis=1, keepdims=True) + 1e-08)
