@@ -84,8 +84,8 @@ class Generator(Chain):
 				ws[i:stop] = [truncation_trick(self.mapper(z, c))] * (stop - i)
 		return ws, self.synthesizer(ws)
 
-	def generate_latents(self, batch):
-		return self.sampler(batch, self.size)
+	def generate_latents(self, batch, center=None, sd=1.0):
+		return self.sampler(batch, self.size) * sd + (0.0 if center is None else center)
 
 	def generate_conditions(self, batch, category=None):
 		if category is None:
@@ -106,6 +106,12 @@ class Generator(Chain):
 	def embed_labels(self, labels):
 		for i, l in enumerate(labels):
 			self.labels[i] = str(l)
+
+	def lookup_label(self, label):
+		for i, l in enumerate(self.labels):
+			if l == label:
+				return i
+		return None
 
 	def save(self, filepath):
 		with HDF5File(filepath, "w") as hdf5:
