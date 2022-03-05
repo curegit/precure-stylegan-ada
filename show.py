@@ -4,7 +4,7 @@ from interface.stdout import print_model_args, print_data_classes
 from utilities.stdio import eprint
 
 def main(args):
-	print("Loading model...")
+	print("Loading a model...")
 	generator = Generator.load(args.generator)
 	print_model_args(generator)
 	print_data_classes(generator)

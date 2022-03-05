@@ -21,13 +21,13 @@ def main(args):
 	generator = Generator(args.size, args.depth, args.levels, *args.channels, args.categories)
 	discriminator = Discriminator(args.levels, args.channels[1], args.channels[0], args.categories, args.depth)
 	print_model_args(generator)
-	print("Parameter counts")
+	print("Parameter counts:")
 	print(f"- G: {generator.count_params()}")
 	print(f"- D: {discriminator.count_params()}")
 	z = generator.generate_latents(args.batch)
 	c = generator.generate_conditions(args.batch) if args.categories > 1 else None
 	_, x = generator(z, c)
-	y = discriminator(x)
+	y = discriminator(x, c)
 	gen_graph = build_computational_graph([x], variable_style=gen_varstyle, function_style=gen_funstyle).dump()
 	x.unchain_backward()
 	dis_graph = build_computational_graph([y], variable_style=dis_varstyle, function_style=dis_funstyle).dump()
@@ -40,8 +40,8 @@ def main(args):
 	print(f"Saved: {dis_path}")
 
 def parse_args():
-	parser = CustomArgumentParser("Show model arguments and data classes of a serialized generator")
-	parser.add_argument("-A", "--categories", type=natural, default=1)
+	parser = CustomArgumentParser("Draw computational graphs of generator and discriminator in PDFs")
+	parser.add_argument("-n", "--class", type=natural, metavar="N", dest="categories", default=1, help="specify the number of data classes")
 	parser.add_output_args("graphs").add_model_args().add_evaluation_args()
 	return parser.parse_args()
 

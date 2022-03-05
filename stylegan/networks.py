@@ -7,7 +7,8 @@ from chainer.serializers import HDF5Serializer, HDF5Deserializer
 from stylegan.layers.basic import GaussianDistribution, LeakyRelu, EqualizedLinear
 from stylegan.layers.generator import InitialSkipArchitecture, SkipArchitecture
 from stylegan.layers.discriminator import FromRGB, ResidualBlock, OutputBlock
-from utilities.math import identity, lerp
+from utilities.math import lerp
+from utilities.stdio import eprint
 
 class Mapper(Chain):
 
@@ -66,35 +67,38 @@ class Generator(Chain):
 		z, *zs = z if z is tuple or z is list else [z]
 		if c is not None:
 			c = self.embedder(c)
-		truncation_trick = identity
-		if psi != 1.0:
-			if mean_w is None:
-				mean_w = self.calculate_mean_w()
-			truncation_trick = lambda w: lerp(mean_w, w, psi)
-		w = truncation_trick(self.mapper(z, c))
+		w = self.truncation_trick(self.mapper(z, c), psi, mean_w)
 		ws = [w] * self.levels
 		stop = self.levels
 		if self.levels > 1 and random_mix is not None:
 			mix_level = randint(1, self.levels - 1)
-			mix_w = truncation_trick(self.mapper(random_mix, c))
+			mix_w = self.truncation_trick(self.mapper(random_mix, c), psi, mean_w)
 			ws[mix_level:stop] = [mix_w] * (stop - mix_level)
 			stop = mix_level
 		for i, z in zip(range(1, stop), zs):
 			if z is not Ellipsis:
-				ws[i:stop] = [truncation_trick(self.mapper(z, c))] * (stop - i)
+				ws[i:stop] = [self.truncation_trick(self.mapper(z, c), psi, mean_w)] * (stop - i)
 		return ws, self.synthesizer(ws)
 
 	def generate_latents(self, batch, center=None, sd=1.0):
 		return self.sampler(batch, self.size) * sd + (0.0 if center is None else center)
 
-	def generate_conditions(self, batch, category=None):
-		if category is None:
+	def generate_conditions(self, batch, categories=None):
+		if categories is None:
 			return Variable(self.xp.eye(self.categories, dtype=self.xp.float32)[self.xp.random.randint(low=0, high=self.categories, size=batch)])
 		else:
-			return Variable(self.xp.eye(self.categories, dtype=self.xp.float32)[[category] * batch])
+			ind = self.xp.array(categories)[self.xp.random.randint(low=0, high=len(categories), size=batch)]
+			return Variable(self.xp.eye(self.categories, dtype=self.xp.float32)[ind])
 
 	def generate_masks(self, batch):
 		return self.sampler(batch, 3, *self.resolution) / root(self.resolution[0] * self.resolution[1])
+
+	def truncation_trick(self, w, psi, mean_w=None):
+		if psi != 1.0:
+			if mean_w is None:
+				mean_w = self.calculate_mean_w()
+			return lerp(mean_w, w, psi)
+		return w
 
 	def calculate_mean_w(self, n=50000):
 		return mean(self.mapper(self.generate_latents(n)), axis=0)
@@ -111,7 +115,8 @@ class Generator(Chain):
 		for i, l in enumerate(self.labels):
 			if l == label:
 				return i
-		return None
+		eprint("No such label in the model!")
+		raise RuntimeError("Label error")
 
 	def save(self, filepath):
 		with HDF5File(filepath, "w") as hdf5:
