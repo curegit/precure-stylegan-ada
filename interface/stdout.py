@@ -12,8 +12,8 @@ def print_model_args(generator):
 	print(f"CNN channels: {generator.first_channels} (initial) -> {generator.last_channels} (final)")
 
 def print_data_classes(generator):
-	print(f"Data classes: {generator.categories if generator.conditional > 1 else '1 (unconditional)'}")
-	if generator.conditional > 1:
+	print(f"Data classes: {generator.categories if generator.conditional else '1 (unconditional)'}")
+	if generator.conditional:
 		for i, l in enumerate(generator.labels):
 			print(f"- class {i}: {l}")
 
