@@ -33,6 +33,7 @@ def main(args):
 	print(f"Dataset size: {len(dataset)} images")
 	if categories > 1:
 		generator.embed_labels(args.labels)
+		averaged_generator.embed_labels(args.labels)
 	print_data_classes(generator)
 	if args.preload and args.nobar:
 		dataset.preload()
@@ -73,6 +74,7 @@ def main(args):
 		trainer.enable_reports(args.print)
 	if not args.nobar:
 		trainer.enable_progress_bar(1)
+	print("Training started")
 	trainer.run()
 	print("Saving results...")
 	gen_path = build_filepath(args.dest, "generator", "hdf5", args.force)
