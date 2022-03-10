@@ -43,12 +43,11 @@ def main(args):
 			ws, y = generator(z, c, psi=args.psi, mean_w=mean_w)
 			z.to_cpu()
 			y.to_cpu()
+			ws[0].to_cpu()
 			for j in range(n):
 				filename = f"{i + j + 1}"
-				np.save(build_filepath(args.dest, filename + ".latent", "npy", args.force), z.array[j])
-				for k, w in enumerate(ws, 1):
-					w.to_cpu()
-					np.save(build_filepath(args.dest, filename + f"-{k}.style", "npy", args.force), w.array[j])
+				np.save(build_filepath(args.dest, filename + "-latent", "npy", args.force), z.array[j])
+				np.save(build_filepath(args.dest, filename + "-style", "npy", args.force), ws[0].array[j])
 				save_image(y.array[j], build_filepath(args.dest, filename, "png", args.force))
 				bar.update()
 

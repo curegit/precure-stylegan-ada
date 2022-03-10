@@ -335,5 +335,5 @@ class CustomTrainer(Trainer):
 			y.to_cpu()
 			for j in range(n):
 				filename = f"{trainer.iteration}-{i + j + 1}"
-				np.save(build_filepath(trainer.images_out, filename, "npy", trainer.overwrite), z.array[j])
+				np.save(build_filepath(trainer.images_out, filename + "-latent", "npy", trainer.overwrite), z.array[j])
 				save_image(y.array[j], build_filepath(trainer.images_out, filename, "png", trainer.overwrite))
