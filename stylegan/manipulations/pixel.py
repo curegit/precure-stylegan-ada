@@ -3,13 +3,27 @@ from stylegan.manipulations.base import Manipulation
 
 class Mirror(Manipulation):
 
+	def __init__(self, probability_multiplier=1.0):
+		super().__init__()
+		self.probability_multiplier = probability_multiplier
+
 	def __call__(self, x, p):
+		p *= self.probability_multiplier
+		if p <= 0:
+			return x
 		mirrored = self.random_where(0.5, x, flip(x, axis=3))
 		return self.random_where(p, mirrored, x)
 
 class Rotation(Manipulation):
 
+	def __init__(self, probability_multiplier=1.0):
+		super().__init__()
+		self.probability_multiplier = probability_multiplier
+
 	def __call__(self, x, p):
+		p *= self.probability_multiplier
+		if p <= 0:
+			return x
 		transposed = x.transpose(0, 1, 3, 2)
 		rot90 = flip(transposed, axis=2)
 		rot180 = flip(flip(x, axis=2), axis=3)
@@ -19,12 +33,16 @@ class Rotation(Manipulation):
 
 class Shift(Manipulation):
 
-	def __init__(self, horizontal=0.125, vertical=0.125):
+	def __init__(self, horizontal=0.125, vertical=0.125, probability_multiplier=1.0):
 		super().__init__()
 		self.horizontal = horizontal
 		self.vertical = vertical
+		self.probability_multiplier = probability_multiplier
 
 	def __call__(self, x, p):
+		p *= self.probability_multiplier
+		if p <= 0:
+			return x
 		batch, _, height, width = x.shape
 		sh, sw = round(height * self.vertical), round(width * self.horizontal)
 		padded = pad(x, ((0, 0), (0, 0), (sh, sh), (sw, sw)), mode="symmetric")

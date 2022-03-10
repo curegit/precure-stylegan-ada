@@ -1,8 +1,8 @@
 from math import sqrt, log, sin, cos, pi
 from numpy import array, eye, outer, stack, float32
 from numpy.random import uniform, normal, lognormal
-from chainer import Link
 from chainer.functions import concat
+from stylegan.manipulations.base import Manipulation
 
 indentity = eye(4, dtype=float32)
 
@@ -23,16 +23,20 @@ def householder(axis):
 	v = array([*axis, 0], dtype=float32) / norm
 	return indentity - 2 * outer(v, v)
 
-class ColorAffineTransformation(Link):
+class ColorAffineTransformation(Manipulation):
 
-	def __init__(self, brightness=0.1, contrast=0.5, hue_rotation=360, saturation=1.0):
+	def __init__(self, brightness=0.1, contrast=0.5, hue_rotation=360, saturation=1.0, probability_multiplier=1.0):
 		super().__init__()
 		self.brightness = brightness
 		self.contrast = contrast * log(2)
 		self.hue_rotation = hue_rotation / 360 * pi
 		self.saturation = saturation * log(2)
+		self.probability_multiplier = probability_multiplier
 
 	def __call__(self, x, p=1.0):
+		p *= self.probability_multiplier
+		if p <= 0:
+			return x
 		batch, channels, height, width = x.shape
 		centering = translation(-0.5, -0.5, -0.5)
 		affine = centering @ indentity

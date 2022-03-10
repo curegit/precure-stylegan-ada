@@ -42,7 +42,7 @@ class AdamSet():
 		if self.conditional:
 			self.generator_embedder_optimizer.setup(generator.embedder)
 			self.discriminator_embedder_optimizer.setup(discriminator.embedder)
-			self.condition_mapper_optimizer.setup(discriminator.condition_mapper)
+			self.condition_mapper_optimizer.setup(discriminator.mapper)
 
 	def update_generator(self):
 		self.mapper_optimizer.update()
@@ -58,14 +58,14 @@ class AdamSet():
 
 class CustomUpdater(StandardUpdater):
 
-	def __init__(self, generator, averaged_generator, discriminator, iterator, optimizers, conditional=False, averaging_images=10000, lsgan=False):
+	def __init__(self, generator, averaged_generator, discriminator, iterator, optimizers, averaging_images=10000, lsgan=False):
 		super().__init__(iterator, dict(optimizers))
 		self.generator = generator
 		self.averaged_generator = averaged_generator
 		self.discriminator = discriminator
 		self.iterator = iterator
 		self.optimizers = optimizers
-		self.conditional = conditional
+		self.conditional = generator.conditional
 		self.averaging_images = averaging_images
 		self.lsgan = lsgan
 		self.group = None
@@ -118,7 +118,7 @@ class CustomUpdater(StandardUpdater):
 				c = self.discriminator.xp.array(list(cs))
 				yield Variable(x), Variable(c)
 			else:
-				x = self.discriminator.xp.array(group)
+				x = self.discriminator.xp.array(list(group))
 				yield Variable(x), None
 
 	def update_core(self):
@@ -335,5 +335,5 @@ class CustomTrainer(Trainer):
 			y.to_cpu()
 			for j in range(n):
 				filename = f"{trainer.iteration}-{i + j + 1}"
-				np.save(build_filepath(trainer.images_out, filename, "npy", trainer.overwrite), z.array[j])
+				np.save(build_filepath(trainer.images_out, filename + "-latent", "npy", trainer.overwrite), z.array[j])
 				save_image(y.array[j], build_filepath(trainer.images_out, filename, "png", trainer.overwrite))
