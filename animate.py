@@ -71,12 +71,12 @@ def main(args):
 				if not args.no_samples:
 					y = generator.synthesizer([w] * generator.levels)
 					z.to_cpu()
+					w.to_cpu()
 					y.to_cpu()
-					sampled_ws[0].to_cpu()
 					for j in range(n):
 						filename = f"{i + j + 1}"
 						np.save(build_filepath(args.dest, filename + "-latent", "npy", args.force), z.array[j])
-						np.save(build_filepath(args.dest, filename + "-style", "npy", args.force), sampled_ws[0].array[j])
+						np.save(build_filepath(args.dest, filename + "-style", "npy", args.force), w.array[j])
 						save_image(y.array[j], build_filepath(args.dest, filename, "png", args.force))
 						bar.update()
 	ws = prepend + sampled_ws + append
