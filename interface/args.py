@@ -35,9 +35,9 @@ class CustomArgumentParser(ArgumentParser):
 		group.add_argument("-v", "--device", "--gpu", metavar="ID", dest="device", type=device, default=device("CPU"), help="use GPU device of the specified ID (pass 'GPU' as ID to select GPU device automatically)")
 		return self
 
-	def add_generation_args(self):
+	def add_generation_args(self, allow_zero=False):
 		group = self.add_argument_group("generation arguments")
-		group.add_argument("-n", "--number", metavar="N", type=uint, default=10, help="the number of images to generate")
+		group.add_argument("-n", "--number", metavar="N", type=uint if allow_zero else natural, default=10, help="the number of images to generate")
 		group.add_argument("-c", "--class", metavar="NUM", type=uint, nargs="+", dest="classes", action="extend", help="specify image classes to generate by number")
 		group.add_argument("-l", "--label", metavar="CLASS", nargs="+", dest="labels", action="extend", help="specify image classes to generate by label")
 		group.add_argument("-s", "--similar", "--latent", "--center", metavar="LATENT_FILE", dest="center", help="move the mean of random latent vectors to a specified one")
