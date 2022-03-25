@@ -31,7 +31,7 @@ def main(args):
 	else:
 		dataset = ImageDataset(args.dataset[0], generator.resolution)
 	print(f"Dataset size: {len(dataset)} images")
-	if categories > 1:
+	if args.labels:
 		generator.embed_labels(args.labels)
 		averaged_generator.embed_labels(args.labels)
 	print_data_classes(generator)
