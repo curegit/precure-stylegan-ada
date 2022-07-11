@@ -12,6 +12,11 @@ FID = 26.41, dataset = 2.5k
 
 ![](examples/beauty.png)
 
+## Requirements
+
+- Python >= 3.8
+- Chainer >= 7.2
+
 ## License
 
 [CC BY-NC 4.0](LICENSE)
