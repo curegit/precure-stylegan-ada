@@ -16,6 +16,11 @@ FID = 26.41, dataset = 2.5k
 
 - Python >= 3.8
 - Chainer >= 7.2
+- Pillow >= 7.1
+- Numpy
+- Matplotlib
+- H5py
+- Tqdm
 
 ## License
 
