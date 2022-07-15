@@ -20,6 +20,8 @@ def main(args):
 	print("Initializing models...")
 	generator = Generator(args.size, args.depth, args.levels, *args.channels, args.categories)
 	discriminator = Discriminator(args.levels, args.channels[1], args.channels[0], args.categories, args.depth)
+	generator.to_device(args.device)
+	discriminator.to_device(args.device)
 	print_model_args(generator)
 	print("Parameter counts:")
 	print(f"- G: {generator.count_params()}")
