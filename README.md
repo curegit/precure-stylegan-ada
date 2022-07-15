@@ -22,6 +22,8 @@ FID = 26.41, dataset = 2.5k
 - H5py
 - Tqdm
 
+`conda install python-graphviz`
+
 ## License
 
 [CC BY-NC 4.0](LICENSE)
