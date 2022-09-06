@@ -33,9 +33,9 @@ def rate(string):
 
 def device(string):
 	value = string.upper()
-	if value == "CPU":
+	if value == "CPU" or value == "@NUMPY":
 		return CpuDevice()
-	if value == "GPU":
+	if value == "GPU" or value == "@CUPY":
 		return GpuDevice.from_device_id(0)
 	value = int(string)
 	if value >= 0:
