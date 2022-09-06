@@ -64,7 +64,7 @@ class Generator(Chain):
 				self.embedder = EqualizedLinear(categories, size, gain=1)
 
 	def __call__(self, z, c=None, random_mix=None, psi=1.0, mean_w=None):
-		z, *zs = z if z is tuple or z is list else [z]
+		z, *zs = z if isinstance(z, tuple) or isinstance(z, list) else [z]
 		if c is not None:
 			c = self.embedder(c)
 		w = self.truncation_trick(self.mapper(z, c), psi, mean_w)
