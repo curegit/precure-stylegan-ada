@@ -6,9 +6,8 @@ def chainer_like_tqdm(desc, total):
 	return tqdm(desc=desc, total=total, bar_format=bar_format, miniters=1, ascii=".#", ncols=70)
 
 def print_model_args(generator):
-	h, w = generator.resolution
 	print(f"Multilayer perceptron: {generator.size}x{generator.depth}")
-	print(f"CNN layers: {generator.levels} levels (output = {w}x{h})")
+	print(f"CNN layers: {generator.levels} levels (output = {generator.width}x{generator.height})")
 	print(f"CNN channels: {generator.first_channels} (initial) -> {generator.last_channels} (final)")
 
 def print_data_classes(generator):

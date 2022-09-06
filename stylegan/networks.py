@@ -91,7 +91,7 @@ class Generator(Chain):
 			return Variable(self.xp.eye(self.categories, dtype=self.xp.float32)[ind])
 
 	def generate_masks(self, batch):
-		return self.sampler(batch, 3, *self.resolution) / root(self.resolution[0] * self.resolution[1])
+		return self.sampler(batch, 3, self.height, self.width) / root(self.height * self.width)
 
 	def truncation_trick(self, w, psi, mean_w=None):
 		if psi != 1.0:
@@ -102,6 +102,14 @@ class Generator(Chain):
 
 	def calculate_mean_w(self, n=50000):
 		return mean(self.mapper(self.generate_latents(n)), axis=0)
+
+	@property
+	def width(self):
+		return self.resolution[0]
+
+	@property
+	def height(self):
+		return self.resolution[1]
 
 	@property
 	def conditional(self):
