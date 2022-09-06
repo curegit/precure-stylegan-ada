@@ -1,3 +1,4 @@
+from os.path import basename, normpath
 from chainer import global_config
 from chainer.iterators import SerialIterator
 from stylegan.dataset import ImageDataset, MulticategoryImageDataset
@@ -116,12 +117,17 @@ def check_args(args):
 			eprint("Accumulation size is not divisible by group size!")
 	raise RuntimeError("Incompatible grouping configuration")
 
+def preprocess_args(args):
+	if args.labels is not None and len(args.labels) == 0:
+		args.labels = [basename(normpath(d)) for d in args.dataset]
+	return args
+
 def parse_args():
 	parser = CustomArgumentParser("Train StyleGAN 2.0 (conditional or unconditional models)")
 	parser.add_output_args(default_dest="results").add_model_args()
 	parser.add_argument("dataset", metavar="DATASET_DIR", nargs="+", help="dataset directory that includes real images (specify multiple directories to train conditional models, one directory per image class)")
 	parser.add_argument("-p", "--preload", action="store_true", help="preload entire dataset into the RAM")
-	parser.add_argument("-l", "--labels", metavar="CLASS", nargs="+", help="embed data class labels into output generators (provide as many as dataset directories)")
+	parser.add_argument("-l", "--labels", metavar="CLASS", nargs="*", help="embed data class labels into output generators (provide CLASS as many as dataset directories), dataset directory names are automatically used if no CLASS arguments are given")
 	group = parser.add_argument_group("training arguments")
 	group.add_argument("-s", "--snapshot", metavar="HDF5_FILE", help="load weights and parameters from a snapshot (for resuming)")
 	group.add_argument("-e", "--epoch", metavar="N", type=natural, default=1, help="training duration in epoch (note that training duration will not be serialized in snapshot)")
@@ -156,7 +162,7 @@ def parse_args():
 
 if __name__ == "__main__":
 	try:
-		main(check_args(parse_args()))
+		main(check_args(preprocess_args(parse_args())))
 	except KeyboardInterrupt:
 		eprint("KeyboardInterrupt")
 		exit(1)
