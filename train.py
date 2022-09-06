@@ -91,6 +91,11 @@ def check_args(args):
 	if len(args.dataset) > 1 and args.labels and len(args.labels) != len(args.dataset):
 		eprint("You must provide the same number of data classes and labels!")
 		raise RuntimeError("Label error")
+	if args.labels:
+		for l in args.labels:
+			if not l:
+				eprint("Empty strings are not allowed for labels!")
+				raise RuntimeError("Label error")
 	if args.labels and len(args.labels) != len(set(args.labels)):
 		eprint("Labels are not unique!")
 		raise RuntimeError("Label error")
