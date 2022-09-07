@@ -52,7 +52,7 @@ def main(args):
 				bar.update()
 
 def parse_args():
-	parser = CustomArgumentParser("Generate images of a trained generator from random latent vectors")
+	parser = CustomArgumentParser("Generate images with a trained generator from random latent vectors")
 	parser.require_generator().add_output_args("images").add_generation_args().add_evaluation_args()
 	return parser.parse_args()
 

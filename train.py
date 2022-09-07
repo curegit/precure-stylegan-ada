@@ -123,7 +123,7 @@ def preprocess_args(args):
 	return args
 
 def parse_args():
-	parser = CustomArgumentParser("Train StyleGAN 2.0 (conditional or unconditional models)")
+	parser = CustomArgumentParser("Train a conditional or unconditional StyleGAN 2.0 model")
 	parser.add_output_args(default_dest="results").add_model_args()
 	parser.add_argument("dataset", metavar="DATASET_DIR", nargs="+", help="dataset directory that includes real images (specify multiple directories to train conditional models, one directory per image class)")
 	parser.add_argument("-p", "--preload", action="store_true", help="preload entire dataset into the RAM")
