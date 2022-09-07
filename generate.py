@@ -32,7 +32,7 @@ def main(args):
 	else:
 		categories = None
 	if args.psi != 1.0:
-		mean_w = generator.calculate_mean_w()
+		mean_w = generator.calculate_mean_w(categories=(None if args.global_truncation else categories))
 	else:
 		mean_w = None
 	mkdirs(args.dest)

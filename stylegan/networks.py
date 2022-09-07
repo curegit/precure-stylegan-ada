@@ -63,21 +63,23 @@ class Generator(Chain):
 			if categories > 1:
 				self.embedder = EqualizedLinear(categories, size, gain=1)
 
-	def __call__(self, z, c=None, random_mix=None, psi=1.0, mean_w=None):
+	def __call__(self, z, c=None, random_mix=None, psi=1.0, mean_w=None, categories=None):
 		z, *zs = z if isinstance(z, tuple) or isinstance(z, list) else [z]
+		if self.conditional and c is None:
+			c = self.generate_conditions(len(z), categories)
 		if c is not None:
 			c = self.embedder(c)
-		w = self.truncation_trick(self.mapper(z, c), psi, mean_w)
+		w = self.truncation_trick(self.mapper(z, c), psi, mean_w, categories)
 		ws = [w] * self.levels
 		stop = self.levels
 		if self.levels > 1 and random_mix is not None:
 			mix_level = randint(1, self.levels - 1)
-			mix_w = self.truncation_trick(self.mapper(random_mix, c), psi, mean_w)
+			mix_w = self.truncation_trick(self.mapper(random_mix, c), psi, mean_w, categories)
 			ws[mix_level:stop] = [mix_w] * (stop - mix_level)
 			stop = mix_level
 		for i, z in zip(range(1, stop), zs):
 			if z is not Ellipsis:
-				ws[i:stop] = [self.truncation_trick(self.mapper(z, c), psi, mean_w)] * (stop - i)
+				ws[i:stop] = [self.truncation_trick(self.mapper(z, c), psi, mean_w, categories)] * (stop - i)
 		return ws, self.synthesizer(ws)
 
 	def generate_latents(self, batch, center=None, sd=1.0):
@@ -93,15 +95,16 @@ class Generator(Chain):
 	def generate_masks(self, batch):
 		return self.sampler(batch, 3, self.height, self.width) / root(self.height * self.width)
 
-	def truncation_trick(self, w, psi, mean_w=None):
+	def truncation_trick(self, w, psi, mean_w=None, categories=None):
 		if psi != 1.0:
 			if mean_w is None:
-				mean_w = self.calculate_mean_w()
+				mean_w = self.calculate_mean_w(categories=categories)
 			return lerp(mean_w, w, psi)
 		return w
 
-	def calculate_mean_w(self, n=50000):
-		return mean(self.mapper(self.generate_latents(n)), axis=0)
+	def calculate_mean_w(self, n=50000, categories=None):
+		c = self.embedder(self.generate_conditions(n, categories)) if self.conditional else None
+		return mean(self.mapper(self.generate_latents(n), c), axis=0)
 
 	@property
 	def width(self):
