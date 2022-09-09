@@ -44,7 +44,7 @@ def main(args):
 def parse_args():
 	parser = CustomArgumentParser("Draw computational graphs of generator and discriminator in PDFs")
 	parser.add_argument("-n", "--class", type=natural, metavar="N", dest="categories", default=1, help="specify the number of data classes")
-	parser.add_output_args("graphs").add_model_args().add_evaluation_args()
+	parser.add_output_args("graphs").add_model_args().add_evaluation_args(include_noise=False)
 	return parser.parse_args()
 
 if __name__ == "__main__":

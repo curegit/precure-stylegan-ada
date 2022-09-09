@@ -158,7 +158,7 @@ def parse_args():
 	parser.add_argument("-P", "--print-interval", metavar="ITER", dest="print", type=uint, default=1000, help="print statistics every ITER iteration")
 	parser.add_argument("-S", "--save-interval", metavar="ITER", dest="save", type=uint, default=2000, help="save snapshots, statistics and middle images every ITER iteration")
 	parser.add_argument("-n", "--number", metavar="N", type=uint, default=32, help="the number of middle images to generate each save-time")
-	return parser.add_evaluation_args(include_batch=False).parse_args()
+	return parser.add_evaluation_args(include_batch=False, include_noise=False).parse_args()
 
 if __name__ == "__main__":
 	try:

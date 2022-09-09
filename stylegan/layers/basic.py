@@ -1,5 +1,7 @@
 from math import sqrt, log
-from chainer import Parameter, Link
+from numpy import float32
+from numpy.random import Generator, PCG64
+from chainer import Variable, Parameter, Link
 from chainer.functions import gaussian, leaky_relu, linear, convolution_2d, broadcast_to
 from chainer.initializers import Zero, Normal
 
@@ -8,12 +10,17 @@ class GaussianDistribution():
 	def __init__(self, link, mean=0.0, sd=1.0):
 		self.link = link
 		self.mean = mean
+		self.sd = sd
 		self.ln_var = log(sd ** 2)
 
 	def __call__(self, *shape):
 		mean = self.link.xp.array(self.mean, dtype=self.link.xp.float32)
 		ln_var = self.link.xp.array(self.ln_var, dtype=self.link.xp.float32)
 		return gaussian(broadcast_to(mean, shape), broadcast_to(ln_var, shape))
+
+	def deterministic(self, *shape, seed=0):
+		x = Generator(PCG64(seed)).normal(size=shape, loc=self.mean, scale=self.sd).astype(float32)
+		return Variable(self.link.xp.asarray(x))
 
 class LeakyRelu():
 

@@ -69,7 +69,7 @@ def main(args):
 				w = generator.truncation_trick(generator.mapper(z, c if c is None else generator.embedder(c)), args.psi, mean_w)
 				sampled_ws += [w[i] for i in range(n)]
 				if not args.no_samples:
-					y = generator.synthesizer([w] * generator.levels)
+					y = generator.synthesizer([w] * generator.levels, noise=args.noisy, freeze=args.freeze)
 					z.to_cpu()
 					w.to_cpu()
 					y.to_cpu()
@@ -85,7 +85,7 @@ def main(args):
 	images = []
 	with chainer_like_tqdm(desc="frames", total=len(frame_ws)) as bar:
 		for ws in iter_batch(frame_ws, args.batch):
-			y = generator.synthesizer([stack(list(ws))] * generator.levels)
+			y = generator.synthesizer([stack(list(ws))] * generator.levels, noise=args.noisy, freeze=args.freeze)
 			y.to_cpu()
 			for i in range(y.shape[0]):
 				image = to_pil_image(y.array[i])
@@ -119,7 +119,7 @@ def parse_args():
 	group.add_argument("-L", "--loop", action="store_true", help="interpolate between the last and first images")
 	group.add_argument("-R", "--repeat", action="store_true", help="tell the image writer explicitly that an output image should loop")
 	group.add_argument("-D", "--duration", metavar="MS", type=natural, default=100, help="the display duration of each frame in milliseconds")
-	group.add_argument("-N", "--interpolate", metavar="N", type=uint, default=15, help="the number of frames between key images")
+	group.add_argument("-I", "--interpolate", metavar="N", type=uint, default=15, help="the number of frames between key images")
 	group.add_argument("-P", "--prepend", metavar="STYLE_FILE", nargs="+", action="extend", help="add specified key images (by style NPY file) to the head")
 	group.add_argument("-A", "--append", metavar="STYLE_FILE", nargs="+", action="extend", help="add specified key images (by style NPY file) to the tail")
 	return parser.add_evaluation_args().parse_args()
