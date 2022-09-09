@@ -4,7 +4,7 @@ from chainer.computational_graph import build_computational_graph
 from stylegan.networks import Generator, Discriminator
 from interface.args import CustomArgumentParser
 from interface.argtypes import natural
-from interface.stdout import print_model_args
+from interface.stdout import print_model_args, print_parameter_counts
 from utilities.stdio import eprint
 from utilities.filesys import mkdirs, build_filepath
 
@@ -23,9 +23,7 @@ def main(args):
 	generator.to_device(args.device)
 	discriminator.to_device(args.device)
 	print_model_args(generator)
-	print("Parameter counts:")
-	print(f"- G: {generator.count_params()}")
-	print(f"- D: {discriminator.count_params()}")
+	print_parameter_counts(generator, discriminator)
 	z = generator.generate_latents(args.batch)
 	c = generator.generate_conditions(args.batch) if args.categories > 1 else None
 	_, x = generator(z, c)

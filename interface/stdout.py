@@ -16,6 +16,14 @@ def print_data_classes(generator):
 		for i, l in enumerate(generator.labels):
 			print(f"- class {i}: {l}")
 
+def print_parameter_counts(generator, discriminator=None):
+	if discriminator is None:
+		print(f"Parameter counts: {generator.count_params()}")
+	else:
+		print("Parameter counts:")
+		print(f"- G: {generator.count_params()}")
+		print(f"- D: {discriminator.count_params()}")
+
 def print_training_args(args):
 	if args.accum is None:
 		print(f"Batch size: {args.batch} (Group size: {'entire batch' if args.group == 0 else args.group})")
