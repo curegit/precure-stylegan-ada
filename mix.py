@@ -24,12 +24,12 @@ def main(args):
 				ws.append(ws[-1])
 			else:
 				eprint("You must supply a 1st level style!")
-				raise RuntimeError("Style error")
+				raise RuntimeError("Input error")
 		else:
 			ws.append(Variable(np.load(s)))
 	if (len(ws) > generator.levels):
 		eprint("Too many styles!")
-		raise RuntimeError("Style error")
+		raise RuntimeError("Input error")
 	elif (len(ws) != generator.levels):
 		ws += [ws[-1]] * (generator.levels - len(ws))
 	mkdirs(args.dest)
