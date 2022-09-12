@@ -42,7 +42,7 @@ def main(args):
 	elif args.preload:
 		with chainer_like_tqdm("dataset", len(dataset)) as bar:
 			dataset.preload(lambda: bar.update())
-	print("Setting up training....")
+	print("Setting up training...")
 	print_training_args(args)
 	iterator = SerialIterator(dataset, args.batch, repeat=True, shuffle=True)
 	updater = CustomUpdater(generator, averaged_generator, discriminator, iterator, optimizers, args.ema, args.lsgan)
@@ -64,7 +64,7 @@ def main(args):
 		pipeline.to_device(args.device)
 		updater.enable_adaptive_augumentation(pipeline, args.target, args.limit, args.delta)
 	if args.snapshot is not None:
-		print("Loading a snapshot....")
+		print("Loading a snapshot...")
 		updater.load_states(args.snapshot)
 	mkdirs(args.dest)
 	dump_json(args, build_filepath(args.dest, "arguments", "json", args.force))
@@ -116,7 +116,8 @@ def check_args(args):
 			eprint("Last accumulation size is not divisible by group size!")
 		else:
 			eprint("Accumulation size is not divisible by group size!")
-	raise RuntimeError("Incompatible grouping configuration")
+	eprint("Incompatible grouping configuration")
+	raise RuntimeError("Conflict error")
 
 def preprocess_args(args):
 	if args.labels is not None and len(args.labels) == 0:
@@ -126,7 +127,7 @@ def preprocess_args(args):
 def parse_args():
 	parser = CustomArgumentParser("Train a conditional or unconditional StyleGAN 2.0 model")
 	parser.add_output_args(default_dest="results").add_model_args()
-	parser.add_argument("dataset", metavar="DATASET_DIR", nargs="+", help="dataset directory that includes real images (specify multiple directories to train conditional models, one directory per image class)")
+	parser.add_argument("dataset", metavar="DATASET_DIR", nargs="+", help=f"dataset directory that includes real images (specify multiple directories to train conditional models, one directory per image class), supported file extensions: {', '.join(ImageDataset.extensions)}")
 	parser.add_argument("-p", "--preload", action="store_true", help="preload entire dataset into the RAM")
 	parser.add_argument("-l", "--labels", metavar="CLASS", nargs="*", help="embed data class labels into output generators (provide CLASS as many as dataset directories), dataset directory names are automatically used if no CLASS arguments are given")
 	group = parser.add_argument_group("training arguments")
