@@ -126,6 +126,7 @@ class Generator(Chain):
 		for i, l in enumerate(self.labels):
 			if l == label:
 				return i
+		eprint(f"Invalid label: {label}")
 		eprint("No such label in the model!")
 		raise RuntimeError("Label error")
 
