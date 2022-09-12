@@ -1,4 +1,4 @@
-from os.path import basename, normpath
+from os.path import basename, realpath
 from chainer import global_config
 from chainer.iterators import SerialIterator
 from stylegan.dataset import ImageDataset, MulticategoryImageDataset
@@ -121,7 +121,7 @@ def check_args(args):
 
 def preprocess_args(args):
 	if args.labels is not None and len(args.labels) == 0:
-		args.labels = [basename(normpath(d)) for d in args.dataset]
+		args.labels = [basename(realpath(d)) for d in args.dataset]
 	return args
 
 def parse_args():
