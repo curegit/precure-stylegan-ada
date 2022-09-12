@@ -21,7 +21,7 @@ class ImageDataset(DatasetMixin):
 			eprint(f"Invalid dataset: {directory}")
 			eprint("Specified path is not a correct directory!")
 			raise RuntimeError("Input error")
-		self.image_files = sum([glob_recursively(directory, e) for e in ImageDataset.extensions], [])
+		self.image_files = sum([glob_recursively(directory, e, robust_letter_case=True) for e in ImageDataset.extensions], [])
 		if not self.image_files:
 			eprint(f"Invalid dataset: {directory}")
 			eprint("No images found in the directory!")
