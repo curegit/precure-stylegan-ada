@@ -1,3 +1,4 @@
+from os.path import lexists, isdir
 from numpy import eye, float32
 from chainer.dataset import DatasetMixin
 from utilities.stdio import eprint
@@ -12,10 +13,19 @@ class ImageDataset(DatasetMixin):
 		super().__init__()
 		self.resolution = resolution
 		self.preloaded = False
+		if not lexists(directory):
+			eprint(f"Invalid dataset: {directory}")
+			eprint("No such directory!")
+			raise RuntimeError("Input error")
+		if not isdir(directory):
+			eprint(f"Invalid dataset: {directory}")
+			eprint("Specified path is not a correct directory!")
+			raise RuntimeError("Input error")
 		self.image_files = sum([glob_recursively(directory, e) for e in ImageDataset.extensions], [])
 		if not self.image_files:
+			eprint(f"Invalid dataset: {directory}")
 			eprint("No images found in the directory!")
-			raise RuntimeError("empty dataset")
+			raise RuntimeError("Input error")
 
 	def __len__(self):
 		return len(self.image_files)
