@@ -3,7 +3,7 @@ from numpy import eye, float32
 from chainer.dataset import DatasetMixin
 from utilities.stdio import eprint
 from utilities.image import load_image
-from utilities.filesys import glob_recursively
+from utilities.filesys import relaxed_glob_recursively
 
 class ImageDataset(DatasetMixin):
 
@@ -21,7 +21,7 @@ class ImageDataset(DatasetMixin):
 			eprint(f"Invalid dataset: {directory}")
 			eprint("Specified path is not a correct directory!")
 			raise RuntimeError("Input error")
-		self.image_files = sum([glob_recursively(directory, e, robust_letter_case=True) for e in ImageDataset.extensions], [])
+		self.image_files = sum([relaxed_glob_recursively(directory, e) for e in ImageDataset.extensions], [])
 		if not self.image_files:
 			eprint(f"Invalid dataset: {directory}")
 			eprint("No images found in the directory!")
