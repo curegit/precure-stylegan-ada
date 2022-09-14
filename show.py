@@ -1,6 +1,6 @@
 from stylegan.networks import Generator
 from interface.args import CustomArgumentParser
-from interface.stdout import print_model_args, print_parameter_counts, print_data_classes
+from interface.stdout import print_model_args, print_parameter_counts, print_cnn_architecture, print_data_classes
 from utilities.stdio import eprint
 
 def main(args):
@@ -8,6 +8,7 @@ def main(args):
 	generator = Generator.load(args.generator)
 	print_model_args(generator)
 	print_parameter_counts(generator)
+	print_cnn_architecture(generator)
 	print_data_classes(generator)
 
 def parse_args():

@@ -70,6 +70,12 @@ class ResidualBlock(Chain):
 		skip = self.down(self.conv3(x))
 		return (h + skip) / root(2)
 
+	@property
+	def channels(self):
+		yield self.conv1.in_channels
+		yield self.conv1.out_channels
+		yield self.conv2.out_channels
+
 class OutputBlock(Chain):
 
 	def __init__(self, in_channels, conditional=False, group_size=None):
@@ -86,3 +92,9 @@ class OutputBlock(Chain):
 		h1 = self.act1(self.conv1(self.mbstd(x)))
 		h2 = self.act2(self.conv2(h1))
 		return self.linear(h2)
+
+	@property
+	def channels(self):
+		yield self.conv1.in_channels
+		yield self.conv1.out_channels
+		yield self.conv2.out_channels

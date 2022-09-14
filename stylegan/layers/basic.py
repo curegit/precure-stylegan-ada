@@ -46,6 +46,8 @@ class EqualizedConvolution2D(Link):
 
 	def __init__(self, in_channels, out_channels, ksize=3, stride=1, pad=0, nobias=False, initial_bias=Zero(), gain=sqrt(2)):
 		super().__init__()
+		self.in_channels = in_channels
+		self.out_channels = out_channels
 		self.stride = stride
 		self.pad = pad
 		self.c = gain / sqrt(in_channels * ksize ** 2)

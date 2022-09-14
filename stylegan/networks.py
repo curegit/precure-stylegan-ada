@@ -44,6 +44,12 @@ class Synthesizer(Chain):
 			h, rgb = s(h, rgb, w, noise=noise, freeze=freeze)
 		return rgb
 
+	@property
+	def blocks(self):
+		yield 1, self.init
+		for i, s in enumerate(self.skips, 2):
+			yield i, s
+
 class Generator(Chain):
 
 	def __init__(self, size=512, depth=8, levels=7, first_channels=512, last_channels=64, categories=1):
@@ -182,3 +188,9 @@ class Discriminator(Chain):
 		h = self.main(x)
 		batch, channels = h.shape
 		return h.reshape(batch) if c is None else sum(h * c1, axis=1) / root(channels)
+
+	@property
+	def blocks(self):
+		for i, s in enumerate(self.main):
+			if i > 0:
+				yield i, s

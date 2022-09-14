@@ -56,6 +56,8 @@ class WeightModulatedConvolution(Link):
 
 	def __init__(self, in_channels, out_channels, pointwise=False, demod=True):
 		super().__init__()
+		self.in_channels = in_channels
+		self.out_channels = out_channels
 		self.demod = demod
 		self.ksize = 1 if pointwise else 3
 		self.pad = 0 if pointwise else 1
@@ -124,6 +126,11 @@ class InitialSkipArchitecture(Chain):
 		h4 = self.act(h3)
 		return h4, self.torgb(h4, self.style2(w))
 
+	@property
+	def channels(self):
+		yield self.wmconv.in_channels
+		yield self.wmconv.out_channels
+
 class SkipArchitecture(Chain):
 
 	def __init__(self, size, in_channels, out_channels, level=2):
@@ -151,3 +158,9 @@ class SkipArchitecture(Chain):
 		h6 = self.noise2(h5, coefficient=noise, freeze=freeze)
 		h7 = self.act2(h6)
 		return h7, self.skip(y) + self.torgb(h7, self.style3(w))
+
+	@property
+	def channels(self):
+		yield self.wmconv1.in_channels
+		yield self.wmconv1.out_channels
+		yield self.wmconv2.out_channels

@@ -24,6 +24,20 @@ def print_parameter_counts(generator, discriminator=None):
 		print(f"- G: {generator.count_params()}")
 		print(f"- D: {discriminator.count_params()}")
 
+def print_cnn_architecture(generator, discriminator=None):
+	if discriminator is None:
+		print("CNN channels:")
+	else:
+		print("Generator CNN channels:")
+	pad = max(max(len(str(s)) for s in s.channels) for _, s in generator.synthesizer.blocks)
+	for i, s in generator.synthesizer.blocks:
+		print(f"- Level {i}: " + " -> conv -> ".join(str(c).rjust(pad) for c in s.channels))
+	if discriminator is not None:
+		print("Discriminator CNN channels:")
+		pad = max(max(len(str(b)) for b in b.channels) for _, b in discriminator.blocks)
+		for i, b in discriminator.blocks:
+			print(f"- Level {i}: " + " -> conv -> ".join(str(b).rjust(pad) for b in b.channels))
+
 def print_training_args(args):
 	if args.accum is None:
 		print(f"Batch size: {args.batch} (Group size: {'entire batch' if args.group == 0 else args.group})")
