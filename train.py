@@ -90,33 +90,43 @@ def main(args):
 	print(f"Saved: {dis_path}")
 
 def check_args(args):
+	if args.group != 0 and args.group > args.batch:
+		eprint("Group size must be less than or equal to batch size!")
+		raise RuntimeError("Argument conflict")
+	if args.accum is not None:
+		if args.accum > args.batch:
+			eprint("Accumulation size must be less than or equal to batch size!")
+			raise RuntimeError("Argument conflict")
+		if args.group != 0 and args.group > args.accum:
+			eprint("Group size must be less than or equal to accumulation size!")
+			raise RuntimeError("Argument conflict")
 	if args.lms is not None:
 		if len(args.dataset) == 1:
-			eprint("Unconditional model cannot employ the mode seeking regularization")
+			eprint("Unconditional model cannot employ the mode seeking regularization!")
 			raise RuntimeError("Argument conflict")
 		if args.accum is None and args.batch % 2 != 0:
-			eprint("Batch size must be even to use the mode seeking regularization")
+			eprint("Batch size must be even to use the mode seeking regularization!")
 			raise RuntimeError("Argument conflict")
 		elif args.accum is not None and args.accum % 2 != 0:
-			eprint("Accumulation size must be even to use the mode seeking regularization")
+			eprint("Accumulation size must be even to use the mode seeking regularization!")
 			raise RuntimeError("Argument conflict")
 		elif args.accum is not None and (args.batch % args.accum) % 2 != 0:
-			eprint("Last accumulation size also must be even to use the mode seeking regularization")
+			eprint("Last accumulation size also must be even to use the mode seeking regularization!")
 			raise RuntimeError("Argument conflict")
-	if len(args.dataset) == 1 and args.labels:
-		eprint("Unconditional model cannot have labels!")
-		raise RuntimeError("Label error")
-	if len(args.dataset) > 1 and args.labels and len(args.labels) != len(args.dataset):
-		eprint("You must provide the same number of data classes and labels!")
-		raise RuntimeError("Label error")
 	if args.labels:
+		if len(args.dataset) == 1:
+			eprint("Unconditional model cannot have labels!")
+			raise RuntimeError("Label error")
+		if len(args.dataset) > 1 and len(args.labels) != len(args.dataset):
+			eprint("You must provide the same number of data classes and labels!")
+			raise RuntimeError("Label error")
 		for l in args.labels:
 			if not l:
 				eprint("Empty strings are not allowed for labels!")
 				raise RuntimeError("Label error")
-	if args.labels and len(args.labels) != len(set(args.labels)):
-		eprint("Labels are not unique!")
-		raise RuntimeError("Label error")
+		if len(args.labels) != len(set(args.labels)):
+			eprint("Labels are not unique!")
+			raise RuntimeError("Label error")
 	if args.accum is None:
 		if args.group == 0:
 			return args
@@ -132,8 +142,7 @@ def check_args(args):
 			eprint("Last accumulation size is not divisible by group size!")
 		else:
 			eprint("Accumulation size is not divisible by group size!")
-	eprint("Incompatible grouping configuration")
-	raise RuntimeError("Conflict error")
+	raise RuntimeError("Argument conflict")
 
 def preprocess_args(args):
 	if args.labels is not None and len(args.labels) == 0:
