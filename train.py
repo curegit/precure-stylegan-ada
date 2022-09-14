@@ -90,9 +90,19 @@ def main(args):
 	print(f"Saved: {dis_path}")
 
 def check_args(args):
-	if len(args.dataset) == 1 and args.lms is not None:
-		eprint("Unconditional model cannot employ the mode seeking regularization")
-		raise RuntimeError("Conflict error")
+	if args.lms is not None:
+		if len(args.dataset) == 1:
+			eprint("Unconditional model cannot employ the mode seeking regularization")
+			raise RuntimeError("Argument conflict")
+		if args.accum is None and args.batch % 2 != 0:
+			eprint("Batch size must be even to use the mode seeking regularization")
+			raise RuntimeError("Argument conflict")
+		elif args.accum is not None and args.accum % 2 != 0:
+			eprint("Accumulation size must be even to use the mode seeking regularization")
+			raise RuntimeError("Argument conflict")
+		elif args.accum is not None and (args.batch % args.accum) % 2 != 0:
+			eprint("Last accumulation size also must be even to use the mode seeking regularization")
+			raise RuntimeError("Argument conflict")
 	if len(args.dataset) == 1 and args.labels:
 		eprint("Unconditional model cannot have labels!")
 		raise RuntimeError("Label error")
