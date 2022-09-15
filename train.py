@@ -101,9 +101,6 @@ def check_args(args):
 			eprint("Group size must be less than or equal to accumulation size!")
 			raise RuntimeError("Argument conflict")
 	if args.lms is not None:
-		if len(args.dataset) == 1:
-			eprint("Unconditional model cannot employ the mode seeking regularization!")
-			raise RuntimeError("Argument conflict")
 		if args.accum is None and args.batch % 2 != 0:
 			eprint("Batch size must be even to use the mode seeking regularization!")
 			raise RuntimeError("Argument conflict")
