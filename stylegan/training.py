@@ -162,7 +162,7 @@ class CustomUpdater(StandardUpdater):
 			if self.mode_seeking_regularization():
 				z1, z2 = split_axis(z, 2, axis=0)
 				x1, x2 = split_axis(x_fake, 2, axis=0)
-				lms = sum(CustomUpdater.distance_ratio(z1, x1, z2, x2)) / self.batch_size
+				lms = sum(CustomUpdater.distance_ratio(z1, x1, z2, x2)) / (self.batch_size / 2)
 				weight = self.mode_seeking_regularization_lambda * self.mode_seeking_regularization_interval
 				penalty = penalty + weight / (lms + 1e-8)
 				accumulated_penalty += penalty.item()
