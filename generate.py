@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import numpy as np
 from chainer import global_config, Variable
 from stylegan.networks import Generator

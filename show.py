@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from stylegan.networks import Generator
 from interface.args import CustomArgumentParser
 from interface.stdout import print_model_args, print_parameter_counts, print_cnn_architecture, print_data_classes

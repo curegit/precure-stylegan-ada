@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from os.path import basename, realpath
 from chainer import global_config
 from chainer.iterators import SerialIterator

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from pydot import graph_from_dot_data
 from chainer import global_config
 from chainer.computational_graph import build_computational_graph
