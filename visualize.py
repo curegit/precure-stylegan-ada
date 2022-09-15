@@ -25,6 +25,7 @@ def main(args):
 	print_model_args(generator)
 	print_parameter_counts(generator, discriminator)
 	print_cnn_architecture(generator, discriminator)
+	print("Exporting graphs...")
 	z = generator.generate_latents(args.batch)
 	c = generator.generate_conditions(args.batch) if args.categories > 1 else None
 	_, x = generator(z, c)
