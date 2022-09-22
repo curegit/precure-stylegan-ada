@@ -138,28 +138,38 @@ class Generator(Chain):
 
 	def save(self, filepath):
 		with HDF5File(filepath, "w") as hdf5:
-			hdf5.attrs["size"] = self.size
-			hdf5.attrs["depth"] = self.depth
-			hdf5.attrs["levels"] = self.levels
-			hdf5.attrs["first_channels"] = self.first_channels
-			hdf5.attrs["last_channels"] = self.last_channels
-			hdf5.attrs["categories"] = self.categories
-			hdf5.attrs["labels"] = self.labels
-			HDF5Serializer(hdf5).save(self)
+			self.save_in(hdf5)
+
+	def save_in(self, hdf5):
+		HDF5Serializer(hdf5).save(self)
+		self.embed_labels(hdf5)
+
+	def embed_params(self, hdf5):
+		hdf5.attrs["size"] = self.size
+		hdf5.attrs["depth"] = self.depth
+		hdf5.attrs["levels"] = self.levels
+		hdf5.attrs["first_channels"] = self.first_channels
+		hdf5.attrs["last_channels"] = self.last_channels
+		hdf5.attrs["categories"] = self.categories
+		hdf5.attrs["labels"] = self.labels
 
 	@staticmethod
 	def load(filepath):
 		with HDF5File(filepath, "r") as hdf5:
-			size = int(hdf5.attrs["size"])
-			depth = int(hdf5.attrs["depth"])
-			levels = int(hdf5.attrs["levels"])
-			first_channels = int(hdf5.attrs["first_channels"])
-			last_channels = int(hdf5.attrs["last_channels"])
-			categories = int(hdf5.attrs["categories"])
-			generator = Generator(size, depth, levels, first_channels, last_channels, categories)
-			generator.embed_labels(hdf5.attrs["labels"])
-			HDF5Deserializer(hdf5).load(generator)
-			return generator
+			return Generator.load_from(hdf5)
+
+	@staticmethod
+	def load_from(hdf5):
+		size = int(hdf5.attrs["size"])
+		depth = int(hdf5.attrs["depth"])
+		levels = int(hdf5.attrs["levels"])
+		first_channels = int(hdf5.attrs["first_channels"])
+		last_channels = int(hdf5.attrs["last_channels"])
+		categories = int(hdf5.attrs["categories"])
+		generator = Generator(size, depth, levels, first_channels, last_channels, categories)
+		generator.embed_labels(hdf5.attrs["labels"])
+		HDF5Deserializer(hdf5).load(generator)
+		return generator
 
 class Discriminator(Chain):
 
@@ -192,5 +202,4 @@ class Discriminator(Chain):
 	@property
 	def blocks(self):
 		for i, s in enumerate(self.main):
-			if i > 0:
-				yield i, s
+			yield i, s

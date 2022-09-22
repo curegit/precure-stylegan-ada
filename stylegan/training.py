@@ -100,6 +100,16 @@ class CustomUpdater(StandardUpdater):
 		self.augumentation_delta_images = delta_images
 		self.augumentation_probability = initial_probability or self.augumentation_probability
 
+	def freeze_generator(self, levels=[]):
+		for i, s in self.generator.synthesizer.blocks:
+			if i in levels:
+				s.disable_update()
+
+	def freeze_discriminator(self, levels=[]):
+		for i, s in self.discriminator.blocks:
+			if i in levels:
+				s.disable_update()
+
 	def generate_latents(self, n):
 		return self.generator.generate_latents(n)
 
@@ -230,6 +240,15 @@ class CustomUpdater(StandardUpdater):
 			optimizer_group = hdf5.create_group("optimizers")
 			for key, optimizer in dict(self.optimizers).items():
 				HDF5Serializer(optimizer_group.create_group(key)).save(optimizer)
+
+	def transfer(self, filepath, generator_levels=[], discriminator_levels=[]):
+		with HDF5File(filepath, "r") as hdf5:
+
+			HDF5Deserializer(hdf5["discriminator"]).load(self.discriminator)
+
+			for (i, s), (j, t) in zip(generator.synthesizer.blocks(), ):
+				if i in generator_levels:
+					t.copydata(s)
 
 	@property
 	def batch_size(self):
