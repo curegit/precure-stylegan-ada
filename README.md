@@ -6,6 +6,9 @@ This project is continued from [Precure StyleGAN](https://github.com/curegit/pre
 It is still WIP, and its codes are extremely rough.
 So they might not work properly.
 
+- tqdm
+- matplot
+
 ## Intermediate Result
 
 FID = 26.41, dataset = 2.5k
