@@ -238,9 +238,7 @@ class CustomUpdater(StandardUpdater):
 			HDF5Deserializer(hdf5["generator"]).load(self.generator)
 			HDF5Deserializer(hdf5["averaged_generator"]).load(self.averaged_generator)
 			HDF5Deserializer(hdf5["discriminator"]).load(self.discriminator)
-			for key, optimizer in dict(self.optimizers).items():
-				print(key)
-				print(hdf5["optimizers"][key])
+			for key, optimizer in self.optimizers:
 				HDF5Deserializer(hdf5["optimizers"][key]).load(optimizer)
 
 	def save_states(self, filepath):
@@ -253,7 +251,7 @@ class CustomUpdater(StandardUpdater):
 			self.averaged_generator.embed_params(hdf5["averaged_generator"])
 			HDF5Serializer(hdf5.create_group("discriminator")).save(self.discriminator)
 			optimizer_group = hdf5.create_group("optimizers")
-			for key, optimizer in dict(self.optimizers).items():
+			for key, optimizer in self.optimizers:
 				HDF5Serializer(optimizer_group.create_group(key)).save(optimizer)
 
 	@property
