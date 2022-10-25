@@ -29,14 +29,15 @@ def print_cnn_architecture(generator, discriminator=None):
 		print("CNN channels:")
 	else:
 		print("Generator CNN channels:")
-	pad = max(max(len(str(s)) for s in s.channels) for _, s in generator.synthesizer.blocks)
+	pad = max(max(len(str(s)) for s in s.channels) for i, s in generator.synthesizer.blocks)
 	for i, s in generator.synthesizer.blocks:
 		print(f"- Level {i}: " + " -> conv -> ".join(str(c).rjust(pad) for c in s.channels))
 	if discriminator is not None:
 		print("Discriminator CNN channels:")
-		pad = max(max(len(str(b)) for b in b.channels) for _, b in discriminator.blocks)
+		pad = max(max(len(str(b)) for b in b.channels) for i, b in discriminator.blocks if i > 0)
 		for i, b in discriminator.blocks:
-			print(f"- Level {i}: " + " -> conv -> ".join(str(b).rjust(pad) for b in b.channels))
+			if i > 0:
+				print(f"- Level {i}: " + " -> conv -> ".join(str(b).rjust(pad) for b in b.channels))
 
 def print_training_args(args):
 	if args.accum is None:

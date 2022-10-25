@@ -52,7 +52,7 @@ class Synthesizer(Chain):
 
 class Generator(Chain):
 
-	def __init__(self, size=512, depth=8, levels=7, first_channels=512, last_channels=64, categories=1):
+	def __init__(self, size=512, depth=8, levels=7, first_channels=512, last_channels=64, categories=1, labels=None):
 		super().__init__()
 		self.size = size
 		self.depth = depth
@@ -62,6 +62,8 @@ class Generator(Chain):
 		self.categories = categories
 		self.resolution = (2 * 2 ** levels, 2 * 2 ** levels)
 		self.labels = [f"cat{i}" for i in range(categories)]
+		if labels is not None:
+			self.embed_labels(labels)
 		with self.init_scope():
 			self.sampler = GaussianDistribution(self)
 			self.mapper = Mapper(size, depth, categories > 1)
@@ -138,11 +140,8 @@ class Generator(Chain):
 
 	def save(self, filepath):
 		with HDF5File(filepath, "w") as hdf5:
-			self.save_in(hdf5)
-
-	def save_in(self, hdf5):
-		HDF5Serializer(hdf5).save(self)
-		self.embed_labels(hdf5)
+			HDF5Serializer(hdf5).save(self)
+			self.embed_params(hdf5)
 
 	def embed_params(self, hdf5):
 		hdf5.attrs["size"] = self.size
@@ -156,20 +155,21 @@ class Generator(Chain):
 	@staticmethod
 	def load(filepath):
 		with HDF5File(filepath, "r") as hdf5:
-			return Generator.load_from(hdf5)
+			params = Generator.read_params(hdf5)
+			generator = Generator(**params)
+			HDF5Deserializer(hdf5).load(generator)
+			return generator
 
 	@staticmethod
-	def load_from(hdf5):
-		size = int(hdf5.attrs["size"])
-		depth = int(hdf5.attrs["depth"])
-		levels = int(hdf5.attrs["levels"])
-		first_channels = int(hdf5.attrs["first_channels"])
-		last_channels = int(hdf5.attrs["last_channels"])
-		categories = int(hdf5.attrs["categories"])
-		generator = Generator(size, depth, levels, first_channels, last_channels, categories)
-		generator.embed_labels(hdf5.attrs["labels"])
-		HDF5Deserializer(hdf5).load(generator)
-		return generator
+	def read_params(hdf5):
+		return {
+			"size": int(hdf5.attrs["size"]),
+			"depth": int(hdf5.attrs["depth"]),
+			"levels": int(hdf5.attrs["levels"]),
+			"first_channels": int(hdf5.attrs["first_channels"]),
+			"last_channels": int(hdf5.attrs["last_channels"]),
+			"categories": int(hdf5.attrs["categories"]),
+			"labels": hdf5.attrs["labels"]}
 
 class Discriminator(Chain):
 

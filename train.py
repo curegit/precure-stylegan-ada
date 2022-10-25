@@ -71,6 +71,8 @@ def main(args):
 		updater.load_states(args.snapshot)
 	mkdirs(args.dest)
 	dump_json(args, build_filepath(args.dest, "arguments", "json", args.force))
+	#updater.freeze_generator([4, 5, 6, 7])
+	#updater.freeze_discriminator([0, 1, 2])
 	trainer = CustomTrainer(updater, args.epoch, args.dest, args.force)
 	if args.save != 0:
 		trainer.hook_state_save(args.save)
@@ -85,9 +87,9 @@ def main(args):
 	gen_path = build_filepath(args.dest, "generator", "hdf5", args.force)
 	averaged_generator.save(gen_path)
 	print(f"Saved: {gen_path}")
-	dis_path = build_filepath(args.dest, "snapshot", "hdf5", args.force)
-	updater.save_states(dis_path)
-	print(f"Saved: {dis_path}")
+	up_path = build_filepath(args.dest, "snapshot", "hdf5", args.force)
+	updater.save_states(up_path)
+	print(f"Saved: {up_path}")
 
 def check_args(args):
 	if len(args.dataset) == 1 and args.labels:
