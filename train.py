@@ -133,7 +133,7 @@ def preprocess_args(args):
 	if args.transfer is not None:
 		try:
 			snapshot, g, d = args.transfer
-			args.transfer = (snapshot, uint(g), uint(d))
+			args.transfer = snapshot, uint(g), uint(d)
 		except:
 			eprint("Transfer levels must be non-negative integers!")
 			raise
@@ -148,8 +148,8 @@ def parse_args():
 	group = parser.add_argument_group("training arguments")
 	group.add_argument("-s", "--snapshot", metavar="HDF5_FILE", help="load weights and parameters from a snapshot (for resuming)")
 	# TODO: help
-	group.add_argument("-t", "--transfer", metavar=("HDF5_FILE", "M", "N"), nargs=3, help="import CNN weights from another snapshot, specify M and N to limit CNN levels of generator and discriminator respectively to transfer")
-	group.add_argument("-Z", "--freeze", metavar=("G", "D"), nargs=2, type=uint, help="don't update / CNN levels")
+	group.add_argument("-t", "--transfer", metavar=("HDF5_FILE", "G", "D"), nargs=3, help="import CNN weights from another snapshot (transfer learning), transfer generator/discriminator CNN blocks only above/below level G/D (inclusive)")
+	group.add_argument("-Z", "--freeze", metavar=("G", "D"), nargs=2, type=uint, help="disable updating generator/discriminator CNN blocks above/below level G/D (inclusive), likely used with --transfer")
 	group.add_argument("-e", "--epoch", metavar="N", type=natural, default=1, help="training duration in epoch (note that training duration will not be serialized in snapshot)")
 	group.add_argument("-b", "--batch", metavar="N", type=natural, default=16, help="batch size, affecting not only memory usage, but also training result")
 	group.add_argument("-k", "--accum", metavar="N", dest="accum", type=natural, help="enable the gradient accumulation and specify its partial batch size")
