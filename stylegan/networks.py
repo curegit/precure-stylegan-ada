@@ -138,6 +138,17 @@ class Generator(Chain):
 		eprint("No such label in the model!")
 		raise RuntimeError("Label error")
 
+	def freeze(self, levels=[]):
+		for i, b in self.synthesizer.blocks:
+			if i in levels:
+				if isinstance(b, InitialSkipArchitecture):
+					b.wmconv.disable_update()
+					b.torgb.disable_update()
+				else:
+					b.wmconv1.disable_update()
+					b.wmconv2.disable_update()
+					b.torgb.disable_update()
+
 	def transfer(self, source, levels=[]):
 		for (i, dest), (_, src) in zip(self.synthesizer.blocks, source.synthesizer.blocks):
 			if i in levels:
@@ -209,6 +220,17 @@ class Discriminator(Chain):
 		h = self.main(x)
 		batch, channels = h.shape
 		return h.reshape(batch) if c is None else sum(h * c1, axis=1) / root(channels)
+
+	def freeze(self, levels=[]):
+		for i, b in self.blocks:
+			if i in levels:
+				if isinstance(b, FromRGB):
+					b.disable_update()
+				elif isinstance(b, ResidualBlock):
+					b.disable_update()
+				else:
+					b.conv1.disable_update()
+					b.conv2.disable_update()
 
 	def transfer(self, source, levels=[]):
 		for (i, dest), (_, src) in zip(self.blocks, source.blocks):

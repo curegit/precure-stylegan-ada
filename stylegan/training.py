@@ -102,7 +102,8 @@ class CustomUpdater(StandardUpdater):
 		self.augumentation_probability = initial_probability or self.augumentation_probability
 
 	def freeze(self, generator_level, discriminator_level):
-		pass
+		self.generator.freeze(list(range(generator_level, self.generator.levels + 1)))
+		self.discriminator.freeze(list(range(0, discriminator_level + 1)))
 
 	def generate_latents(self, n):
 		return self.generator.generate_latents(n)
@@ -232,7 +233,7 @@ class CustomUpdater(StandardUpdater):
 			HDF5Deserializer(hdf5["averaged_generator"]).load(self.averaged_generator)
 			HDF5Deserializer(hdf5["discriminator"]).load(self.discriminator)
 			for key, optimizer in self.optimizers:
-				HDF5Deserializer(hdf5["optimizers"][key]).load(optimizer)
+				HDF5Deserializer(hdf5["optimizers"][key], strict=False).load(optimizer)
 
 	def save_states(self, filepath):
 		with HDF5File(filepath, "w") as hdf5:
