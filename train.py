@@ -147,6 +147,9 @@ def parse_args():
 	parser.add_argument("-l", "--labels", metavar="CLASS", nargs="*", help="embed data class labels into output generators (provide CLASS as many as dataset directories), dataset directory names are automatically used if no CLASS arguments are given")
 	group = parser.add_argument_group("training arguments")
 	group.add_argument("-s", "--snapshot", metavar="HDF5_FILE", help="load weights and parameters from a snapshot (for resuming)")
+	# TODO: help
+	group.add_argument("-t", "--transfer", metavar=("HDF5_FILE", "M", "N"), nargs=3, help="import CNN weights from another snapshot, specify M and N to limit CNN levels of generator and discriminator respectively to transfer")
+	group.add_argument("-Z", "--freeze", metavar=("G", "D"), nargs=2, type=uint, help="don't update / CNN levels")
 	group.add_argument("-e", "--epoch", metavar="N", type=natural, default=1, help="training duration in epoch (note that training duration will not be serialized in snapshot)")
 	group.add_argument("-b", "--batch", metavar="N", type=natural, default=16, help="batch size, affecting not only memory usage, but also training result")
 	group.add_argument("-k", "--accum", metavar="N", dest="accum", type=natural, help="enable the gradient accumulation and specify its partial batch size")
@@ -156,7 +159,7 @@ def parse_args():
 	group.add_argument("-i", "--r1-interval", metavar="ITER", dest="r1", type=natural, default=16, help="apply R1 regularization every ITER iteration (lazy regularization)")
 	group.add_argument("-w", "--pl-weight", metavar="W", dest="weight", type=ufloat, default=2.0, help="coefficient of the path length regularization (set 0 to disable)")
 	group.add_argument("-y", "--pl-decay", metavar="RATE", dest="decay", type=rate, default=0.99, help="decay rate of the path length regularization")
-	group.add_argument("-t", "--pl-interval", metavar="ITER", dest="pl", type=natural, default=8, help="apply the path length regularization every ITER iteration (lazy regularization)")
+	group.add_argument("-u", "--pl-interval", metavar="ITER", dest="pl", type=natural, default=8, help="apply the path length regularization every ITER iteration (lazy regularization)")
 	group.add_argument("-L", "--lsgan", "--least-squares", action="store_true", help="use the least squares loss function instead of the logistic loss function")
 	group.add_argument("-E", "--ema-images", metavar="N", dest="ema", type=natural, default=10000, help="period of the exponential moving average for generator weights (enlarge the value to take longer)")
 	group.add_argument("-A", "--alpha", "--lr", metavar="ALPHA", type=positive, default=0.002, help="Adam's learning rate (shared both generator and discriminator)")
