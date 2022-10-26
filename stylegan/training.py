@@ -101,15 +101,8 @@ class CustomUpdater(StandardUpdater):
 		self.augumentation_delta_images = delta_images
 		self.augumentation_probability = initial_probability or self.augumentation_probability
 
-	def freeze_generator(self, levels=[]):
-		for i, s in self.generator.synthesizer.blocks:
-			if i in levels:
-				s.freeze()
-
-	def freeze_discriminator(self, levels=[]):
-		for i, s in self.discriminator.blocks:
-			if i in levels:
-				s.freeze()
+	def freeze(self, generator_level, discriminator_level):
+		pass
 
 	def generate_latents(self, n):
 		return self.generator.generate_latents(n)
@@ -221,15 +214,15 @@ class CustomUpdater(StandardUpdater):
 	def path_length_regularization(self):
 		return self.path_length_regularization_interval and self.iteration % self.path_length_regularization_interval == 0
 
-	def transfer(self, filepath, generator_levels=[], discriminator_levels=[]):
+	def transfer(self, filepath, generator_level, discriminator_level):
 		with HDF5File(filepath, "r") as hdf5:
-			generator_params = Generator.read_params(hdf5["generator"])
-			discriminator_kws = ["levels", "first_channels", "last_channels", "categories", "depth"]
-			discriminator_params = {k: v for k, v in generator_params.items() if k in discriminator_kws}
-			source_generator = Generator(**generator_params)
-			source_discriminator = Discriminator(**discriminator_params)
+			params = Generator.read_params(hdf5["generator"])
+			source_generator = Generator(**params)
+			source_discriminator = Discriminator(params["levels"], params["last_channels"], params["first_channels"], params["categories"], params["depth"])
 			HDF5Deserializer(hdf5["generator"]).load(source_generator)
 			HDF5Deserializer(hdf5["discriminator"]).load(source_discriminator)
+			self.generator.transfer(source_generator, list(range(generator_level, self.generator.levels + 1)))
+			self.discriminator.transfer(source_discriminator, list(range(0, discriminator_level + 1)))
 
 	def load_states(self, filepath):
 		with HDF5File(filepath, "r") as hdf5:

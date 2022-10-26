@@ -138,6 +138,17 @@ class Generator(Chain):
 		eprint("No such label in the model!")
 		raise RuntimeError("Label error")
 
+	def transfer(self, source, levels=[]):
+		for (i, dest), (_, src) in zip(self.synthesizer.blocks, source.synthesizer.blocks):
+			if i in levels:
+				if isinstance(dest, InitialSkipArchitecture):
+					dest.wmconv.copyparams(src.wmconv)
+					dest.torgb.copyparams(src.torgb)
+				else:
+					dest.wmconv1.copyparams(src.wmconv1)
+					dest.wmconv2.copyparams(src.wmconv2)
+					dest.torgb.copyparams(src.torgb)
+
 	def save(self, filepath):
 		with HDF5File(filepath, "w") as hdf5:
 			HDF5Serializer(hdf5).save(self)
@@ -198,6 +209,17 @@ class Discriminator(Chain):
 		h = self.main(x)
 		batch, channels = h.shape
 		return h.reshape(batch) if c is None else sum(h * c1, axis=1) / root(channels)
+
+	def transfer(self, source, levels=[]):
+		for (i, dest), (_, src) in zip(self.blocks, source.blocks):
+			if i in levels:
+				if isinstance(dest, FromRGB):
+					dest.copyparams(src)
+				elif isinstance(dest, ResidualBlock):
+					dest.copyparams(src)
+				else:
+					dest.conv1.copyparams(src.conv1)
+					dest.conv2.copyparams(src.conv2)
 
 	@property
 	def blocks(self):

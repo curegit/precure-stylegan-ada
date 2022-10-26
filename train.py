@@ -27,7 +27,7 @@ def main(args):
 	averaged_generator.to_device(args.device)
 	print_model_args(generator)
 	print_parameter_counts(generator, discriminator)
-	print_cnn_architecture(generator, discriminator)
+	print_cnn_architecture(generator, discriminator, None if args.transfer is None else args.transfer[1:3], args.freeze)
 	optimizers = AdamSet(args.alpha, args.betas[0], args.betas[1], categories > 1)
 	optimizers.setup(generator, discriminator)
 	print("Preparing a dataset...")
@@ -69,10 +69,13 @@ def main(args):
 	if args.snapshot is not None:
 		print("Loading a snapshot...")
 		updater.load_states(args.snapshot)
+	if args.transfer is not None:
+		print("Transfering...")
+		updater.transfer(*args.transfer)
+	if args.freeze is not None:
+		updater.freeze(*args.freeze)
 	mkdirs(args.dest)
 	dump_json(args, build_filepath(args.dest, "arguments", "json", args.force))
-	#updater.freeze_generator([4, 5, 6, 7])
-	#updater.freeze_discriminator([0, 1, 2])
 	trainer = CustomTrainer(updater, args.epoch, args.dest, args.force)
 	if args.save != 0:
 		trainer.hook_state_save(args.save)
@@ -127,6 +130,13 @@ def check_args(args):
 def preprocess_args(args):
 	if args.labels is not None and len(args.labels) == 0:
 		args.labels = [basename(realpath(d)) for d in args.dataset]
+	if args.transfer is not None:
+		try:
+			snapshot, g, d = args.transfer
+			args.transfer = (snapshot, uint(g), uint(d))
+		except:
+			eprint("Transfer levels must be non-negative integers!")
+			raise
 	return args
 
 def parse_args():
