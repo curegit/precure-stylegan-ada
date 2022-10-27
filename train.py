@@ -85,7 +85,8 @@ def main(args):
 	if not args.nobar:
 		trainer.enable_progress_bar(1)
 	print("Training started")
-	trainer.run()
+	if args.epoch != 0:
+		trainer.run()
 	print("Saving results...")
 	gen_path = build_filepath(args.dest, "generator", "hdf5", args.force)
 	averaged_generator.save(gen_path)
@@ -149,7 +150,7 @@ def parse_args():
 	group.add_argument("-s", "--snapshot", metavar="HDF5_FILE", help="load weights and parameters from a snapshot (for resuming)")
 	group.add_argument("-t", "--transfer", metavar=("HDF5_FILE", "G", "D"), nargs=3, help="import CNN weights from another snapshot (transfer learning), transfer generator/discriminator CNN blocks only above/below level G/D (inclusive)")
 	group.add_argument("-Z", "--freeze", metavar=("G", "D"), nargs=2, type=uint, help="disable updating generator/discriminator CNN blocks above/below level G/D (inclusive), likely used with --transfer")
-	group.add_argument("-e", "--epoch", metavar="N", type=natural, default=1, help="training duration in epoch (note that training duration will not be serialized in snapshot)")
+	group.add_argument("-e", "--epoch", metavar="N", type=uint, default=1, help="training duration in epoch (note that elapsed training duration will not be serialized in snapshot)")
 	group.add_argument("-b", "--batch", metavar="N", type=natural, default=16, help="batch size, affecting not only memory usage, but also training result")
 	group.add_argument("-k", "--accum", metavar="N", dest="accum", type=natural, help="enable the gradient accumulation and specify its partial batch size")
 	group.add_argument("-g", "--group", metavar="N", dest="group", type=uint, default=0, help="group size of the minibatch standard deviation (set 0 to use entire batch)")
