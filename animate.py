@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import numpy as np
-from chainer import global_config, Variable
 from chainer.functions import stack
 from stylegan.networks import Generator
 from interface.args import CustomArgumentParser
@@ -11,6 +10,7 @@ from utilities.image import to_pil_image, save_image
 from utilities.stdio import eprint
 from utilities.filesys import mkdirs, build_filepath
 from utilities.iter import range_batch, iter_batch
+from utilities.chainer import to_variable, config_valid
 
 def interpolate(ws, middles=15, loop=True, closed=True):
 	n = len(ws)
@@ -23,26 +23,24 @@ def interpolate(ws, middles=15, loop=True, closed=True):
 		yield ws[n - 1]
 
 def main(args):
-	global_config.train = False
-	global_config.autotune = True
-	global_config.cudnn_deterministic = True
+	config_valid()
 	print("Loading a model...")
 	generator = Generator.load(args.generator)
 	generator.to_device(args.device)
 	if args.center is not None:
 		print("Loading a latent vector...")
-		center = Variable(np.load(args.center))
+		center = to_variable(np.load(args.center), device=args.device)
 	else:
 		center = None
 	if args.prepend is not None:
 		print("Loading prepended styles...")
-		prepend = [Variable(np.load(s)) for s in args.prepend]
+		prepend = [to_variable(np.load(s), device=args.device) for s in args.prepend]
 		print(f"Prepended styles: {len(prepend)}")
 	else:
 		prepend = []
 	if args.append is not None:
 		print("Loading appended styles...")
-		append = [Variable(np.load(s)) for s in args.append]
+		append = [to_variable(np.load(s), device=args.device) for s in args.append]
 		print(f"Appended styles: {len(append)}")
 	else:
 		append = []
