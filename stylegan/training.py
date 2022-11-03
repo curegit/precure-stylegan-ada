@@ -223,6 +223,7 @@ class CustomUpdater(StandardUpdater):
 			HDF5Deserializer(hdf5["generator"]).load(source_generator)
 			HDF5Deserializer(hdf5["discriminator"]).load(source_discriminator)
 			self.generator.transfer(source_generator, list(range(generator_level, self.generator.levels + 1)))
+			self.averaged_generator.transfer(source_generator, list(range(generator_level, self.averaged_generator.levels + 1)))
 			self.discriminator.transfer(source_discriminator, list(range(0, discriminator_level + 1)))
 
 	def load_states(self, filepath):
