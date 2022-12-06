@@ -11,13 +11,13 @@ class Downsampler():
 		if lanczos:
 			self.n = n
 			kernel = lambda x: sinc(x) * sinc(x / n)
-			ys = array([kernel(i + 0.5) for i in range(-n, n)])
-			k = ys.reshape(1, n * 2) * ys.reshape(n * 2, 1)
+			ys = array([kernel(i / 2 + 0.25) for i in range(-2 * n, 2 * n)])
+			k = ys.reshape(1, n * 4) * ys.reshape(n * 4, 1)
 			self.w = array([[k / k.sum()]], dtype=float32)
 
 	def __call__(self, x):
 		if self.lanczos:
-			p = self.n - 1
+			p = 2 * self.n - 1
 			batch, channels, height, width = x.shape
 			h1 = x.reshape(batch * channels, 1, height, width)
 			h2 = pad(h1, ((0, 0), (0, 0), (p, p), (p, p)), mode="symmetric")
