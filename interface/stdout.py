@@ -56,5 +56,11 @@ def print_training_args(args):
 		print(f"Path length regularization: coefficient = {args.weight}, decay = {args.decay} (every iteration)")
 	else:
 		print(f"Path length regularization: disabled")
+	if args.lms is not None and args.ms > 1:
+		print(f"Mode seeking regularization: coefficient = {args.lms} (every {args.ms} iterations)")
+	elif args.lms is not None:
+		print(f"Mode seeking regularization: coefficient = {args.lms} (every iteration)")
+	else:
+		print("Mode seeking regularization: disabled")
 	print(f"Objective: {'least squares loss' if args.lsgan else 'logistic loss'}")
 	print(f"Adam: alpha = {args.alpha}, beta1 = {args.betas[0]}, beta2 = {args.betas[1]}")

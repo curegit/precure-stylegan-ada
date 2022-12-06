@@ -54,6 +54,8 @@ def main(args):
 		updater.enable_r1_regularization(args.gamma, args.r1)
 	if args.weight > 0:
 		updater.enable_path_length_regularization(args.decay, args.weight, args.pl)
+	if args.lms is not None:
+		updater.enable_mode_seeking_regularization(args.lms, args.ms)
 	if args.ada:
 		print("Enabling ADA...")
 		print(f"- pixel: {args.pixel * 100}%")
@@ -88,20 +90,40 @@ def main(args):
 	print(f"Saved: {dis_path}")
 
 def check_args(args):
-	if len(args.dataset) == 1 and args.labels:
-		eprint("Unconditional model cannot have labels!")
-		raise RuntimeError("Label error")
-	if len(args.dataset) > 1 and args.labels and len(args.labels) != len(args.dataset):
-		eprint("You must provide the same number of data classes and labels!")
-		raise RuntimeError("Label error")
+	if args.group != 0 and args.group > args.batch:
+		eprint("Group size must be less than or equal to batch size!")
+		raise RuntimeError("Argument conflict")
+	if args.accum is not None:
+		if args.accum > args.batch:
+			eprint("Accumulation size must be less than or equal to batch size!")
+			raise RuntimeError("Argument conflict")
+		if args.group != 0 and args.group > args.accum:
+			eprint("Group size must be less than or equal to accumulation size!")
+			raise RuntimeError("Argument conflict")
+	if args.lms is not None:
+		if args.accum is None and args.batch % 2 != 0:
+			eprint("Batch size must be even to use the mode seeking regularization!")
+			raise RuntimeError("Argument conflict")
+		elif args.accum is not None and args.accum % 2 != 0:
+			eprint("Accumulation size must be even to use the mode seeking regularization!")
+			raise RuntimeError("Argument conflict")
+		elif args.accum is not None and (args.batch % args.accum) % 2 != 0:
+			eprint("Last accumulation size also must be even to use the mode seeking regularization!")
+			raise RuntimeError("Argument conflict")
 	if args.labels:
+		if len(args.dataset) == 1:
+			eprint("Unconditional model cannot have labels!")
+			raise RuntimeError("Label error")
+		if len(args.dataset) > 1 and len(args.labels) != len(args.dataset):
+			eprint("You must provide the same number of data classes and labels!")
+			raise RuntimeError("Label error")
 		for l in args.labels:
 			if not l:
 				eprint("Empty strings are not allowed for labels!")
 				raise RuntimeError("Label error")
-	if args.labels and len(args.labels) != len(set(args.labels)):
-		eprint("Labels are not unique!")
-		raise RuntimeError("Label error")
+		if len(args.labels) != len(set(args.labels)):
+			eprint("Labels are not unique!")
+			raise RuntimeError("Label error")
 	if args.accum is None:
 		if args.group == 0:
 			return args
@@ -117,8 +139,7 @@ def check_args(args):
 			eprint("Last accumulation size is not divisible by group size!")
 		else:
 			eprint("Accumulation size is not divisible by group size!")
-	eprint("Incompatible grouping configuration")
-	raise RuntimeError("Conflict error")
+	raise RuntimeError("Argument conflict")
 
 def preprocess_args(args):
 	if args.labels is not None and len(args.labels) == 0:
@@ -143,6 +164,8 @@ def parse_args():
 	group.add_argument("-w", "--pl-weight", metavar="W", dest="weight", type=ufloat, default=2.0, help="coefficient of the path length regularization (set 0 to disable)")
 	group.add_argument("-y", "--pl-decay", metavar="RATE", dest="decay", type=rate, default=0.99, help="decay rate of the path length regularization")
 	group.add_argument("-t", "--pl-interval", metavar="ITER", dest="pl", type=natural, default=8, help="apply the path length regularization every ITER iteration (lazy regularization)")
+	group.add_argument("-M", "--ms", "--mode-seeking", metavar="LAMBDA", dest="lms", type=positive, nargs="?", const=0.1, help="enable the mode seeking regularization and set its coefficient LAMBDA")
+	group.add_argument("-V", "--ms-interval", metavar="ITER", dest="ms", type=natural, default=2, help="apply the mode seeking regularization every ITER iteration (lazy regularization)")
 	group.add_argument("-L", "--lsgan", "--least-squares", action="store_true", help="use the least squares loss function instead of the logistic loss function")
 	group.add_argument("-E", "--ema-images", metavar="N", dest="ema", type=natural, default=10000, help="period of the exponential moving average for generator weights (enlarge the value to take longer)")
 	group.add_argument("-A", "--alpha", "--lr", metavar="ALPHA", type=positive, default=0.002, help="Adam's learning rate (shared both generator and discriminator)")
@@ -150,7 +173,7 @@ def parse_args():
 	group = parser.add_argument_group("augmentation arguments")
 	group.add_argument("-a", "--ada", action="store_true", help="enable the adaptive discriminator augmentation")
 	group.add_argument("-T", "--target", metavar="RATE", type=rate, default=0.6, help="target value of the discriminator overfitting heuristic indicator")
-	group.add_argument("-M", "--limit", metavar="RATE", type=rate, default=0.8, help="upper limit of the augmentation probability")
+	group.add_argument("-U", "--limit", metavar="RATE", type=rate, default=0.8, help="upper limit of the augmentation probability")
 	group.add_argument("-D", "--delta", metavar="N", type=natural, default=500000, help="control the amount of an augmentation probability update (use a smaller value for bigger updates)")
 	group.add_argument("-I", "--pixel", "--integer", metavar="P", type=ufloat, default=1.0, help="application rate multiplier of the by-pixel transformation augmentation")
 	group.add_argument("-G", "--geometric", metavar="P", type=ufloat, default=1.0, help="application rate multiplier of the general geometric transformation augmentation")
