@@ -2,7 +2,7 @@ from os.path import lexists, isdir
 from numpy import eye, float32
 from chainer.dataset import DatasetMixin
 from utilities.stdio import eprint
-from utilities.image import load_image
+from utilities.image import load_image, load_image_uint8, uint8_to_float
 from utilities.filesys import relaxed_glob_recursively
 
 class ImageDataset(DatasetMixin):
@@ -34,12 +34,12 @@ class ImageDataset(DatasetMixin):
 		self.preloaded = True
 		self.loaded_images = []
 		for i in self.image_files:
-			self.loaded_images.append(load_image(i, self.resolution))
+			self.loaded_images.append(load_image_uint8(i, self.resolution))
 			if callback:
 				callback()
 
 	def get_example(self, index):
-		return self.loaded_images[index] if self.preloaded else load_image(self.image_files[index], self.resolution)
+		return uint8_to_float(self.loaded_images[index]) if self.preloaded else load_image(self.image_files[index], self.resolution)
 
 class MulticategoryImageDataset(DatasetMixin):
 
