@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import numpy as np
-from chainer import global_config, Variable
 from chainer.functions import stack
 from stylegan.networks import Generator
 from interface.args import CustomArgumentParser
@@ -11,11 +10,10 @@ from utilities.image import save_image
 from utilities.stdio import eprint
 from utilities.filesys import mkdirs, build_filepath
 from utilities.iter import range_batch
+from utilities.chainer import to_variable, config_valid
 
 def main(args):
-	global_config.train = False
-	global_config.autotune = True
-	global_config.cudnn_deterministic = True
+	config_valid()
 	print("Loading a model...")
 	generator = Generator.load(args.generator)
 	generator.to_device(args.device)
@@ -28,7 +26,7 @@ def main(args):
 				eprint("You must supply a 1st level style!")
 				raise RuntimeError("Input error")
 		else:
-			ws.append(Variable(np.load(s)))
+			ws.append(to_variable(np.load(s), device=args.device))
 	if (len(ws) > generator.levels):
 		eprint("Too many styles!")
 		raise RuntimeError("Input error")

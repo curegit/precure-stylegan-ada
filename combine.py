@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import numpy as np
-from chainer import global_config, Variable
 from chainer.functions import stack
 from stylegan.networks import Generator
 from interface.args import CustomArgumentParser
@@ -11,11 +10,10 @@ from utilities.image import save_image
 from utilities.stdio import eprint
 from utilities.filesys import mkdirs, build_filepath
 from utilities.iter import range_batch
+from utilities.chainer import to_variable, config_valid
 
 def main(args):
-	global_config.train = False
-	global_config.autotune = True
-	global_config.cudnn_deterministic = True
+	config_valid()
 	print("Loading a model...")
 	generator = Generator.load(args.generator)
 	generator.to_device(args.device)
@@ -25,7 +23,7 @@ def main(args):
 	np.save(build_filepath(args.dest, "new-style", "npy", args.force), w)
 	with chainer_like_tqdm(desc="generation", total=args.number) as bar:
 		for i, n in range_batch(args.number, args.batch):
-			y = generator.synthesizer([stack([Variable(w)] * n)] * generator.levels, noise=args.noisy, freeze=args.freeze)
+			y = generator.synthesizer([stack([to_variable(w, device=args.device)] * n)] * generator.levels, noise=args.noisy, freeze=args.freeze)
 			y.to_cpu()
 			for j in range(n):
 				filename = f"{i + j + 1}"

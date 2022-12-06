@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from os.path import basename, realpath
-from chainer import global_config
 from chainer.iterators import SerialIterator
 from stylegan.dataset import ImageDataset, MulticategoryImageDataset
 from stylegan.networks import Generator, Discriminator
@@ -12,11 +11,10 @@ from interface.argtypes import uint, natural, ufloat, positive, rate
 from interface.stdout import chainer_like_tqdm, print_model_args, print_parameter_counts, print_cnn_architecture, print_data_classes, print_training_args
 from utilities.stdio import eprint
 from utilities.filesys import mkdirs, build_filepath
+from utilities.chainer import config_train
 
 def main(args):
-	global_config.train = True
-	global_config.autotune = True
-	global_config.cudnn_deterministic = False
+	config_train()
 	print("Initializing models...")
 	categories = len(args.dataset)
 	generator = Generator(args.size, args.depth, args.levels, *args.channels, categories)

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import numpy as np
-from chainer import global_config, Variable
 from stylegan.networks import Generator
 from interface.args import CustomArgumentParser
 from interface.stdout import chainer_like_tqdm
@@ -9,17 +8,16 @@ from utilities.image import save_image
 from utilities.stdio import eprint
 from utilities.filesys import mkdirs, build_filepath
 from utilities.iter import range_batch
+from utilities.chainer import to_variable, config_valid
 
 def main(args):
-	global_config.train = False
-	global_config.autotune = True
-	global_config.cudnn_deterministic = True
+	config_valid()
 	print("Loading a model...")
 	generator = Generator.load(args.generator)
 	generator.to_device(args.device)
 	if args.center is not None:
 		print("Loading a latent vector...")
-		center = Variable(np.load(args.center))
+		center = to_variable(np.load(args.center), device=args.device)
 	else:
 		center = None
 	if args.classes is not None or args.labels is not None:
