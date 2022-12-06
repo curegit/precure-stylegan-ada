@@ -6,7 +6,7 @@ from chainer import grad, Variable
 from chainer.reporter import report
 from chainer.training import StandardUpdater, Trainer
 from chainer.training.extensions import PrintReport, LogReport, PlotReport, ProgressBar
-from chainer.functions import sqrt, sign, softplus, sum, mean, batch_l2_norm_squared, stack
+from chainer.functions import sqrt, sign, softplus, sum, mean, batch_l2_norm_squared, stack, concat, split_axis
 from chainer.optimizers import Adam
 from chainer.serializers import HDF5Serializer, HDF5Deserializer
 from stylegan.networks import Generator, Discriminator
@@ -74,6 +74,7 @@ class CustomUpdater(StandardUpdater):
 		self.r1_regularization_interval = 0
 		self.averaged_path_length = 0.0
 		self.path_length_regularization_interval = 0
+		self.mode_seeking_regularization_interval = 0
 		self.augumentation = False
 		self.augumentation_pipeline = identity
 		self.augumentation_probability = 0.0
@@ -93,6 +94,10 @@ class CustomUpdater(StandardUpdater):
 		self.path_length_penalty_weight = weight
 		self.path_length_regularization_interval = interval
 
+	def enable_mode_seeking_regularization(self, coefficient=0.1, interval=2):
+		self.mode_seeking_regularization_lambda = coefficient
+		self.mode_seeking_regularization_interval = interval
+
 	def enable_adaptive_augumentation(self, pipeline, target=0.6, limit=0.8, delta_images=500000, initial_probability=None):
 		self.augumentation = True
 		self.augumentation_pipeline = pipeline
@@ -108,12 +113,16 @@ class CustomUpdater(StandardUpdater):
 	def generate_latents(self, n):
 		return self.generator.generate_latents(n)
 
-	def generate_conditions(self, n):
-		return self.generator.generate_conditions(n)
+	def generate_conditions(self, n, dual=False):
+		if dual:
+			c = self.generator.generate_conditions(n // 2)
+			return concat((c, c), axis=0)
+		else:
+			return self.generator.generate_conditions(n)
 
-	def next_latent_groups(self):
+	def next_latent_groups(self, mode_seeking=False):
 		for _, n in range_batch(self.batch_size, self.group_size):
-			yield self.generate_latents(n), (self.generate_conditions(n) if self.conditional else None)
+			yield self.generate_latents(n), (self.generate_conditions(n, dual=mode_seeking) if self.conditional else None)
 
 	def next_real_groups(self):
 		for group in iter_batch(self.iterator.next(), self.group_size):
@@ -139,8 +148,9 @@ class CustomUpdater(StandardUpdater):
 		accumulated_loss = 0.0
 		accumulated_penalty = 0.0
 		accumulated_path_length = 0.0
+		accumulated_distance_ratio = 0.0
 		self.generator.cleargrads()
-		for z, c in self.next_latent_groups():
+		for z, c in self.next_latent_groups(self.mode_seeking_regularization()):
 			group_size = z.shape[0]
 			mix = self.generate_latents(group_size) if random.random() < self.style_mixing_rate else None
 			ws, x_fake = self.generator(z, c, random_mix=mix)
@@ -154,6 +164,14 @@ class CustomUpdater(StandardUpdater):
 				penalty = weight * sum((path_length - averaged_path_length) ** 2) / self.batch_size
 				accumulated_penalty += penalty.item()
 				accumulated_path_length += sum(path_length).item() / self.batch_size
+			if self.mode_seeking_regularization():
+				z1, z2 = split_axis(z, 2, axis=0)
+				x1, x2 = split_axis(x_fake, 2, axis=0)
+				lms = sum(CustomUpdater.distance_ratio(z1, x1, z2, x2)) / (self.batch_size / 2)
+				weight = self.mode_seeking_regularization_lambda * self.mode_seeking_regularization_interval
+				penalty = penalty + weight / (lms + 1e-8)
+				accumulated_penalty += penalty.item()
+				accumulated_distance_ratio += lms.item()
 			if self.lsgan:
 				loss = CustomUpdater.generator_least_squares_loss(y_fake) / self.batch_size
 			else:
@@ -165,6 +183,8 @@ class CustomUpdater(StandardUpdater):
 		if self.path_length_regularization():
 			self.averaged_path_length = lerp(accumulated_path_length, self.averaged_path_length, self.path_length_decay)
 			report({"path length": self.averaged_path_length})
+		if self.mode_seeking_regularization():
+			report({"distance ratio": accumulated_distance_ratio})
 
 	def average_generator(self):
 		decay = 0.5 ** (self.batch_size / self.averaging_images)
@@ -214,6 +234,9 @@ class CustomUpdater(StandardUpdater):
 
 	def path_length_regularization(self):
 		return self.path_length_regularization_interval and self.iteration % self.path_length_regularization_interval == 0
+
+	def mode_seeking_regularization(self):
+		return self.mode_seeking_regularization_interval and self.iteration % self.mode_seeking_regularization_interval == 0
 
 	def transfer(self, filepath, generator_level, discriminator_level):
 		with HDF5File(filepath, "r") as hdf5:
@@ -286,6 +309,12 @@ class CustomUpdater(StandardUpdater):
 		gradient = stack(gradients).transpose(1, 0, 2).reshape(batch * levels, size)
 		path_lengths = batch_l2_norm_squared(gradient).reshape(batch, levels)
 		return sqrt(mean(path_lengths, axis=1))
+
+	@staticmethod
+	def distance_ratio(z1, x1, z2, x2):
+		v1 = mean(abs(x1 - x2), axis=(1, 2, 3))
+		v2 = mean(abs(z1 - z2), axis=1)
+		return v1 / (v2 + 1e-8)
 
 class CustomTrainer(Trainer):
 
