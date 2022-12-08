@@ -35,7 +35,7 @@ def main(args):
 	mkdirs(args.dest)
 	with chainer_like_tqdm(desc="generation", total=args.number) as bar:
 		for i, n in range_batch(args.number, args.batch):
-			y = generator.synthesizer([stack([w] * n) for w in ws], noise=args.noisy, freeze=args.freeze)
+			y = generator.synthesizer([stack([w] * n) for w in ws], noise=args.noisy, fixed=args.fixed)
 			y.to_cpu()
 			for j in range(n):
 				filename = f"{i + j + 1}"

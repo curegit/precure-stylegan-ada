@@ -38,10 +38,10 @@ class Synthesizer(Chain):
 			self.init = InitialSkipArchitecture(size, in_channels[0], out_channels[0], level=1)
 			self.skips = ChainList(*[SkipArchitecture(size, i, o, level=l) for l, (i, o) in enumerate(zip(in_channels[1:], out_channels[1:]), 2)])
 
-	def __call__(self, ws, noise=1.0, freeze=None):
-		h, rgb = self.init(ws[0], noise=noise, freeze=freeze)
+	def __call__(self, ws, noise=1.0, fixed=None):
+		h, rgb = self.init(ws[0], noise=noise, fixed=fixed)
 		for s, w in zip(self.skips, ws[1:]):
-			h, rgb = s(h, rgb, w, noise=noise, freeze=freeze)
+			h, rgb = s(h, rgb, w, noise=noise, fixed=fixed)
 		return rgb
 
 	@property
@@ -71,7 +71,7 @@ class Generator(Chain):
 			if categories > 1:
 				self.embedder = EqualizedLinear(categories, size, gain=1)
 
-	def __call__(self, z, c=None, random_mix=None, psi=1.0, mean_w=None, categories=None, noise=1.0, freeze=None):
+	def __call__(self, z, c=None, random_mix=None, psi=1.0, mean_w=None, categories=None, noise=1.0, fixed=None):
 		z, *zs = z if isinstance(z, tuple) or isinstance(z, list) else [z]
 		if self.conditional and c is None:
 			c = self.generate_conditions(len(z), categories)
@@ -88,7 +88,7 @@ class Generator(Chain):
 		for i, z in zip(range(1, stop), zs):
 			if z is not Ellipsis:
 				ws[i:stop] = [self.truncation_trick(self.mapper(z, c), psi, mean_w, categories)] * (stop - i)
-		return ws, self.synthesizer(ws, noise=noise, freeze=freeze)
+		return ws, self.synthesizer(ws, noise=noise, fixed=fixed)
 
 	def generate_latents(self, batch, center=None, sd=1.0):
 		return self.sampler(batch, self.size) * sd + (0.0 if center is None else center)

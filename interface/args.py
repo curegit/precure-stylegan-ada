@@ -35,7 +35,7 @@ class CustomArgumentParser(ArgumentParser):
 			group.add_argument("-b", "--batch", metavar="N", type=natural, default=16, help="batch size, affecting speed and memory usage")
 		if include_noise:
 			group.add_argument("-N", "--noise", metavar="K", dest="noisy", type=ufloat, default=1.0, help="strength multiplier of random noise injections")
-			group.add_argument("-z", "--freeze", metavar="N", type=uint, nargs="?", const=0, help="make noise injections deterministic by given seed N")
+			group.add_argument("-z", "--fixed", metavar="N", type=uint, nargs="?", const=0, help="make noise injections deterministic by given seed N")
 		group.add_argument("-v", "--device", "--gpu", metavar="ID", dest="device", type=device, default=device("CPU"), help="use GPU device of the specified ID (pass 'GPU' as ID to select GPU device automatically)")
 		return self
 

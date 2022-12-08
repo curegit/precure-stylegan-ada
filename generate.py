@@ -40,7 +40,7 @@ def main(args):
 		for i, n in range_batch(args.number, args.batch):
 			z = generator.generate_latents(n, center=center, sd=args.sd)
 			c = generator.generate_conditions(n, categories=categories) if generator.conditional else None
-			ws, y = generator(z, c, psi=args.psi, mean_w=mean_w, noise=args.noisy, freeze=args.freeze)
+			ws, y = generator(z, c, psi=args.psi, mean_w=mean_w, noise=args.noisy, fixed=args.fixed)
 			z.to_cpu()
 			y.to_cpu()
 			ws[0].to_cpu()

@@ -23,7 +23,7 @@ def main(args):
 	np.save(build_filepath(args.dest, "new-style", "npy", args.force), w)
 	with chainer_like_tqdm(desc="generation", total=args.number) as bar:
 		for i, n in range_batch(args.number, args.batch):
-			y = generator.synthesizer([stack([to_variable(w, device=args.device)] * n)] * generator.levels, noise=args.noisy, freeze=args.freeze)
+			y = generator.synthesizer([stack([to_variable(w, device=args.device)] * n)] * generator.levels, noise=args.noisy, fixed=args.fixed)
 			y.to_cpu()
 			for j in range(n):
 				filename = f"{i + j + 1}"

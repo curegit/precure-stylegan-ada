@@ -85,16 +85,16 @@ class NoiseAdder(Link):
 			self.sampler = GaussianDistribution(self)
 			self.s = Parameter(shape=1, initializer=Zero())
 
-	def __call__(self, x, coefficient=1.0, freeze=None):
+	def __call__(self, x, coefficient=1.0, fixed=None):
 		if coefficient == 0.0:
 			return x
 		else:
 			batch, channels, height, width = x.shape
 			scale = self.s if coefficient == 1.0 else coefficient * self.s
-			if freeze is None:
+			if fixed is None:
 				return x + scale * self.sampler(batch, 1, height, width)
 			else:
-				return x + scale * self.sampler.deterministic(1, 1, height, width, seed=(freeze + self.id))
+				return x + scale * self.sampler.deterministic(1, 1, height, width, seed=(fixed + self.id))
 
 class ToRGB(Chain):
 
@@ -119,10 +119,10 @@ class InitialSkipArchitecture(Chain):
 			self.style2 = StyleAffineTransformation(size, out_channels)
 			self.torgb = ToRGB(out_channels)
 
-	def __call__(self, w, noise=1.0, freeze=None):
+	def __call__(self, w, noise=1.0, fixed=None):
 		h1 = self.const(w.shape[0])
 		h2 = self.wmconv(h1, self.style1(w))
-		h3 = self.noise(h2, coefficient=noise, freeze=freeze)
+		h3 = self.noise(h2, coefficient=noise, fixed=fixed)
 		h4 = self.act(h3)
 		return h4, self.torgb(h4, self.style2(w))
 
@@ -149,13 +149,13 @@ class SkipArchitecture(Chain):
 			self.torgb = ToRGB(out_channels)
 			self.skip = BicubicUpsampler(1, 0)
 
-	def __call__(self, x, y, w, noise=1.0, freeze=None):
+	def __call__(self, x, y, w, noise=1.0, fixed=None):
 		h1 = self.up(x)
 		h2 = self.wmconv1(h1, self.style1(w))
-		h3 = self.noise1(h2, coefficient=noise, freeze=freeze)
+		h3 = self.noise1(h2, coefficient=noise, fixed=fixed)
 		h4 = self.act1(h3)
 		h5 = self.wmconv2(h4, self.style2(w))
-		h6 = self.noise2(h5, coefficient=noise, freeze=freeze)
+		h6 = self.noise2(h5, coefficient=noise, fixed=fixed)
 		h7 = self.act2(h6)
 		return h7, self.skip(y) + self.torgb(h7, self.style3(w))
 
