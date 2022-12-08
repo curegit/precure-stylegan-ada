@@ -25,7 +25,7 @@ def main(args):
 	averaged_generator.to_device(args.device)
 	print_model_args(generator)
 	print_parameter_counts(generator, discriminator)
-	print_cnn_architecture(generator, discriminator)
+	print_cnn_architecture(generator, discriminator, None if args.transfer is None else args.transfer[1:3], args.freeze)
 	optimizers = AdamSet(args.alpha, args.betas[0], args.betas[1], categories > 1)
 	optimizers.setup(generator, discriminator)
 	print("Preparing a dataset...")
@@ -69,6 +69,11 @@ def main(args):
 	if args.snapshot is not None:
 		print("Loading a snapshot...")
 		updater.load_states(args.snapshot)
+	if args.transfer is not None:
+		print("Transfering...")
+		updater.transfer(*args.transfer)
+	if args.freeze is not None:
+		updater.freeze(*args.freeze)
 	mkdirs(args.dest)
 	dump_json(args, build_filepath(args.dest, "arguments", "json", args.force))
 	trainer = CustomTrainer(updater, args.epoch, args.dest, args.force)
@@ -80,14 +85,15 @@ def main(args):
 	if not args.nobar:
 		trainer.enable_progress_bar(1)
 	print("Training started")
-	trainer.run()
+	if args.epoch != 0:
+		trainer.run()
 	print("Saving results...")
 	gen_path = build_filepath(args.dest, "generator", "hdf5", args.force)
 	averaged_generator.save(gen_path)
 	print(f"Saved: {gen_path}")
-	dis_path = build_filepath(args.dest, "snapshot", "hdf5", args.force)
-	updater.save_states(dis_path)
-	print(f"Saved: {dis_path}")
+	up_path = build_filepath(args.dest, "snapshot", "hdf5", args.force)
+	updater.save_states(up_path)
+	print(f"Saved: {up_path}")
 
 def check_args(args):
 	if args.group != 0 and args.group > args.batch:
@@ -144,6 +150,13 @@ def check_args(args):
 def preprocess_args(args):
 	if args.labels is not None and len(args.labels) == 0:
 		args.labels = [basename(realpath(d)) for d in args.dataset]
+	if args.transfer is not None:
+		try:
+			snapshot, g, d = args.transfer
+			args.transfer = snapshot, uint(g), uint(d)
+		except:
+			eprint("Transfer levels must be non-negative integers!")
+			raise
 	return args
 
 def parse_args():
@@ -154,7 +167,9 @@ def parse_args():
 	parser.add_argument("-l", "--labels", metavar="CLASS", nargs="*", help="embed data class labels into output generators (provide CLASS as many as dataset directories), dataset directory names are automatically used if no CLASS arguments are given")
 	group = parser.add_argument_group("training arguments")
 	group.add_argument("-s", "--snapshot", metavar="HDF5_FILE", help="load weights and parameters from a snapshot (for resuming)")
-	group.add_argument("-e", "--epoch", metavar="N", type=natural, default=1, help="training duration in epoch (note that training duration will not be serialized in snapshot)")
+	group.add_argument("-t", "--transfer", metavar=("HDF5_FILE", "G", "D"), nargs=3, help="import CNN weights from another snapshot (transfer learning), transfer generator/discriminator CNN blocks only above/below level G/D (inclusive)")
+	group.add_argument("-Z", "--freeze", metavar=("G", "D"), nargs=2, type=uint, help="disable updating generator/discriminator CNN blocks above/below level G/D (inclusive), likely used with --transfer")
+	group.add_argument("-e", "--epoch", metavar="N", type=uint, default=1, help="training duration in epoch (note that elapsed training duration will not be serialized in snapshot)")
 	group.add_argument("-b", "--batch", metavar="N", type=natural, default=16, help="batch size, affecting not only memory usage, but also training result")
 	group.add_argument("-k", "--accum", metavar="N", dest="accum", type=natural, help="enable the gradient accumulation and specify its partial batch size")
 	group.add_argument("-g", "--group", metavar="N", dest="group", type=uint, default=0, help="group size of the minibatch standard deviation (set 0 to use entire batch)")
@@ -163,7 +178,7 @@ def parse_args():
 	group.add_argument("-i", "--r1-interval", metavar="ITER", dest="r1", type=natural, default=16, help="apply R1 regularization every ITER iteration (lazy regularization)")
 	group.add_argument("-w", "--pl-weight", metavar="W", dest="weight", type=ufloat, default=2.0, help="coefficient of the path length regularization (set 0 to disable)")
 	group.add_argument("-y", "--pl-decay", metavar="RATE", dest="decay", type=rate, default=0.99, help="decay rate of the path length regularization")
-	group.add_argument("-t", "--pl-interval", metavar="ITER", dest="pl", type=natural, default=8, help="apply the path length regularization every ITER iteration (lazy regularization)")
+	group.add_argument("-u", "--pl-interval", metavar="ITER", dest="pl", type=natural, default=8, help="apply the path length regularization every ITER iteration (lazy regularization)")
 	group.add_argument("-M", "--ms", "--mode-seeking", metavar="LAMBDA", dest="lms", type=positive, nargs="?", const=0.1, help="enable the mode seeking regularization and set its coefficient LAMBDA")
 	group.add_argument("-V", "--ms-interval", metavar="ITER", dest="ms", type=natural, default=2, help="apply the mode seeking regularization every ITER iteration (lazy regularization)")
 	group.add_argument("-L", "--lsgan", "--least-squares", action="store_true", help="use the least squares loss function instead of the logistic loss function")

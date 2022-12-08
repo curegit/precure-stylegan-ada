@@ -9,6 +9,7 @@ from chainer.training.extensions import PrintReport, LogReport, PlotReport, Prog
 from chainer.functions import sqrt, sign, softplus, sum, mean, batch_l2_norm_squared, stack, concat, split_axis
 from chainer.optimizers import Adam
 from chainer.serializers import HDF5Serializer, HDF5Deserializer
+from stylegan.networks import Generator, Discriminator
 from utilities.iter import range_batch, iter_batch
 from utilities.math import identity, sgn, clamp, lerp
 from utilities.image import save_image
@@ -104,6 +105,10 @@ class CustomUpdater(StandardUpdater):
 		self.augumentation_limit = limit
 		self.augumentation_delta_images = delta_images
 		self.augumentation_probability = initial_probability or self.augumentation_probability
+
+	def freeze(self, generator_level, discriminator_level):
+		self.generator.freeze(list(range(generator_level, self.generator.levels + 1)))
+		self.discriminator.freeze(list(range(0, discriminator_level + 1)))
 
 	def generate_latents(self, n):
 		return self.generator.generate_latents(n)
@@ -233,6 +238,17 @@ class CustomUpdater(StandardUpdater):
 	def mode_seeking_regularization(self):
 		return self.mode_seeking_regularization_interval and self.iteration % self.mode_seeking_regularization_interval == 0
 
+	def transfer(self, filepath, generator_level, discriminator_level):
+		with HDF5File(filepath, "r") as hdf5:
+			params = Generator.read_params(hdf5["generator"])
+			source_generator = Generator(**params)
+			source_discriminator = Discriminator(params["levels"], params["last_channels"], params["first_channels"], params["categories"], params["depth"])
+			HDF5Deserializer(hdf5["generator"]).load(source_generator)
+			HDF5Deserializer(hdf5["discriminator"]).load(source_discriminator)
+			self.generator.transfer(source_generator, list(range(generator_level, self.generator.levels + 1)))
+			self.averaged_generator.transfer(source_generator, list(range(generator_level, self.averaged_generator.levels + 1)))
+			self.discriminator.transfer(source_discriminator, list(range(0, discriminator_level + 1)))
+
 	def load_states(self, filepath):
 		with HDF5File(filepath, "r") as hdf5:
 			self.averaged_path_length = float(hdf5["averaged_path_length"][()])
@@ -240,18 +256,20 @@ class CustomUpdater(StandardUpdater):
 			HDF5Deserializer(hdf5["generator"]).load(self.generator)
 			HDF5Deserializer(hdf5["averaged_generator"]).load(self.averaged_generator)
 			HDF5Deserializer(hdf5["discriminator"]).load(self.discriminator)
-			for key, optimizer in dict(self.optimizers).items():
-				HDF5Deserializer(hdf5["optimizers"][key]).load(optimizer)
+			for key, optimizer in self.optimizers:
+				HDF5Deserializer(hdf5["optimizers"][key], strict=False).load(optimizer)
 
 	def save_states(self, filepath):
 		with HDF5File(filepath, "w") as hdf5:
 			hdf5.create_dataset("averaged_path_length", data=self.averaged_path_length)
 			hdf5.create_dataset("augumentation_probability", data=self.augumentation_probability)
 			HDF5Serializer(hdf5.create_group("generator")).save(self.generator)
+			self.generator.embed_params(hdf5["generator"])
 			HDF5Serializer(hdf5.create_group("averaged_generator")).save(self.averaged_generator)
+			self.averaged_generator.embed_params(hdf5["averaged_generator"])
 			HDF5Serializer(hdf5.create_group("discriminator")).save(self.discriminator)
 			optimizer_group = hdf5.create_group("optimizers")
-			for key, optimizer in dict(self.optimizers).items():
+			for key, optimizer in self.optimizers:
 				HDF5Serializer(optimizer_group.create_group(key)).save(optimizer)
 
 	@property

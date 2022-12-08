@@ -38,10 +38,10 @@ class Synthesizer(Chain):
 			self.init = InitialSkipArchitecture(size, in_channels[0], out_channels[0], level=1)
 			self.skips = ChainList(*[SkipArchitecture(size, i, o, level=l) for l, (i, o) in enumerate(zip(in_channels[1:], out_channels[1:]), 2)])
 
-	def __call__(self, ws, noise=1.0, freeze=None):
-		h, rgb = self.init(ws[0], noise=noise, freeze=freeze)
+	def __call__(self, ws, noise=1.0, fixed=None):
+		h, rgb = self.init(ws[0], noise=noise, fixed=fixed)
 		for s, w in zip(self.skips, ws[1:]):
-			h, rgb = s(h, rgb, w, noise=noise, freeze=freeze)
+			h, rgb = s(h, rgb, w, noise=noise, fixed=fixed)
 		return rgb
 
 	@property
@@ -52,7 +52,7 @@ class Synthesizer(Chain):
 
 class Generator(Chain):
 
-	def __init__(self, size=512, depth=8, levels=7, first_channels=512, last_channels=64, categories=1):
+	def __init__(self, size=512, depth=8, levels=7, first_channels=512, last_channels=64, categories=1, labels=None):
 		super().__init__()
 		self.size = size
 		self.depth = depth
@@ -62,6 +62,8 @@ class Generator(Chain):
 		self.categories = categories
 		self.resolution = (2 * 2 ** levels, 2 * 2 ** levels)
 		self.labels = [f"cat{i}" for i in range(categories)]
+		if labels is not None:
+			self.embed_labels(labels)
 		with self.init_scope():
 			self.sampler = GaussianDistribution(self)
 			self.mapper = Mapper(size, depth, categories > 1)
@@ -69,7 +71,7 @@ class Generator(Chain):
 			if categories > 1:
 				self.embedder = EqualizedLinear(categories, size, gain=1)
 
-	def __call__(self, z, c=None, random_mix=None, psi=1.0, mean_w=None, categories=None, noise=1.0, freeze=None):
+	def __call__(self, z, c=None, random_mix=None, psi=1.0, mean_w=None, categories=None, noise=1.0, fixed=None):
 		z, *zs = z if isinstance(z, tuple) or isinstance(z, list) else [z]
 		if self.conditional and c is None:
 			c = self.generate_conditions(len(z), categories)
@@ -86,7 +88,7 @@ class Generator(Chain):
 		for i, z in zip(range(1, stop), zs):
 			if z is not Ellipsis:
 				ws[i:stop] = [self.truncation_trick(self.mapper(z, c), psi, mean_w, categories)] * (stop - i)
-		return ws, self.synthesizer(ws, noise=noise, freeze=freeze)
+		return ws, self.synthesizer(ws, noise=noise, fixed=fixed)
 
 	def generate_latents(self, batch, center=None, sd=1.0):
 		return self.sampler(batch, self.size) * sd + (0.0 if center is None else center)
@@ -136,30 +138,60 @@ class Generator(Chain):
 		eprint("No such label in the model!")
 		raise RuntimeError("Label error")
 
+	def freeze(self, levels=[]):
+		for i, b in self.synthesizer.blocks:
+			if i in levels:
+				if isinstance(b, InitialSkipArchitecture):
+					b.wmconv.disable_update()
+					b.torgb.disable_update()
+				else:
+					b.wmconv1.disable_update()
+					b.wmconv2.disable_update()
+					b.torgb.disable_update()
+
+	def transfer(self, source, levels=[]):
+		for (i, dest), (_, src) in zip(self.synthesizer.blocks, source.synthesizer.blocks):
+			if i in levels:
+				if isinstance(dest, InitialSkipArchitecture):
+					dest.wmconv.copyparams(src.wmconv)
+					dest.torgb.copyparams(src.torgb)
+				else:
+					dest.wmconv1.copyparams(src.wmconv1)
+					dest.wmconv2.copyparams(src.wmconv2)
+					dest.torgb.copyparams(src.torgb)
+
 	def save(self, filepath):
 		with HDF5File(filepath, "w") as hdf5:
-			hdf5.attrs["size"] = self.size
-			hdf5.attrs["depth"] = self.depth
-			hdf5.attrs["levels"] = self.levels
-			hdf5.attrs["first_channels"] = self.first_channels
-			hdf5.attrs["last_channels"] = self.last_channels
-			hdf5.attrs["categories"] = self.categories
-			hdf5.attrs["labels"] = self.labels
 			HDF5Serializer(hdf5).save(self)
+			self.embed_params(hdf5)
+
+	def embed_params(self, hdf5):
+		hdf5.attrs["size"] = self.size
+		hdf5.attrs["depth"] = self.depth
+		hdf5.attrs["levels"] = self.levels
+		hdf5.attrs["first_channels"] = self.first_channels
+		hdf5.attrs["last_channels"] = self.last_channels
+		hdf5.attrs["categories"] = self.categories
+		hdf5.attrs["labels"] = self.labels
 
 	@staticmethod
 	def load(filepath):
 		with HDF5File(filepath, "r") as hdf5:
-			size = int(hdf5.attrs["size"])
-			depth = int(hdf5.attrs["depth"])
-			levels = int(hdf5.attrs["levels"])
-			first_channels = int(hdf5.attrs["first_channels"])
-			last_channels = int(hdf5.attrs["last_channels"])
-			categories = int(hdf5.attrs["categories"])
-			generator = Generator(size, depth, levels, first_channels, last_channels, categories)
-			generator.embed_labels(hdf5.attrs["labels"])
+			params = Generator.read_params(hdf5)
+			generator = Generator(**params)
 			HDF5Deserializer(hdf5).load(generator)
 			return generator
+
+	@staticmethod
+	def read_params(hdf5):
+		return {
+			"size": int(hdf5.attrs["size"]),
+			"depth": int(hdf5.attrs["depth"]),
+			"levels": int(hdf5.attrs["levels"]),
+			"first_channels": int(hdf5.attrs["first_channels"]),
+			"last_channels": int(hdf5.attrs["last_channels"]),
+			"categories": int(hdf5.attrs["categories"]),
+			"labels": hdf5.attrs["labels"]}
 
 class Discriminator(Chain):
 
@@ -189,8 +221,29 @@ class Discriminator(Chain):
 		batch, channels = h.shape
 		return h.reshape(batch) if c is None else sum(h * c1, axis=1) / root(channels)
 
+	def freeze(self, levels=[]):
+		for i, b in self.blocks:
+			if i in levels:
+				if isinstance(b, FromRGB):
+					b.disable_update()
+				elif isinstance(b, ResidualBlock):
+					b.disable_update()
+				else:
+					b.conv1.disable_update()
+					b.conv2.disable_update()
+
+	def transfer(self, source, levels=[]):
+		for (i, dest), (_, src) in zip(self.blocks, source.blocks):
+			if i in levels:
+				if isinstance(dest, FromRGB):
+					dest.copyparams(src)
+				elif isinstance(dest, ResidualBlock):
+					dest.copyparams(src)
+				else:
+					dest.conv1.copyparams(src.conv1)
+					dest.conv2.copyparams(src.conv2)
+
 	@property
 	def blocks(self):
 		for i, s in enumerate(self.main):
-			if i > 0:
-				yield i, s
+			yield i, s

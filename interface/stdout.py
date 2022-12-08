@@ -24,19 +24,38 @@ def print_parameter_counts(generator, discriminator=None):
 		print(f"- G: {generator.count_params()}")
 		print(f"- D: {discriminator.count_params()}")
 
-def print_cnn_architecture(generator, discriminator=None):
+def print_cnn_architecture(generator, discriminator=None, transfer=None, freeze=None):
 	if discriminator is None:
 		print("CNN channels:")
 	else:
 		print("Generator CNN channels:")
-	pad = max(max(len(str(s)) for s in s.channels) for _, s in generator.synthesizer.blocks)
+	pad = max(max(len(str(s)) for s in s.channels) for i, s in generator.synthesizer.blocks)
 	for i, s in generator.synthesizer.blocks:
-		print(f"- Level {i}: " + " -> conv -> ".join(str(c).rjust(pad) for c in s.channels))
+		if transfer is not None and i >= transfer[0]:
+			if freeze is not None and i >= freeze[0]:
+				info = "(transferred and frozen)"
+			else:
+				info = "(transferred)"
+		elif freeze is not None and i >= freeze[0]:
+			info = "(frozen)"
+		else:
+			info = ""
+		print(f"- Level {i}: " + " -> conv -> ".join(str(c).rjust(pad) for c in s.channels) + f" {info}")
 	if discriminator is not None:
 		print("Discriminator CNN channels:")
-		pad = max(max(len(str(b)) for b in b.channels) for _, b in discriminator.blocks)
+		pad = max(max(len(str(b)) for b in b.channels) for i, b in discriminator.blocks if i > 0)
 		for i, b in discriminator.blocks:
-			print(f"- Level {i}: " + " -> conv -> ".join(str(b).rjust(pad) for b in b.channels))
+			if i > 0:
+				if transfer is not None and i <= transfer[1]:
+					if freeze is not None and i <= freeze[1]:
+						info = "(transferred and frozen)"
+					else:
+						info = "(transferred)"
+				elif freeze is not None and i <= freeze[1]:
+					info = "(frozen)"
+				else:
+					info = ""
+				print(f"- Level {i}: " + " -> conv -> ".join(str(b).rjust(pad) for b in b.channels) + f" {info}")
 
 def print_training_args(args):
 	if args.accum is None:

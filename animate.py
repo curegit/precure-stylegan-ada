@@ -69,7 +69,7 @@ def main(args):
 				w = generator.truncation_trick(generator.mapper(z, c if c is None else generator.embedder(c)), args.psi, mean_w)
 				sampled_ws += [w[i] for i in range(n)]
 				if not args.no_samples:
-					y = generator.synthesizer([w] * generator.levels, noise=args.noisy, freeze=args.freeze)
+					y = generator.synthesizer([w] * generator.levels, noise=args.noisy, fixed=args.fixed)
 					z.to_cpu()
 					w.to_cpu()
 					y.to_cpu()
@@ -85,7 +85,7 @@ def main(args):
 	images = []
 	with chainer_like_tqdm(desc="frames", total=len(frame_ws)) as bar:
 		for ws in iter_batch(frame_ws, args.batch):
-			y = generator.synthesizer([stack(list(ws))] * generator.levels, noise=args.noisy, freeze=args.freeze)
+			y = generator.synthesizer([stack(list(ws))] * generator.levels, noise=args.noisy, fixed=args.fixed)
 			y.to_cpu()
 			for i in range(y.shape[0]):
 				image = to_pil_image(y.array[i])
