@@ -35,9 +35,14 @@ def device(string):
 	value = string.upper()
 	if value == "CPU" or value == "@NUMPY":
 		return CpuDevice()
+	if value[:6] == "@CUPY:":
+		return GpuDevice.from_device_id(int(value[6:]))
 	if value == "GPU" or value == "@CUPY":
 		return GpuDevice.from_device_id(0)
-	value = int(string)
+	try:
+		value = int(string)
+	except:
+		raise ValueError() from None
 	if value >= 0:
 		return GpuDevice.from_device_id(value)
 	if value == -1:
