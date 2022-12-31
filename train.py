@@ -153,7 +153,9 @@ def preprocess_args(args):
 	if args.transfer is not None:
 		try:
 			snapshot, g, d = args.transfer
-			args.transfer = snapshot, uint(g), uint(d)
+			g = 1 if g.lower() == "all" else uint(g)
+			d = args.levels if d.lower() == "all" else uint(d)
+			args.transfer = snapshot, g, d
 		except:
 			eprint("Transfer levels must be non-negative integers!")
 			raise
@@ -167,7 +169,7 @@ def parse_args():
 	parser.add_argument("-l", "--labels", metavar="CLASS", nargs="*", help="embed data class labels into output generators (provide CLASS as many as dataset directories), dataset directory names are automatically used if no CLASS arguments are given")
 	group = parser.add_argument_group("training arguments")
 	group.add_argument("-s", "--snapshot", metavar="HDF5_FILE", help="load weights and parameters from a snapshot (for resuming)")
-	group.add_argument("-t", "--transfer", metavar=("HDF5_FILE", "G", "D"), nargs=3, help="import CNN weights from another snapshot (transfer learning), transfer generator/discriminator CNN blocks only above/below level G/D (inclusive)")
+	group.add_argument("-t", "--transfer", metavar=("HDF5_FILE", "{G|all}", "{D|all}"), nargs=3, help="import CNN weights from another snapshot (transfer learning), transfer generator/discriminator CNN blocks only above/below level G/D (inclusive), or specify 'all' to transfer all blocks")
 	group.add_argument("-Z", "--freeze", metavar=("G", "D"), nargs=2, type=uint, help="disable updating generator/discriminator CNN blocks above/below level G/D (inclusive), likely used with --transfer")
 	group.add_argument("-e", "--epoch", metavar="N", type=uint, default=1, help="training duration in epoch (note that elapsed training duration will not be serialized in snapshot)")
 	group.add_argument("-b", "--batch", metavar="N", type=natural, default=16, help="batch size, affecting not only memory usage, but also training result")
