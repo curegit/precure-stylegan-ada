@@ -14,3 +14,6 @@ def clamp(a, x, b):
 
 def lerp(a, b, t):
 	return a + t * (b - a)
+
+def ilerp(a, b, x):
+	return (x - a) / (b - a)
