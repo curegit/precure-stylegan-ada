@@ -35,6 +35,23 @@ def lerp_ellipsis(xs):
 			right, (_, rw) = first(enumerate(xs), lambda ix: ix[0] > i and ix[1] is not ..., default=(-1, None))
 	return ys
 
+def justify(xs, length, align_end=False, fill=...):
+	ys = []
+	ixs = enumerate(xs)
+	j, x = next(ixs)
+	ys.append(x)
+	for i in range(1, length):
+		if align_end:
+			k = i * (len(xs) - 1) // (length - 1)
+		else:
+			k = i * len(xs) // length
+		if k >= j + 1:
+			j, x = next(ixs)
+			ys.append(x)
+		else:
+			ys.append(fill)
+	return ys
+
 def main(args):
 	config_valid()
 	print("Loading a model...")
