@@ -16,15 +16,15 @@ from utilities.chainer import to_variable, config_valid
 def justify(xs, length, align_end=False, fill=...):
 	ys = []
 	ixs = enumerate(xs)
-	j, x = next(ixs)
+	i, x = next(ixs)
 	ys.append(x)
-	for i in range(1, length):
+	for j in range(1, length):
 		if align_end:
-			k = i * (len(xs) - 1) // (length - 1)
+			k = j * (len(xs) - 1) // (length - 1)
 		else:
-			k = i * len(xs) // length
-		if k >= j + 1:
-			j, x = next(ixs)
+			k = j * len(xs) // length
+		if k >= i + 1:
+			i, x = next(ixs)
 			ys.append(x)
 		else:
 			ys.append(fill)
@@ -32,35 +32,35 @@ def justify(xs, length, align_end=False, fill=...):
 
 def slide_ellipsis(xs):
 	ys = []
-	_, lw = first(xs, lambda x: x is not ...)
-	for w in xs:
-		if w is ...:
-			ys.append(lw)
+	_, lx = first(xs, lambda x: x is not ...)
+	for x in xs:
+		if x is ...:
+			ys.append(lx)
 		else:
-			ys.append(w)
-			lw = w
+			ys.append(x)
+			lx = x
 	return ys
 
 def lerp_ellipsis(xs):
 	ys = []
-	left, lw = None, None
-	right, rw = first(xs, lambda x: x is not ...)
-	for i, w in enumerate(xs):
-		if w is ...:
-			if lw is None:
-				if rw is None:
+	left, lx = None, None
+	right, rx = first(xs, lambda x: x is not ...)
+	for i, x in enumerate(xs):
+		if x is ...:
+			if lx is None:
+				if rx is None:
 					raise ValueError()
-				ys.append(rw)
-			elif rw is None:
-				if lw is None:
+				ys.append(rx)
+			elif rx is None:
+				if lx is None:
 					raise ValueError()
-				ys.append(lw)
+				ys.append(lx)
 			else:
-				ys.append(lerp(lw, rw, ilerp(left, right, i)))
+				ys.append(lerp(lx, rx, ilerp(left, right, i)))
 		else:
-			ys.append(w)
-			left, lw = i, w
-			right, (_, rw) = first(enumerate(xs), lambda ix: ix[0] > i and ix[1] is not ..., default=(-1, None))
+			ys.append(x)
+			left, lx = i, x
+			right, (_, rx) = first(enumerate(xs), lambda ix: ix[0] > i and ix[1] is not ..., default=(-1, None))
 	return ys
 
 def main(args):
