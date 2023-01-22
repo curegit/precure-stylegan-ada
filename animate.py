@@ -129,4 +129,4 @@ if __name__ == "__main__":
 		main(check_args(parse_args()))
 	except KeyboardInterrupt:
 		eprint("KeyboardInterrupt")
-		exit(1)
+		exit(130)
