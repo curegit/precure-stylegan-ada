@@ -233,10 +233,11 @@ class Discriminator(Chain):
 					b.conv2.disable_update()
 
 	def transfer(self, source, levels=[]):
-		for (i, dest), (_, src) in zip(self.blocks, source.blocks):
+		for (i, dest), (_, src) in zip(reversed(list(self.blocks)), reversed(list(source.blocks))):
 			if i in levels:
 				if isinstance(dest, FromRGB):
-					dest.copyparams(src)
+					pass
+					#dest.copyparams(src)
 				elif isinstance(dest, ResidualBlock):
 					dest.copyparams(src)
 				else:
