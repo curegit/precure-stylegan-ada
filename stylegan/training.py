@@ -1,3 +1,4 @@
+import time
 import random
 import os.path
 from h5py import File as HDF5File
@@ -78,6 +79,8 @@ class CustomUpdater(StandardUpdater):
 		self.augumentation = False
 		self.augumentation_pipeline = identity
 		self.augumentation_probability = 0.0
+		self.sleep_seconds = 0
+		self.sleep_interval = 0
 
 	def enable_gradient_accumulation(self, group_size):
 		self.group = group_size
@@ -105,6 +108,10 @@ class CustomUpdater(StandardUpdater):
 		self.augumentation_limit = limit
 		self.augumentation_delta_images = delta_images
 		self.augumentation_probability = initial_probability or self.augumentation_probability
+
+	def schedule_sleep(self, seconds=1, interval=100):
+		self.sleep_seconds = seconds
+		self.sleep_interval = interval
 
 	def freeze(self, generator_level, discriminator_level):
 		self.generator.freeze(list(range(generator_level, self.generator.levels + 1)))
@@ -143,6 +150,7 @@ class CustomUpdater(StandardUpdater):
 		rt = self.update_discriminator()
 		if self.augumentation:
 			self.adapt_augumentation(rt)
+		self.sleep()
 
 	def update_generator(self):
 		accumulated_loss = 0.0
@@ -237,6 +245,10 @@ class CustomUpdater(StandardUpdater):
 
 	def mode_seeking_regularization(self):
 		return self.mode_seeking_regularization_interval and self.iteration % self.mode_seeking_regularization_interval == 0
+
+	def sleep(self):
+		if self.sleep_interval and self.iteration % self.sleep_interval == 0:
+			time.sleep(self.sleep_seconds)
 
 	def transfer(self, filepath, generator_level, discriminator_level):
 		with HDF5File(filepath, "r") as hdf5:
