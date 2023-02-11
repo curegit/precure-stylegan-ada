@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from sys import exit
 from chainer.functions import stack
 from stylegan.networks import Generator
 from interface.args import CustomArgumentParser

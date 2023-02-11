@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from sys import exit
 from numpy import array
 from chainer.functions import stack
 from stylegan.networks import Generator

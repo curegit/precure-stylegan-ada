@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from sys import exit
 from os.path import basename, realpath
 from chainer.iterators import SerialIterator
 from stylegan.dataset import ImageDataset, MulticategoryImageDataset
