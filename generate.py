@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
-import numpy as np
+from sys import exit
 from stylegan.networks import Generator
 from interface.args import CustomArgumentParser
 from interface.stdout import chainer_like_tqdm
+from utilities.iter import range_batch
 from utilities.image import save_image
 from utilities.stdio import eprint
 from utilities.filesys import mkdirs, build_filepath
-from utilities.iter import range_batch
+from utilities.numpy import load, save
 from utilities.chainer import to_variable, config_valid
 
 def main(args):
@@ -17,7 +18,7 @@ def main(args):
 	generator.to_device(args.device)
 	if args.center is not None:
 		print("Loading a latent vector...")
-		center = to_variable(np.load(args.center), device=args.device)
+		center = to_variable(load(args.center), device=args.device)
 	else:
 		center = None
 	if args.classes is not None or args.labels is not None:
@@ -46,8 +47,8 @@ def main(args):
 			ws[0].to_cpu()
 			for j in range(n):
 				filename = f"{i + j + 1}"
-				np.save(build_filepath(args.dest, filename + "-latent", "npy", args.force), z.array[j])
-				np.save(build_filepath(args.dest, filename + "-style", "npy", args.force), ws[0].array[j])
+				save(build_filepath(args.dest, filename + "-latent", "npy", args.force), z.array[j])
+				save(build_filepath(args.dest, filename + "-style", "npy", args.force), ws[0].array[j])
 				save_image(y.array[j], build_filepath(args.dest, filename, "png", args.force))
 				bar.update()
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from sys import exit
 from os.path import basename, realpath
 from chainer.iterators import SerialIterator
 from stylegan.dataset import ImageDataset, MulticategoryImageDataset
@@ -66,6 +67,9 @@ def main(args):
 		pipeline = AugmentationPipeline(args.pixel, args.geometric, args.color, args.filtering, args.noise)
 		pipeline.to_device(args.device)
 		updater.enable_adaptive_augumentation(pipeline, args.target, args.limit, args.delta)
+	if args.sleep:
+		print("Throttling enabled")
+		updater.schedule_sleep(args.sleep[0], args.sleep[1])
 	if args.snapshot is not None:
 		print("Loading a snapshot...")
 		updater.load_states(args.snapshot)
@@ -84,6 +88,9 @@ def main(args):
 		trainer.enable_reports(args.print)
 	if not args.nobar:
 		trainer.enable_progress_bar(1)
+	if args.quit:
+		print("Quit")
+		exit(0)
 	print("Training started")
 	if args.epoch != 0:
 		trainer.run()
@@ -197,7 +204,9 @@ def parse_args():
 	group.add_argument("-C", "--color", metavar="P", type=ufloat, default=1.0, help="application rate multiplier of the color transformation augmentation")
 	group.add_argument("-F", "--filtering", metavar="P", type=ufloat, default=1.0, help="application rate multiplier of the filtering augmentation")
 	group.add_argument("-N", "--noise", metavar="P", type=ufloat, default=1.0, help="application rate multiplier of the noise augmentation")
+	parser.add_argument("-q", "--quit", action="store_true", help="exit just before starting training (for debugging)")
 	parser.add_argument("-J", "--no-progress-bar", dest="nobar", action="store_true", help="don't show progress bars")
+	parser.add_argument("-Q", "--sleep", metavar=("N", "M"), nargs=2, type=uint, help="sleep N seconds every M iteration to slow down (intentional throttling)")
 	parser.add_argument("-P", "--print-interval", metavar="ITER", dest="print", type=uint, default=1000, help="print statistics every ITER iteration")
 	parser.add_argument("-S", "--save-interval", metavar="ITER", dest="save", type=uint, default=2000, help="save snapshots, statistics and middle images every ITER iteration")
 	parser.add_argument("-n", "--number", metavar="N", type=uint, default=32, help="the number of middle images to generate each save-time")
