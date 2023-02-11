@@ -1,5 +1,11 @@
 import itertools
 
+def first(iterable, predicate, default=None):
+	for i, x in enumerate(iter(iterable)):
+		if predicate(x):
+			return i, x
+	return -1, default
+
 def range_batch(stop, batch=1):
 	for i in range(0, stop, batch):
 		yield i, min(batch, stop - i)

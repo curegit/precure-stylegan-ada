@@ -4,10 +4,10 @@ from sys import exit
 from stylegan.networks import Generator
 from interface.args import CustomArgumentParser
 from interface.stdout import chainer_like_tqdm
+from utilities.iter import range_batch
 from utilities.image import save_image
 from utilities.stdio import eprint
 from utilities.filesys import mkdirs, build_filepath
-from utilities.iter import range_batch
 from utilities.numpy import load, save
 from utilities.chainer import to_variable, config_valid
 
