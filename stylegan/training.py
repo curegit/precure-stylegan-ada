@@ -1,6 +1,5 @@
 import random
 import os.path
-import numpy as np
 from h5py import File as HDF5File
 from chainer import grad, Variable
 from chainer.reporter import report
@@ -14,6 +13,7 @@ from utilities.iter import range_batch, iter_batch
 from utilities.math import identity, sgn, clamp, lerp
 from utilities.image import save_image
 from utilities.filesys import mkdirs, build_filepath
+from utilities.numpy import save
 
 class AdamSet():
 
@@ -382,5 +382,5 @@ class CustomTrainer(Trainer):
 			y.to_cpu()
 			for j in range(n):
 				filename = f"{trainer.iteration}-{i + j + 1}"
-				np.save(build_filepath(trainer.images_out, filename + "-latent", "npy", trainer.overwrite), z.array[j])
+				save(build_filepath(trainer.images_out, filename + "-latent", "npy", trainer.overwrite), z.array[j])
 				save_image(y.array[j], build_filepath(trainer.images_out, filename, "png", trainer.overwrite))
