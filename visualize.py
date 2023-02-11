@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from sys import exit
 from pydot import graph_from_dot_data
 from chainer.computational_graph import build_computational_graph
 from stylegan.networks import Generator, Discriminator
@@ -52,4 +53,4 @@ if __name__ == "__main__":
 		main(parse_args())
 	except KeyboardInterrupt:
 		eprint("KeyboardInterrupt")
-		exit(1)
+		exit(130)

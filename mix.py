@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import numpy as np
+from sys import exit
 from chainer.functions import stack
 from stylegan.networks import Generator
 from interface.args import CustomArgumentParser
@@ -11,6 +11,7 @@ from utilities.math import lerp, ilerp
 from utilities.image import save_image
 from utilities.stdio import eprint
 from utilities.filesys import mkdirs, build_filepath
+from utilities.numpy import load
 from utilities.chainer import to_variable, config_valid
 
 def justify(xs, length, align_end=False, fill=...):
@@ -73,7 +74,7 @@ def main(args):
 		if (s == "..."):
 			ws.append(...)
 		else:
-			ws.append(to_variable(np.load(s), device=args.device))
+			ws.append(to_variable(load(s), device=args.device))
 	if all(w is ... for w in ws):
 		eprint("You must supply at least one style file!")
 		raise RuntimeError("Input error")
@@ -122,4 +123,4 @@ if __name__ == "__main__":
 		main(parse_args())
 	except KeyboardInterrupt:
 		eprint("KeyboardInterrupt")
-		exit(1)
+		exit(130)

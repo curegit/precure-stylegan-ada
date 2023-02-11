@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from sys import exit
 from stylegan.networks import Generator
 from interface.args import CustomArgumentParser
 from interface.stdout import print_model_args, print_parameter_counts, print_cnn_architecture, print_data_classes
@@ -23,4 +24,4 @@ if __name__ == "__main__":
 		main(parse_args())
 	except KeyboardInterrupt:
 		eprint("KeyboardInterrupt")
-		exit(1)
+		exit(130)
