@@ -144,21 +144,29 @@ class Generator(Chain):
 				if isinstance(b, InitialSkipArchitecture):
 					b.wmconv.disable_update()
 					b.torgb.disable_update()
-				else:
+				elif isinstance(b, SkipArchitecture):
 					b.wmconv1.disable_update()
 					b.wmconv2.disable_update()
 					b.torgb.disable_update()
 
 	def transfer(self, source, levels=[]):
-		for (i, dest), (_, src) in zip(self.synthesizer.blocks, source.synthesizer.blocks):
+		for (i, dest), (j, src) in zip(reversed(list(self.synthesizer.blocks)), reversed(list(source.synthesizer.blocks))):
 			if i in levels:
 				if isinstance(dest, InitialSkipArchitecture):
+					if not isinstance(src, InitialSkipArchitecture):
+						eprint("Network architecture doesn't match!")
+						raise RuntimeError("Model error")
 					dest.wmconv.copyparams(src.wmconv)
 					dest.torgb.copyparams(src.torgb)
-				else:
+				elif isinstance(dest, SkipArchitecture):
+					if not isinstance(src, SkipArchitecture):
+						eprint("Network architecture doesn't match!")
+						raise RuntimeError("Model error")
 					dest.wmconv1.copyparams(src.wmconv1)
 					dest.wmconv2.copyparams(src.wmconv2)
 					dest.torgb.copyparams(src.torgb)
+				else:
+					raise RuntimeError()
 
 	def save(self, filepath):
 		with HDF5File(filepath, "w") as hdf5:
@@ -228,21 +236,31 @@ class Discriminator(Chain):
 					b.disable_update()
 				elif isinstance(b, ResidualBlock):
 					b.disable_update()
-				else:
+				elif isinstance(b, OutputBlock):
 					b.conv1.disable_update()
 					b.conv2.disable_update()
 
 	def transfer(self, source, levels=[]):
-		for (i, dest), (_, src) in zip(reversed(list(self.blocks)), reversed(list(source.blocks))):
+		for (i, dest), (j, src) in zip(self.blocks, source.blocks):
 			if i in levels:
 				if isinstance(dest, FromRGB):
-					pass
-					#dest.copyparams(src)
-				elif isinstance(dest, ResidualBlock):
+					if not isinstance(src, FromRGB):
+						eprint("Network architecture doesn't match!")
+						raise RuntimeError("Model error")
 					dest.copyparams(src)
-				else:
+				elif isinstance(dest, ResidualBlock):
+					if not isinstance(src, ResidualBlock):
+						eprint("Network architecture doesn't match!")
+						raise RuntimeError("Model error")
+					dest.copyparams(src)
+				elif isinstance(dest, OutputBlock):
+					if not isinstance(src, OutputBlock):
+						eprint("Network architecture doesn't match!")
+						raise RuntimeError("Model error")
 					dest.conv1.copyparams(src.conv1)
 					dest.conv2.copyparams(src.conv2)
+				else:
+					raise RuntimeError()
 
 	@property
 	def blocks(self):
