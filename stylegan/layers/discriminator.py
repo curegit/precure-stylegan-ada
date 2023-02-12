@@ -4,7 +4,7 @@ from chainer import Chain
 from chainer.functions import sqrt, mean, average_pooling_2d, convolution_2d, concat, broadcast_to, pad
 from stylegan.layers.basic import LeakyRelu, EqualizedLinear, EqualizedConvolution2D
 
-class Downsampler():
+class Downsampler:
 
 	def __init__(self, lanczos=True, n=2):
 		self.lanczos = lanczos
@@ -26,7 +26,7 @@ class Downsampler():
 		else:
 			return average_pooling_2d(x, ksize=2, stride=2)
 
-class MinibatchStandardDeviation():
+class MinibatchStandardDeviation:
 
 	def __init__(self, group_size=None):
 		self.group_size = group_size

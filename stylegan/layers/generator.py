@@ -14,7 +14,7 @@ class LearnableConstant(Link):
 	def __call__(self, batch):
 		return broadcast_to(self.c, (batch, *self.c.shape))
 
-class BicubicUpsampler():
+class BicubicUpsampler:
 
 	def __init__(self, b=0.0, c=0.5):
 		self.b, self.c = b, c

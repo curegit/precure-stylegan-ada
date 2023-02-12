@@ -5,7 +5,7 @@ from chainer import Variable, Parameter, Link
 from chainer.functions import gaussian, leaky_relu, linear, convolution_2d, broadcast_to
 from chainer.initializers import Zero, Normal
 
-class GaussianDistribution():
+class GaussianDistribution:
 
 	def __init__(self, link, mean=0.0, sd=1.0):
 		self.link = link
@@ -22,7 +22,7 @@ class GaussianDistribution():
 		x = Generator(PCG64(seed)).normal(size=shape, loc=self.mean, scale=self.sd).astype(float32)
 		return Variable(self.link.xp.asarray(x))
 
-class LeakyRelu():
+class LeakyRelu:
 
 	def __init__(self, a=0.2):
 		self.a = a

@@ -16,7 +16,7 @@ from utilities.image import save_image
 from utilities.filesys import mkdirs, build_filepath
 from utilities.numpy import save
 
-class AdamSet():
+class AdamSet:
 
 	def __init__(self, alpha, beta1, beta2, conditional=False):
 		self.conditional = conditional
