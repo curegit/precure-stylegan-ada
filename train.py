@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from sys import exit
 from os.path import basename, realpath
 from chainer.iterators import SerialIterator
 from stylegan.dataset import ImageDataset, MulticategoryImageDataset
@@ -66,6 +67,9 @@ def main(args):
 		pipeline = AugmentationPipeline(args.pixel, args.geometric, args.color, args.filtering, args.noise)
 		pipeline.to_device(args.device)
 		updater.enable_adaptive_augumentation(pipeline, args.target, args.limit, args.delta)
+	if args.sleep:
+		print("Throttling enabled")
+		updater.schedule_sleep(args.sleep[0], args.sleep[1])
 	if args.snapshot is not None:
 		print("Loading a snapshot...")
 		updater.load_states(args.snapshot)
@@ -84,6 +88,9 @@ def main(args):
 		trainer.enable_reports(args.print)
 	if not args.nobar:
 		trainer.enable_progress_bar(1)
+	if args.quit:
+		print("Quit")
+		exit(0)
 	print("Training started")
 	if args.epoch != 0:
 		trainer.run()
@@ -169,7 +176,7 @@ def parse_args():
 	parser.add_argument("-l", "--labels", metavar="CLASS", nargs="*", help="embed data class labels into output generators (provide CLASS as many as dataset directories), dataset directory names are automatically used if no CLASS arguments are given")
 	group = parser.add_argument_group("training arguments")
 	group.add_argument("-s", "--snapshot", metavar="HDF5_FILE", help="load weights and parameters from a snapshot (for resuming)")
-	group.add_argument("-t", "--transfer", metavar=("HDF5_FILE", "{G|all}", "{D|all}"), nargs=3, help="import CNN weights from another snapshot (transfer learning), transfer generator/discriminator CNN blocks only above/below level G/D (inclusive), or specify 'all' to transfer all blocks")
+	group.add_argument("-t", "--transfer", metavar=("HDF5_FILE", "{G|all}", "{D|all}"), nargs=3, help="import CNN weights from another snapshot (transfer learning), transfer generator/discriminator CNN blocks to levels only above/below level G/D (inclusive) from corresponding ones aligned from the top/bottom level, specify 'all' to transfer all blocks")
 	group.add_argument("-Z", "--freeze", metavar=("G", "D"), nargs=2, type=uint, help="disable updating generator/discriminator CNN blocks above/below level G/D (inclusive), likely used with --transfer")
 	group.add_argument("-e", "--epoch", metavar="N", type=uint, default=1, help="training duration in epoch (note that elapsed training duration will not be serialized in snapshot)")
 	group.add_argument("-b", "--batch", metavar="N", type=natural, default=16, help="batch size, affecting not only memory usage, but also training result")
@@ -197,7 +204,9 @@ def parse_args():
 	group.add_argument("-C", "--color", metavar="P", type=ufloat, default=1.0, help="application rate multiplier of the color transformation augmentation")
 	group.add_argument("-F", "--filtering", metavar="P", type=ufloat, default=1.0, help="application rate multiplier of the filtering augmentation")
 	group.add_argument("-N", "--noise", metavar="P", type=ufloat, default=1.0, help="application rate multiplier of the noise augmentation")
+	parser.add_argument("-q", "--quit", action="store_true", help="exit just before starting training (for debugging)")
 	parser.add_argument("-J", "--no-progress-bar", dest="nobar", action="store_true", help="don't show progress bars")
+	parser.add_argument("-Q", "--sleep", metavar=("N", "M"), nargs=2, type=uint, help="sleep N seconds every M iteration to slow down (intentional throttling)")
 	parser.add_argument("-P", "--print-interval", metavar="ITER", dest="print", type=uint, default=1000, help="print statistics every ITER iteration")
 	parser.add_argument("-S", "--save-interval", metavar="ITER", dest="save", type=uint, default=2000, help="save snapshots, statistics and middle images every ITER iteration")
 	parser.add_argument("-n", "--number", metavar="N", type=uint, default=32, help="the number of middle images to generate each save-time")

@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 
-import numpy as np
+from sys import exit
 from chainer.functions import stack
 from stylegan.networks import Generator
 from interface.args import CustomArgumentParser
 from interface.argtypes import uint, natural
 from interface.stdout import chainer_like_tqdm
+from utilities.iter import range_batch, iter_batch
 from utilities.image import to_pil_image, save_image
 from utilities.stdio import eprint
 from utilities.filesys import mkdirs, build_filepath
-from utilities.iter import range_batch, iter_batch
+from utilities.numpy import load, save
 from utilities.chainer import to_variable, config_valid
 
 def interpolate(ws, middles=15, loop=True, closed=True):
@@ -29,18 +30,18 @@ def main(args):
 	generator.to_device(args.device)
 	if args.center is not None:
 		print("Loading a latent vector...")
-		center = to_variable(np.load(args.center), device=args.device)
+		center = to_variable(load(args.center), device=args.device)
 	else:
 		center = None
 	if args.prepend is not None:
 		print("Loading prepended styles...")
-		prepend = [to_variable(np.load(s), device=args.device) for s in args.prepend]
+		prepend = [to_variable(load(s), device=args.device) for s in args.prepend]
 		print(f"Prepended styles: {len(prepend)}")
 	else:
 		prepend = []
 	if args.append is not None:
 		print("Loading appended styles...")
-		append = [to_variable(np.load(s), device=args.device) for s in args.append]
+		append = [to_variable(load(s), device=args.device) for s in args.append]
 		print(f"Appended styles: {len(append)}")
 	else:
 		append = []
@@ -75,8 +76,8 @@ def main(args):
 					y.to_cpu()
 					for j in range(n):
 						filename = f"{i + j + 1}"
-						np.save(build_filepath(args.dest, filename + "-latent", "npy", args.force), z.array[j])
-						np.save(build_filepath(args.dest, filename + "-style", "npy", args.force), w.array[j])
+						save(build_filepath(args.dest, filename + "-latent", "npy", args.force), z.array[j])
+						save(build_filepath(args.dest, filename + "-style", "npy", args.force), w.array[j])
 						save_image(y.array[j], build_filepath(args.dest, filename, "png", args.force))
 						bar.update()
 	ws = prepend + sampled_ws + append
