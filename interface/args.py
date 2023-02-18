@@ -6,6 +6,7 @@ def dump_json(args, filepath):
 	with open(filepath, mode="w", encoding="utf-8") as fp:
 		dump(vars(args), fp, indent=2, sort_keys=True, default=str)
 
+
 class CustomArgumentParser(ArgumentParser):
 
 	def __init__(self, description):

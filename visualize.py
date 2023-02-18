@@ -48,6 +48,7 @@ def parse_args():
 	parser.add_output_args("graphs").add_model_args().add_evaluation_args(include_noise=False)
 	return parser.parse_args()
 
+
 if __name__ == "__main__":
 	try:
 		main(parse_args())

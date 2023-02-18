@@ -22,6 +22,7 @@ class GaussianDistribution:
 		x = Generator(PCG64(seed)).normal(size=shape, loc=self.mean, scale=self.sd).astype(float32)
 		return Variable(self.link.xp.asarray(x))
 
+
 class LeakyRelu:
 
 	def __init__(self, a=0.2):
@@ -29,6 +30,7 @@ class LeakyRelu:
 
 	def __call__(self, x):
 		return leaky_relu(x, self.a)
+
 
 class EqualizedLinear(Link):
 
@@ -41,6 +43,7 @@ class EqualizedLinear(Link):
 
 	def __call__(self, x):
 		return linear(self.c * x, self.w, self.b)
+
 
 class EqualizedConvolution2D(Link):
 

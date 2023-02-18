@@ -212,6 +212,7 @@ def parse_args():
 	parser.add_argument("-n", "--number", metavar="N", type=uint, default=32, help="the number of middle images to generate each save-time")
 	return parser.add_evaluation_args(include_batch=False, include_noise=False).parse_args()
 
+
 if __name__ == "__main__":
 	try:
 		main(check_args(preprocess_args(parse_args())))

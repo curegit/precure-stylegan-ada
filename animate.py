@@ -125,6 +125,7 @@ def parse_args():
 	group.add_argument("-A", "--append", metavar="STYLE_FILE", nargs="+", action="extend", help="add specified key images (by style NPY file) to the tail")
 	return parser.add_evaluation_args().parse_args()
 
+
 if __name__ == "__main__":
 	try:
 		main(check_args(parse_args()))

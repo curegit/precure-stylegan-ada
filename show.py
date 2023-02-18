@@ -19,6 +19,7 @@ def parse_args():
 	parser.require_generator()
 	return parser.parse_args()
 
+
 if __name__ == "__main__":
 	try:
 		main(parse_args())

@@ -41,6 +41,7 @@ class ImageDataset(DatasetMixin):
 	def get_example(self, index):
 		return uint8_to_float(self.loaded_images[index]) if self.preloaded else load_image(self.image_files[index], self.resolution)
 
+
 class MulticategoryImageDataset(DatasetMixin):
 
 	def __init__(self, directories, resolution):

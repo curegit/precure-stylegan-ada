@@ -26,6 +26,7 @@ class Mapper(Chain):
 		h2 = h1 if c is None else concat((h1, c / sqrt(mean(c ** 2, axis=1, keepdims=True) + 1e-08)), axis=1)
 		return self.mlp(h2)
 
+
 class Synthesizer(Chain):
 
 	def __init__(self, size, levels, first_channels, last_channels):
@@ -51,6 +52,7 @@ class Synthesizer(Chain):
 		yield 1, self.init
 		for i, s in enumerate(self.skips, 2):
 			yield i, s
+
 
 class Generator(Chain):
 
@@ -202,6 +204,7 @@ class Generator(Chain):
 			"last_channels": int(hdf5.attrs["last_channels"]),
 			"categories": int(hdf5.attrs["categories"]),
 			"labels": hdf5.attrs["labels"]}
+
 
 class Discriminator(Chain):
 

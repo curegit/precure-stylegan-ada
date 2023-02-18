@@ -23,6 +23,7 @@ def householder(axis):
 	v = array([*axis, 0], dtype=float32) / norm
 	return indentity - 2 * outer(v, v)
 
+
 class ColorAffineTransformation(Manipulation):
 
 	def __init__(self, brightness=0.1, contrast=0.5, hue_rotation=360, saturation=1.0, probability_multiplier=1.0):

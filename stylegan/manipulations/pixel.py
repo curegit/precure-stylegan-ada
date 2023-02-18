@@ -14,6 +14,7 @@ class Mirror(Manipulation):
 		mirrored = self.random_where(0.5, x, flip(x, axis=3))
 		return self.random_where(p, mirrored, x)
 
+
 class Rotation(Manipulation):
 
 	def __init__(self, probability_multiplier=1.0):
@@ -30,6 +31,7 @@ class Rotation(Manipulation):
 		rot270 = flip(transposed, axis=3)
 		rotated = self.random_where(0.5, self.random_where(0.5, x, rot90), self.random_where(0.5, rot180, rot270))
 		return self.random_where(p, rotated, x)
+
 
 class Shift(Manipulation):
 

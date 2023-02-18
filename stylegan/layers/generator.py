@@ -14,6 +14,7 @@ class LearnableConstant(Link):
 	def __call__(self, batch):
 		return broadcast_to(self.c, (batch, *self.c.shape))
 
+
 class BicubicUpsampler:
 
 	def __init__(self, b=0.0, c=0.5):
@@ -42,6 +43,7 @@ class BicubicUpsampler:
 		else:
 			return 0.0
 
+
 class StyleAffineTransformation(Chain):
 
 	def __init__(self, size, channels):
@@ -51,6 +53,7 @@ class StyleAffineTransformation(Chain):
 
 	def __call__(self, w):
 		return self.linear(w)
+
 
 class WeightModulatedConvolution(Link):
 
@@ -76,6 +79,7 @@ class WeightModulatedConvolution(Link):
 		h = convolution_2d(padded_grouped_x, grouped_w, stride=1, pad=0, groups=batch)
 		return h.reshape(batch, out_channels, height, width) + self.b.reshape(1, out_channels, 1, 1)
 
+
 class NoiseAdder(Link):
 
 	def __init__(self, id=0):
@@ -96,6 +100,7 @@ class NoiseAdder(Link):
 			else:
 				return x + scale * self.sampler.deterministic(1, 1, height, width, seed=(fixed + self.id))
 
+
 class ToRGB(Chain):
 
 	def __init__(self, in_channels):
@@ -105,6 +110,7 @@ class ToRGB(Chain):
 
 	def __call__(self, x, y):
 		return self.wmconv(x, y)
+
 
 class InitialSkipArchitecture(Chain):
 
@@ -130,6 +136,7 @@ class InitialSkipArchitecture(Chain):
 	def channels(self):
 		yield self.wmconv.in_channels
 		yield self.wmconv.out_channels
+
 
 class SkipArchitecture(Chain):
 

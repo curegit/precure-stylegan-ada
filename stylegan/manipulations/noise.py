@@ -21,6 +21,7 @@ class AdditiveNoise(Manipulation):
 		noise_added = x + gaussian(mean, ln_var)
 		return self.random_where(p, noise_added, x)
 
+
 class Cutout(Manipulation):
 
 	def __init__(self, width=0.5, height=0.5, fill=0.5, probability_multiplier=1.0):

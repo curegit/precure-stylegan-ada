@@ -58,6 +58,7 @@ class AdamSet:
 			self.discriminator_embedder_optimizer.update()
 			self.condition_mapper_optimizer.update()
 
+
 class CustomUpdater(StandardUpdater):
 
 	def __init__(self, generator, averaged_generator, discriminator, iterator, optimizers, averaging_images=10000, lsgan=False):
@@ -327,6 +328,7 @@ class CustomUpdater(StandardUpdater):
 		v1 = mean(abs(x1 - x2), axis=(1, 2, 3))
 		v2 = mean(abs(z1 - z2), axis=1)
 		return v1 / (v2 + 1e-8)
+
 
 class CustomTrainer(Trainer):
 

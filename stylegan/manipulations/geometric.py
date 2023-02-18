@@ -24,6 +24,7 @@ def inverse_rotation(theta):
 def inverse_scaling(s, t):
 	return scaling(1 / s, 1 / t)
 
+
 class AffineTransformation(Manipulation):
 
 	def __init__(self, translation=0.125, rotation=360, scale=0.2, probability_multiplier=1.0):

@@ -118,6 +118,7 @@ def parse_args():
 	parser.add_argument("-n", "--number", metavar="N", type=uint, default=10, help="the number of images to generate")
 	return parser.add_evaluation_args().parse_args()
 
+
 if __name__ == "__main__":
 	try:
 		main(parse_args())

@@ -57,6 +57,7 @@ def parse_args():
 	parser.require_generator().add_output_args("images").add_generation_args().add_evaluation_args()
 	return parser.parse_args()
 
+
 if __name__ == "__main__":
 	try:
 		main(parse_args())

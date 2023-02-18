@@ -26,6 +26,7 @@ class Downsampler:
 		else:
 			return average_pooling_2d(x, ksize=2, stride=2)
 
+
 class MinibatchStandardDeviation:
 
 	def __init__(self, group_size=None):
@@ -41,6 +42,7 @@ class MinibatchStandardDeviation:
 		deviation_map = broadcast_to(deviation, (groups, group_size, 1, height, width)).reshape(batch, 1, height, width)
 		return concat((x, deviation_map), axis=1)
 
+
 class FromRGB(Chain):
 
 	def __init__(self, out_channels):
@@ -51,6 +53,7 @@ class FromRGB(Chain):
 
 	def __call__(self, x):
 		return self.act(self.conv(x))
+
 
 class ResidualBlock(Chain):
 
@@ -75,6 +78,7 @@ class ResidualBlock(Chain):
 		yield self.conv1.in_channels
 		yield self.conv1.out_channels
 		yield self.conv2.out_channels
+
 
 class OutputBlock(Chain):
 
