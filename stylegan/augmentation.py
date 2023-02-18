@@ -11,7 +11,7 @@ class AugmentationPipeline(Chain):
 		super().__init__()
 		self.probability = 1.0
 		with self.init_scope():
-			self.manipulations = ChainList(*[
+			self.manipulations = ChainList(
 				Mirror(probability_multiplier=pixel),
 				Rotation(probability_multiplier=pixel),
 				Shift(probability_multiplier=pixel),
@@ -19,7 +19,8 @@ class AugmentationPipeline(Chain):
 				ColorAffineTransformation(probability_multiplier=color),
 				Filtering(probability_multiplier=filtering),
 				AdditiveNoise(probability_multiplier=noise),
-				Cutout(probability_multiplier=noise)])
+				Cutout(probability_multiplier=noise),
+			)
 
 	def __call__(self, x):
 		for f in self.manipulations:

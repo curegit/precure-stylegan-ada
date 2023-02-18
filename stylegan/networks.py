@@ -16,8 +16,10 @@ class Mapper(Chain):
 		super().__init__()
 		with self.init_scope():
 			self.mlp = Sequential(
-				EqualizedLinear(size * 2 if conditional else size, size), LeakyRelu(),
-				*[l for b in [[EqualizedLinear(size, size), LeakyRelu()] for _ in range(depth - 1)] for l in b])
+				EqualizedLinear(size * 2 if conditional else size, size),
+				LeakyRelu(),
+				*[l for b in [[EqualizedLinear(size, size), LeakyRelu()] for _ in range(depth - 1)] for l in b],
+			)
 
 	def __call__(self, z, c=None):
 		h1 = z / sqrt(mean(z ** 2, axis=1, keepdims=True) + 1e-08)
@@ -215,7 +217,8 @@ class Discriminator(Chain):
 			self.main = Sequential(
 				FromRGB(first_channels),
 				*[ResidualBlock(i, o) for i, o in zip(in_channels, out_channels)],
-				OutputBlock(last_channels, categories > 1, group_size))
+				OutputBlock(last_channels, categories > 1, group_size),
+			)
 			if categories > 1:
 				self.embedder = EqualizedLinear(categories, last_channels, gain=1)
 				self.mapper = Sequential(EqualizedLinear(last_channels, last_channels), LeakyRelu()).repeat(depth)
