@@ -1,12 +1,13 @@
 from PIL import Image
+from PIL.Image import Resampling
 from numpy import rint, asarray, uint8, float32
 
 def load_image(filepath, size):
-	img = Image.open(filepath).convert("RGB").resize(size, Image.LANCZOS)
+	img = Image.open(filepath).convert("RGB").resize(size, Resampling.LANCZOS)
 	return (asarray(img, dtype=uint8).transpose(2, 0, 1) / 255).astype(float32)
 
 def load_image_uint8(filepath, size):
-	img = Image.open(filepath).convert("RGB").resize(size, Image.LANCZOS)
+	img = Image.open(filepath).convert("RGB").resize(size, Resampling.LANCZOS)
 	return asarray(img, dtype=uint8).transpose(2, 0, 1)
 
 def uint8_to_float(array):
