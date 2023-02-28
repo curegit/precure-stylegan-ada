@@ -10,7 +10,9 @@ def config_train():
 	global_config.autotune = True
 	global_config.cudnn_deterministic = False
 
-def config_valid():
+def config_valid(faster=False):
 	global_config.train = False
 	global_config.autotune = True
-	global_config.cudnn_deterministic = True
+	global_config.cudnn_deterministic = not faster
+	global_config.enable_backprop = False
+	global_config.type_check = not faster
