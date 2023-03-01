@@ -1,6 +1,6 @@
 # Precure StyleGAN ADA
 
-StyleGAN 2.0 [a2](#a1) + Adaptive Discriminator Augmentation
+StyleGAN 2.0 + Adaptive Discriminator Augmentation
 
 This project follows on from [the previous project: Precure StyleGAN](https://github.com/curegit/precure-stylegan).
 
