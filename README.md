@@ -17,6 +17,14 @@ FID = 26.41, dataset = 2.5k
 - h5py
 - tqdm
 
+Use `requirements.txt` to install minimal dependencies for inferencing.
+
+```sh
+pip3 install -r requirements.txt
+```
+
+
+
 ### For training
 
 You may need GPU support to train your own models.
@@ -31,6 +39,8 @@ Install the following to run `visualize.py`.
 - Pydot (with GraphViz)
 
 ## See also
+
+- [StyleGAN FastAPI](https://github.com/curegit/stylegan-fastapi)
 
 ## License
 
