@@ -23,8 +23,6 @@ Use `requirements.txt` to install minimal dependencies for inferencing.
 pip3 install -r requirements.txt
 ```
 
-
-
 ### For training
 
 You may need GPU support to train your own models.
