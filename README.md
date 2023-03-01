@@ -2,14 +2,7 @@
 
 StyleGAN 2.0 [a2](#a1) + Adaptive Discriminator Augmentation
 
-This project is continued from [Precure StyleGAN](https://github.com/curegit/precure-stylegan).
-It is still WIP, and its codes are extremely rough.
-So they might not work properly.
-
-- tqdm
-- matplot
-
-## Intermediate Result
+This project follows on from [the previous project: Precure StyleGAN](https://github.com/curegit/precure-stylegan).
 
 FID = 26.41, dataset = 2.5k
 
@@ -20,14 +13,24 @@ FID = 26.41, dataset = 2.5k
 - Python >= 3.8
 - Chainer >= 7.2
 - Pillow >= 7.1
-- Numpy >= 1.17
+- NumPy >= 1.17
+- h5py
+- tqdm
+
+### For training
+
+You may need GPU support to train your own models.
+
+- CuPy (with CUDA & cuDNN)
 - Matplotlib
-- H5py
-- Tqdm
 
-`conda install python-graphviz`
+### Extra
 
-## Ref
+Install the following to run `visualize.py`.
+
+- Pydot (with GraphViz)
+
+## See also
 
 ## License
 
