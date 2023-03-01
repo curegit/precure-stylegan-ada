@@ -25,10 +25,12 @@ pip3 install -r requirements.txt
 
 ### For training
 
-You may need GPU support to train your own models.
-
 - CuPy (with CUDA & cuDNN)
 - Matplotlib
+
+You may need GPU support to train your own models.
+
+Matplotlib is required to draw learning curves.
 
 ### Extra
 
