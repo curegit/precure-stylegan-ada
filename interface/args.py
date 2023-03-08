@@ -48,5 +48,7 @@ class CustomArgumentParser(ArgumentParser):
 		group.add_argument("-s", "--similar", "--latent", "--center", metavar="LATENT_FILE", dest="center", help="move the mean of random latent vectors to a specified one")
 		group.add_argument("-d", "--deviation", "--sd", metavar="SIGMA", dest="sd", type=positive, default=1.0, help="the standard deviation of latent vectors")
 		group.add_argument("-t", "--truncation-trick", "--psi", metavar="PSI", dest="psi", type=ufloat, default=1.0, help="apply the truncation trick")
-		group.add_argument("-T", "--global-truncation", dest="global_truncation", action="store_true", help="truncate to the center of all data classes when the truncation trick is used (by default, the collective center of specified data classes)")
+		ex_group = group.add_mutually_exclusive_group()
+		ex_group.add_argument("-C", "--local-truncation", "--local", dest="local_truncation", action="store_true", help="truncate to the each center of data classes when the truncation trick is used (by default, the collective center of specified data classes)")
+		ex_group.add_argument("-T", "--global-truncation", "--global", dest="global_truncation", action="store_true", help="truncate to the center of all data classes when the truncation trick is used (by default, the collective center of specified data classes)")
 		return self
