@@ -2,7 +2,7 @@ from math import sqrt as root
 from random import randint
 from h5py import File as HDF5File
 from chainer import Variable, Chain, ChainList, Sequential
-from chainer.functions import sqrt, sum, mean, concat
+from chainer.functions import sqrt, sum, mean, concat, stack
 from chainer.serializers import HDF5Serializer, HDF5Deserializer
 from stylegan.layers.basic import GaussianDistribution, LeakyRelu, EqualizedLinear
 from stylegan.layers.generator import InitialSkipArchitecture, SkipArchitecture
@@ -117,6 +117,9 @@ class Generator(Chain):
 	def calculate_mean_w(self, n=50000, categories=None):
 		c = self.embedder(self.generate_conditions(n, categories)[1]) if self.conditional else None
 		return mean(self.mapper(self.generate_latents(n), c), axis=0)
+
+	def calculate_mean_ws_by_categories(self, n=50000):
+		return stack([self.calculate_mean_w(n=n, categories=[i]) for i in range(self.categories)])
 
 	@property
 	def width(self):
