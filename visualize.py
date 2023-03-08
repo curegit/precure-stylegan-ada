@@ -28,7 +28,7 @@ def main(args):
 	print_cnn_architecture(generator, discriminator)
 	print("Exporting graphs...")
 	z = generator.generate_latents(args.batch)
-	c = generator.generate_conditions(args.batch) if args.categories > 1 else None
+	c = generator.generate_conditions(args.batch)[1] if args.categories > 1 else None
 	_, x = generator(z, c)
 	y = discriminator(x, c)
 	gen_graph = build_computational_graph([x], variable_style=gen_varstyle, function_style=gen_funstyle).dump()

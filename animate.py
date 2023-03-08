@@ -66,7 +66,7 @@ def main(args):
 		with chainer_like_tqdm(desc="generation", total=args.number) as bar:
 			for i, n in range_batch(args.number, args.batch):
 				z = generator.generate_latents(n, center=center, sd=args.sd)
-				c = generator.generate_conditions(n, categories=categories) if generator.conditional else None
+				c = generator.generate_conditions(n, categories=categories)[1] if generator.conditional else None
 				w = generator.truncation_trick(generator.mapper(z, c if c is None else generator.embedder(c)), args.psi, mean_w)
 				sampled_ws += [w[i] for i in range(n)]
 				if not args.no_samples:
