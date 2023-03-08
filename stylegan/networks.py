@@ -203,7 +203,8 @@ class Generator(Chain):
 			"first_channels": int(hdf5.attrs["first_channels"]),
 			"last_channels": int(hdf5.attrs["last_channels"]),
 			"categories": int(hdf5.attrs["categories"]),
-			"labels": hdf5.attrs["labels"]}
+			"labels": [str(l) for l in hdf5.attrs["labels"]],
+		}
 
 
 class Discriminator(Chain):
