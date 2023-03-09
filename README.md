@@ -12,7 +12,7 @@ FID = 26.41, dataset = 2.5k
 
 - Python >= 3.8
 - Chainer >= 7.2
-- Pillow >= 7.1
+- Pillow >= 9.1
 - NumPy >= 1.17
 - h5py
 - tqdm
@@ -25,10 +25,12 @@ pip3 install -r requirements.txt
 
 ### For training
 
-You may need GPU support to train your own models.
-
 - CuPy (with CUDA & cuDNN)
 - Matplotlib
+
+You may need GPU support to train your own models.
+
+Matplotlib is required to draw learning curves.
 
 ### Extra
 
