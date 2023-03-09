@@ -118,7 +118,7 @@ class Generator(Chain):
 		c = self.embedder(self.generate_conditions(n, categories)[1]) if self.conditional else None
 		return mean(self.mapper(self.generate_latents(n), c), axis=0)
 
-	def calculate_mean_ws_by_categories(self, n=50000):
+	def calculate_mean_ws_by_category(self, n=50000):
 		return stack([self.calculate_mean_w(n=n, categories=[i]) for i in range(self.categories)])
 
 	@property

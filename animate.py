@@ -58,7 +58,7 @@ def main(args):
 		categories = None
 	if args.psi != 1.0:
 		if generator.conditional and args.local_truncation:
-			mean_w = generator.calculate_mean_ws_by_categories()
+			mean_w = generator.calculate_mean_ws_by_category()
 		else:
 			mean_w = generator.calculate_mean_w(categories=(None if args.global_truncation else categories))
 	else:
