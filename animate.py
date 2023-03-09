@@ -71,7 +71,7 @@ def main(args):
 				z = generator.generate_latents(n, center=center, sd=args.sd)
 				k, c = generator.generate_conditions(n, categories=categories) if generator.conditional else (None, None)
 				mw = mean_w[k] if mean_w is not None and mean_w.ndim == 2 else mean_w
-				w = generator.truncation_trick(generator.mapper(z, c if c is None else generator.embedder(c)), args.psi, mw)
+				w = generator.truncation_trick(generator.mapper(z, c if c is None else generator.embedder(c)), psi=args.psi, mean_w=mw)
 				sampled_ws += [w[i] for i in range(n)]
 				if not args.no_samples:
 					y = generator.synthesizer([w] * generator.levels, noise=args.noisy, fixed=args.fixed)
