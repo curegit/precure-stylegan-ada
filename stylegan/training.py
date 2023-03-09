@@ -123,10 +123,10 @@ class CustomUpdater(StandardUpdater):
 
 	def generate_conditions(self, n, dual=False):
 		if dual:
-			c = self.generator.generate_conditions(n // 2)
+			_, c = self.generator.generate_conditions(n // 2)
 			return concat((c, c), axis=0)
 		else:
-			return self.generator.generate_conditions(n)
+			return self.generator.generate_conditions(n)[1]
 
 	def next_latent_groups(self, mode_seeking=False):
 		for _, n in range_batch(self.batch_size, self.group_size):
@@ -390,7 +390,7 @@ class CustomTrainer(Trainer):
 	def save_images(trainer):
 		for i, n in range_batch(trainer.number, trainer.batch_size):
 			z = trainer.updater.averaged_generator.generate_latents(n)
-			c = trainer.updater.averaged_generator.generate_conditions(n) if trainer.conditional else None
+			c = trainer.updater.averaged_generator.generate_conditions(n)[1] if trainer.conditional else None
 			_, y = trainer.updater.averaged_generator(z, c)
 			z.to_cpu()
 			y.to_cpu()

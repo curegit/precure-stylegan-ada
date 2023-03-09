@@ -2,7 +2,7 @@ from math import sqrt as root
 from random import randint
 from h5py import File as HDF5File
 from chainer import Variable, Chain, ChainList, Sequential
-from chainer.functions import sqrt, sum, mean, concat
+from chainer.functions import sqrt, sum, mean, concat, stack
 from chainer.serializers import HDF5Serializer, HDF5Deserializer
 from stylegan.layers.basic import GaussianDistribution, LeakyRelu, EqualizedLinear
 from stylegan.layers.generator import InitialSkipArchitecture, SkipArchitecture
@@ -78,7 +78,7 @@ class Generator(Chain):
 	def __call__(self, z, c=None, random_mix=None, psi=1.0, mean_w=None, categories=None, noise=1.0, fixed=None):
 		z, *zs = z if isinstance(z, tuple) or isinstance(z, list) else [z]
 		if self.conditional and c is None:
-			c = self.generate_conditions(len(z), categories)
+			_, c = self.generate_conditions(len(z), categories)
 		if c is not None:
 			c = self.embedder(c)
 		w = self.truncation_trick(self.mapper(z, c), psi, mean_w, categories)
@@ -99,10 +99,10 @@ class Generator(Chain):
 
 	def generate_conditions(self, batch, categories=None):
 		if categories is None:
-			return Variable(self.xp.eye(self.categories, dtype=self.xp.float32)[self.xp.random.randint(low=0, high=self.categories, size=batch)])
+			ind = self.xp.random.randint(low=0, high=self.categories, size=batch)
 		else:
 			ind = self.xp.array(categories)[self.xp.random.randint(low=0, high=len(categories), size=batch)]
-			return Variable(self.xp.eye(self.categories, dtype=self.xp.float32)[ind])
+		return [int(i) for i in ind], Variable(self.xp.eye(self.categories, dtype=self.xp.float32)[ind])
 
 	def generate_masks(self, batch):
 		return self.sampler(batch, 3, self.height, self.width) / root(self.height * self.width)
@@ -115,8 +115,11 @@ class Generator(Chain):
 		return w
 
 	def calculate_mean_w(self, n=50000, categories=None):
-		c = self.embedder(self.generate_conditions(n, categories)) if self.conditional else None
+		c = self.embedder(self.generate_conditions(n, categories)[1]) if self.conditional else None
 		return mean(self.mapper(self.generate_latents(n), c), axis=0)
+
+	def calculate_mean_ws_by_category(self, n=50000):
+		return stack([self.calculate_mean_w(n=n, categories=[i]) for i in range(self.categories)])
 
 	@property
 	def width(self):

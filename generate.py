@@ -33,15 +33,19 @@ def main(args):
 	else:
 		categories = None
 	if args.psi != 1.0:
-		mean_w = generator.calculate_mean_w(categories=(None if args.global_truncation else categories))
+		if generator.conditional and args.local_truncation:
+			mean_w = generator.calculate_mean_ws_by_category()
+		else:
+			mean_w = generator.calculate_mean_w(categories=(None if args.global_truncation else categories))
 	else:
 		mean_w = None
 	mkdirs(args.dest)
 	with chainer_like_tqdm(desc="generation", total=args.number) as bar:
 		for i, n in range_batch(args.number, args.batch):
 			z = generator.generate_latents(n, center=center, sd=args.sd)
-			c = generator.generate_conditions(n, categories=categories) if generator.conditional else None
-			ws, y = generator(z, c, psi=args.psi, mean_w=mean_w, noise=args.noisy, fixed=args.fixed)
+			k, c = generator.generate_conditions(n, categories=categories) if generator.conditional else (None, None)
+			mw = mean_w[k] if mean_w is not None and mean_w.ndim == 2 else mean_w
+			ws, y = generator(z, c, psi=args.psi, mean_w=mw, noise=args.noisy, fixed=args.fixed)
 			z.to_cpu()
 			y.to_cpu()
 			ws[0].to_cpu()
