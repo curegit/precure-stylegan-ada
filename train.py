@@ -21,6 +21,9 @@ def main(args):
 	if args.snapshot is not None:
 		print("Reconstructing networks from a snapshot...")
 		generator, discriminator = CustomUpdater.reconstruct_models(args.snapshot, group_size=args.group, load_weights=False)
+		if categories != generator.categories:
+			eprint("The number of data classes is not consistent with the snapshot!")
+			raise RuntimeError("Input error")
 	else:
 		generator = Generator(args.size, args.depth, args.levels, *args.channels, categories)
 		discriminator = Discriminator(args.levels, args.channels[1], args.channels[0], categories, args.depth, group_size=args.group)
