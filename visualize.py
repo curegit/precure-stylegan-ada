@@ -9,7 +9,7 @@ from interface.argtypes import natural
 from interface.stdout import print_model_args, print_parameter_counts, print_cnn_architecture
 from utilities.stdio import eprint
 from utilities.filesys import mkdirs, build_filepath
-from utilities.chainer import config_valid
+from utilities.chainer import config_train
 
 gen_varstyle = {"fillcolor": "#5edbf1", "shape": "record", "style": "filled"}
 gen_funstyle = {"fillcolor": "#ffa9e0", "shape": "record", "style": "filled"}
@@ -17,7 +17,7 @@ dis_varstyle = {"fillcolor": "#7a9fe6", "shape": "record", "style": "filled"}
 dis_funstyle = {"fillcolor": "#fea21d", "shape": "record", "style": "filled"}
 
 def main(args):
-	config_valid()
+	config_train()
 	print("Initializing models...")
 	generator = Generator(args.size, args.depth, args.levels, *args.channels, args.categories)
 	discriminator = Discriminator(args.levels, args.channels[1], args.channels[0], args.categories, args.depth)
