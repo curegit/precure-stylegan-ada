@@ -252,15 +252,10 @@ class CustomUpdater(StandardUpdater):
 			time.sleep(self.sleep_seconds)
 
 	def transfer(self, filepath, generator_level, discriminator_level):
-		with HDF5File(filepath, "r") as hdf5:
-			params = Generator.read_params(hdf5["generator"])
-			source_generator = Generator(**params)
-			source_discriminator = Discriminator(params["levels"], params["last_channels"], params["first_channels"], params["categories"], params["depth"])
-			HDF5Deserializer(hdf5["generator"]).load(source_generator)
-			HDF5Deserializer(hdf5["discriminator"]).load(source_discriminator)
-			self.generator.transfer(source_generator, list(range(generator_level, self.generator.levels + 1)))
-			self.averaged_generator.transfer(source_generator, list(range(generator_level, self.averaged_generator.levels + 1)))
-			self.discriminator.transfer(source_discriminator, list(range(0, discriminator_level + 1)))
+		source_generator, source_discriminator = CustomUpdater.reconstruct_models(filepath, load_weights=True)
+		self.generator.transfer(source_generator, list(range(generator_level, self.generator.levels + 1)))
+		self.averaged_generator.transfer(source_generator, list(range(generator_level, self.averaged_generator.levels + 1)))
+		self.discriminator.transfer(source_discriminator, list(range(0, discriminator_level + 1)))
 
 	def load_states(self, filepath):
 		with HDF5File(filepath, "r") as hdf5:
@@ -284,6 +279,21 @@ class CustomUpdater(StandardUpdater):
 			optimizer_group = hdf5.create_group("optimizers")
 			for key, optimizer in self.optimizers:
 				HDF5Serializer(optimizer_group.create_group(key)).save(optimizer)
+
+	@staticmethod
+	def read_params(hdf5):
+		return Generator.read_params(hdf5["generator"])
+
+	@staticmethod
+	def reconstruct_models(filepath, group_size=None, load_weights=False):
+		with HDF5File(filepath, "r") as hdf5:
+			params = CustomUpdater.read_params(hdf5)
+			generator = Generator(**params)
+			discriminator = Discriminator(params["levels"], params["last_channels"], params["first_channels"], params["categories"], params["depth"], group_size=group_size)
+			if load_weights:
+				HDF5Deserializer(hdf5["generator"]).load(generator)
+				HDF5Deserializer(hdf5["discriminator"]).load(discriminator)
+		return generator, discriminator
 
 	@property
 	def batch_size(self):

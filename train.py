@@ -18,8 +18,12 @@ def main(args):
 	config_train()
 	print("Initializing models...")
 	categories = len(args.dataset)
-	generator = Generator(args.size, args.depth, args.levels, *args.channels, categories)
-	discriminator = Discriminator(args.levels, args.channels[1], args.channels[0], categories, args.depth, args.group)
+	if args.snapshot is not None:
+		print("Reconstructing networks from a snapshot...")
+		generator, discriminator = CustomUpdater.reconstruct_models(args.snapshot, group_size=args.group, load_weights=False)
+	else:
+		generator = Generator(args.size, args.depth, args.levels, *args.channels, categories)
+		discriminator = Discriminator(args.levels, args.channels[1], args.channels[0], categories, args.depth, group_size=args.group)
 	averaged_generator = generator.copy("copy")
 	generator.to_device(args.device)
 	discriminator.to_device(args.device)
