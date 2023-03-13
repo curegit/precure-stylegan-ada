@@ -40,6 +40,10 @@ def main(args):
 		dataset = ImageDataset(args.dataset[0], generator.resolution)
 	print(f"Dataset size: {len(dataset)} images")
 	if args.labels:
+		if args.snapshot is not None:
+			print("Re-embedding labels...")
+		else:
+			print("Embedding labels...")
 		generator.embed_labels(args.labels)
 		averaged_generator.embed_labels(args.labels)
 	print_data_classes(generator)
