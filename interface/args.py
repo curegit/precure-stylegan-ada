@@ -30,10 +30,10 @@ class CustomArgumentParser(ArgumentParser):
 		group.add_argument("-c", "--channels", metavar="C", type=natural, nargs=2, default=(512, 64), help="the number of initial and final channels in CNN")
 		return self
 
-	def add_evaluation_args(self, include_batch=True, include_noise=True):
+	def add_evaluation_args(self, include_batch=True, include_noise=True, default_batch=16):
 		group = self.add_argument_group("evaluation arguments")
 		if include_batch:
-			group.add_argument("-b", "--batch", metavar="N", type=natural, default=16, help="batch size, affecting speed and memory usage")
+			group.add_argument("-b", "--batch", metavar="N", type=natural, default=default_batch, help="batch size, affecting speed and memory usage")
 		if include_noise:
 			group.add_argument("-N", "--noise", metavar="K", dest="noisy", type=ufloat, default=1.0, help="strength multiplier of random noise injections")
 			group.add_argument("-z", "--fixed", metavar="N", type=uint, nargs="?", const=0, help="make noise injections deterministic by given seed N")

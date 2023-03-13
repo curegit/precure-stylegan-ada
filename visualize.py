@@ -4,6 +4,7 @@ from sys import exit
 from pydot import graph_from_dot_data
 from chainer.computational_graph import build_computational_graph
 from stylegan.networks import Generator, Discriminator
+from stylegan.training import CustomUpdater
 from interface.args import CustomArgumentParser
 from interface.argtypes import natural
 from interface.stdout import print_model_args, print_parameter_counts, print_cnn_architecture
@@ -19,8 +20,14 @@ dis_funstyle = {"fillcolor": "#fea21d", "shape": "record", "style": "filled"}
 def main(args):
 	config_train()
 	print("Initializing models...")
-	generator = Generator(args.size, args.depth, args.levels, *args.channels, args.categories)
-	discriminator = Discriminator(args.levels, args.channels[1], args.channels[0], args.categories, args.depth)
+	if args.snapshot is not None:
+		print("Reconstructing networks from a snapshot...")
+		generator, discriminator = CustomUpdater.reconstruct_models(args.snapshot, load_weights=False)
+		categories = generator.categories
+	else:
+		categories = args.categories or 1
+		generator = Generator(args.size, args.depth, args.levels, *args.channels, categories)
+		discriminator = Discriminator(args.levels, args.channels[1], args.channels[0], categories, args.depth)
 	generator.to_device(args.device)
 	discriminator.to_device(args.device)
 	print_model_args(generator)
@@ -28,7 +35,7 @@ def main(args):
 	print_cnn_architecture(generator, discriminator)
 	print("Exporting graphs...")
 	z = generator.generate_latents(args.batch)
-	c = generator.generate_conditions(args.batch)[1] if args.categories > 1 else None
+	c = generator.generate_conditions(args.batch)[1] if categories > 1 else None
 	_, x = generator(z, c)
 	y = discriminator(x, c)
 	gen_graph = build_computational_graph([x], variable_style=gen_varstyle, function_style=gen_funstyle).dump()
@@ -44,8 +51,10 @@ def main(args):
 
 def parse_args():
 	parser = CustomArgumentParser("Draw computational graphs of generator and discriminator in PDFs")
-	parser.add_argument("-n", "--class", type=natural, metavar="N", dest="categories", default=1, help="specify the number of data classes")
-	parser.add_output_args("graphs").add_model_args().add_evaluation_args(include_noise=False)
+	ex_group = parser.add_mutually_exclusive_group()
+	ex_group.add_argument("-s", "--snapshot", metavar="HDF5_FILE", help="import network architecture from a training snapshot")
+	ex_group.add_argument("-n", "--class", type=natural, metavar="N", dest="categories", help="specify the number of data classes")
+	parser.add_output_args("graphs").add_model_args().add_evaluation_args(include_noise=False, default_batch=4)
 	return parser.parse_args()
 
 
