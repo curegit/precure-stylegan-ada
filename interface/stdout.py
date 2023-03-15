@@ -1,8 +1,7 @@
 from tqdm import tqdm
 
-bar_format = "{desc} [{bar}] {percentage:5.1f}%"
-
 def chainer_like_tqdm(desc, total):
+	bar_format = "{desc} [{bar}] {percentage:5.1f}%"
 	return tqdm(desc=desc, total=total, bar_format=bar_format, miniters=1, ascii=".#", ncols=70)
 
 def print_model_args(generator):
