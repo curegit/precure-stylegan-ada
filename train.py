@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from sys import exit
+from sys import exit, argv
 from os.path import basename, realpath
 from chainer.iterators import SerialIterator
 from stylegan.dataset import ImageDataset, MulticategoryImageDataset
@@ -91,6 +91,7 @@ def main(args):
 		updater.freeze(*args.freeze)
 	mkdirs(args.dest)
 	dump_json(args, build_filepath(args.dest, "arguments", "json", args.force))
+	dump_json(argv, build_filepath(args.dest, "command", "json", args.force))
 	trainer = CustomTrainer(updater, args.epoch, args.dest, args.force)
 	if args.save != 0:
 		trainer.hook_state_save(args.save)
