@@ -1,4 +1,5 @@
 from sys import float_info
+from math import isfinite
 from chainer.backend import CpuDevice, GpuDevice
 
 def uint(string):
@@ -13,20 +14,26 @@ def natural(string):
 		return value
 	raise ValueError()
 
-def ufloat(string):
+def real(string):
 	value = float(string)
+	if isfinite(value):
+		return value
+	raise ValueError()
+
+def ufloat(string):
+	value = real(string)
 	if value >= 0:
 		return value
 	raise ValueError()
 
 def positive(string):
-	value = float(string)
+	value = real(string)
 	if value >= float_info.epsilon:
 		return value
 	raise ValueError()
 
 def rate(string):
-	value = float(string)
+	value = real(string)
 	if 0 <= value <= 1:
 		return value
 	raise ValueError()
