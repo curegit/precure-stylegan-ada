@@ -49,8 +49,8 @@ def parse_args():
 	parser.require_generator().add_output_args("combined")
 	parser.add_argument("style", metavar="STYLE_FILE", nargs="+", help="input style NPY file")
 	parser.add_argument("-c", "--coefs", dest="coefs", metavar="K", nargs="+", type=float, help="coefficients of linear combination to multiply each style vectors respectively (average all styles if this option is disabled)")
-	parser.add_argument("-n", "--number", metavar="N", type=uint, default=10, help="the number of images to generate")
-	return parser.add_evaluation_args().parse_args()
+	parser.add_argument("-n", "--number", metavar="N", type=uint, default=3, help="the number of images to generate")
+	return parser.add_evaluation_args(default_batch=1).parse_args()
 
 
 if __name__ == "__main__":
