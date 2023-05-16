@@ -5,7 +5,7 @@ from numpy import array
 from chainer.functions import stack
 from stylegan.networks import Generator
 from interface.args import CustomArgumentParser
-from interface.argtypes import uint
+from interface.argtypes import uint, real
 from interface.stdout import chainer_like_tqdm
 from utilities.iter import range_batch
 from utilities.image import save_image
@@ -48,7 +48,7 @@ def parse_args():
 	parser = CustomArgumentParser("Make a new style vector and its images by linear combination of style vectors")
 	parser.require_generator().add_output_args("combined")
 	parser.add_argument("style", metavar="STYLE_FILE", nargs="+", help="input style NPY file")
-	parser.add_argument("-c", "--coefs", dest="coefs", metavar="K", nargs="+", type=float, help="coefficients of linear combination to multiply each style vectors respectively (average all styles if this option is disabled)")
+	parser.add_argument("-c", "--coefs", dest="coefs", metavar="K", nargs="+", type=real, help="coefficients of linear combination to multiply each style vectors respectively (average all styles if this option is disabled)")
 	parser.add_argument("-n", "--number", metavar="N", type=uint, default=3, help="the number of images to generate")
 	return parser.add_evaluation_args(default_batch=1).parse_args()
 
