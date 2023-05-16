@@ -58,7 +58,7 @@ def main(args):
 
 def parse_args():
 	parser = CustomArgumentParser("Generate images with a trained generator from random latent vectors")
-	parser.require_generator().add_output_args("images").add_generation_args().add_evaluation_args()
+	parser.require_generator().add_output_args("images").add_generation_args().add_evaluation_args(default_batch=1)
 	return parser.parse_args()
 
 

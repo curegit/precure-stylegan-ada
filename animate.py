@@ -127,7 +127,7 @@ def parse_args():
 	group.add_argument("-I", "--interpolate", metavar="N", type=uint, default=15, help="the number of frames between key images")
 	group.add_argument("-P", "--prepend", metavar="STYLE_FILE", nargs="+", action="extend", help="add specified key images (by style NPY file) to the head")
 	group.add_argument("-A", "--append", metavar="STYLE_FILE", nargs="+", action="extend", help="add specified key images (by style NPY file) to the tail")
-	return parser.add_evaluation_args().parse_args()
+	return parser.add_evaluation_args(default_batch=1).parse_args()
 
 
 if __name__ == "__main__":

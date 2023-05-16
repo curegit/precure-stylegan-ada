@@ -115,8 +115,8 @@ def parse_args():
 	parser.add_argument("style", metavar="STYLE_FILE", nargs="+", help="input style NPY file for each level, specify '...' to use the previous level's one (you can omit the tailing '...')")
 	parser.add_argument("-j", "--justify", action="store_true", help="justify input style arguments evenly automatically")
 	parser.add_argument("-l", "--lerp", action="store_true", help="use linear interpolation to resolve '...' instead of repeating")
-	parser.add_argument("-n", "--number", metavar="N", type=uint, default=10, help="the number of images to generate")
-	return parser.add_evaluation_args().parse_args()
+	parser.add_argument("-n", "--number", metavar="N", type=uint, default=3, help="the number of images to generate")
+	return parser.add_evaluation_args(default_batch=1).parse_args()
 
 
 if __name__ == "__main__":
