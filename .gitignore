@@ -11,5 +11,6 @@
 *.bmp
 *.tif
 *.tiff
-!examples/*.png
+!/examples/*.png
+!/models/*.hdf5
 __pycache__/
