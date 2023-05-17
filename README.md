@@ -41,6 +41,7 @@ Install the following to run `visualize.py`.
 ## See also
 
 - [StyleGAN FastAPI](https://github.com/curegit/stylegan-fastapi)
+- [Precure StyleGAN](https://github.com/curegit/precure-stylegan) (old project)
 
 ## License
 
