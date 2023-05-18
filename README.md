@@ -40,7 +40,7 @@ Install the following to run `visualize.py`.
 
 ## Results
 
-ψ = 1.0 for each Fréchet Inception Distance (FID).
+We use ψ = 1.0 to evaluate for each Fréchet Inception Distance (FID).
 
 ### Flickr-Faces-HQ (ψ = 0.9, FID = 15.61)
 
