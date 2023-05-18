@@ -63,6 +63,8 @@ We use ψ = 1.0 (no truncation applied) to evaluate for each Fréchet Inception 
 
 ### Kuzushiji-49 (ψ = 1.0, FID = 3.77)
 
+![Kuzushiji-49](examples/k49.png)
+
 ## See Also
 
 - [StyleGAN FastAPI](https://github.com/curegit/stylegan-fastapi)
