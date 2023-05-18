@@ -28,7 +28,8 @@ pip3 install -r requirements.txt
 - CuPy (with CUDA & cuDNN)
 - Matplotlib
 
-You may need GPU support to train your own models.
+You should need GPU support to train your own models.
+Note that it does not support distributed training across multiple GPUs.
 
 Matplotlib is required to draw learning curves.
 
@@ -38,9 +39,11 @@ Install the following to run `visualize.py`.
 
 - Pydot (with GraphViz)
 
+## Script Synopses
+
 ## Results
 
-We use ψ = 1.0 to evaluate for each Fréchet Inception Distance (FID).
+We use ψ = 1.0 (no truncation applied) to evaluate for each Fréchet Inception Distance (FID).
 
 ### Flickr-Faces-HQ (ψ = 0.9, FID = 15.61)
 
@@ -50,10 +53,33 @@ We use ψ = 1.0 to evaluate for each Fréchet Inception Distance (FID).
 
 ![AFHQ](examples/afhq.png)
 
-## See also
+### Anime Faces (ψ = 0.7, FID = 13.81)
+
+![Anime](examples/anime.png)
+
+### MNIST
+
+### Kuzushiji-49
+
+## See Also
 
 - [StyleGAN FastAPI](https://github.com/curegit/stylegan-fastapi)
 - [Precure StyleGAN](https://github.com/curegit/precure-stylegan) (old project)
+
+## References
+
+### Papers
+
+- [Analyzing and Improving the Image Quality of StyleGAN](https://arxiv.org/abs/1912.04958)
+- [Training Generative Adversarial Networks with Limited Data](https://arxiv.org/abs/2006.06676)
+- [Mode Seeking Generative Adversarial Networks for Diverse Image Synthesis](https://arxiv.org/abs/1903.05628)
+- [On Leveraging Pretrained GANs for Generation with Limited Data](https://arxiv.org/abs/2002.11810)
+
+### Datasets
+
+- [THE MNIST DATABASE of handwritten digits](http://yann.lecun.com/exdb/mnist/)
+- [Deep Learning for Classical Japanese Literature](https://arxiv.org/abs/1812.01718)
+- [Anime-Face-Dataset](https://github.com/Mckinsey666/Anime-Face-Dataset)
 
 ## License
 
