@@ -33,7 +33,7 @@ Note that it does not support distributed training across multiple GPUs.
 
 Matplotlib is required to draw learning curves.
 
-### Extra
+### Extras
 
 Install the following to run `visualize.py`.
 
@@ -57,9 +57,11 @@ We use ψ = 1.0 (no truncation applied) to evaluate for each Fréchet Inception 
 
 ![Anime](examples/anime.png)
 
-### MNIST
+### MNIST (ψ = 1.1, FID = 2.61)
 
-### Kuzushiji-49
+![MNIST](examples/mnist.png)
+
+### Kuzushiji-49 (ψ = 1.0, FID = 3.77)
 
 ## See Also
 
@@ -80,6 +82,7 @@ We use ψ = 1.0 (no truncation applied) to evaluate for each Fréchet Inception 
 - [THE MNIST DATABASE of handwritten digits](http://yann.lecun.com/exdb/mnist/)
 - [Deep Learning for Classical Japanese Literature](https://arxiv.org/abs/1812.01718)
 - [Anime-Face-Dataset](https://github.com/Mckinsey666/Anime-Face-Dataset)
+- [Flickr-Faces-HQ Dataset (FFHQ)](https://github.com/NVlabs/ffhq-dataset)
 
 ## License
 
