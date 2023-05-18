@@ -38,6 +38,18 @@ Install the following to run `visualize.py`.
 
 - Pydot (with GraphViz)
 
+## Results
+
+ψ = 1.0 for each Fréchet Inception Distance (FID).
+
+### Flickr-Faces-HQ (ψ = 0.9, FID = 15.61)
+
+![FFHQ](examples/ffhq.png)
+
+### Animal Faces-HQ (ψ = 0.8, FID = 7.64)
+
+![AFHQ](examples/afhq.png)
+
 ## See also
 
 - [StyleGAN FastAPI](https://github.com/curegit/stylegan-fastapi)
