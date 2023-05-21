@@ -1,12 +1,16 @@
 # Precure StyleGAN ADA
 
-StyleGAN 2.0 + Adaptive Discriminator Augmentation
+StyleGAN 2.0 implementation using Chainer with Adaptive Discriminator Augmentation
+
+## Abstract
 
 This project follows on from [the previous project: Precure StyleGAN](https://github.com/curegit/precure-stylegan).
+We aimed to generate facial images of a specific Precure (Japanese Anime) character using the StyleGAN 2.0.
+We employed the Adaptive Discriminator Augmentation (ADA) to improve the image quality, as the previous project showed that the dataset was too small to train decent GANs naively.
+We trained the models on facial images of Cure Beauty (Smile Pretty Cure!, 2012), whose dataset size is about 3k, and achieved a score of 21.98 in FID, much better than the previous project.
+We also trained the models on other common datasets, demonstrating the stability and robustness of our implementation.
 
-FID = 26.41, dataset = 2.5k
-
-![](examples/beauty.png)
+![Cure Beauty](examples/beauty.png)
 
 ## Requirements
 
@@ -45,11 +49,15 @@ Install the following to run `visualize.py`.
 
 We use ψ = 1.0 (no truncation applied) to evaluate for each Fréchet Inception Distance (FID).
 
+### Cure Beauty (ψ = 0.8, FID = 21.98, ADA enabled)
+
+![Cure Beauty](examples/beauty.png)
+
 ### Flickr-Faces-HQ (ψ = 0.9, FID = 15.61)
 
 ![FFHQ](examples/ffhq.png)
 
-### Animal Faces-HQ (ψ = 0.8, FID = 7.64)
+### Animal Faces-HQ (ψ = 0.8, FID = 7.64, conditional, ADA enabled)
 
 ![AFHQ](examples/afhq.png)
 
@@ -57,11 +65,11 @@ We use ψ = 1.0 (no truncation applied) to evaluate for each Fréchet Inception 
 
 ![Anime](examples/anime.png)
 
-### MNIST (ψ = 1.1, FID = 2.61)
+### MNIST (ψ = 1.1, FID = 2.61, conditional)
 
 ![MNIST](examples/mnist.png)
 
-### Kuzushiji-49 (ψ = 1.0, FID = 3.77)
+### Kuzushiji-49 (ψ = 1.0, FID = 3.77, conditional, ADA enabled)
 
 ![Kuzushiji-49](examples/k49.png)
 
