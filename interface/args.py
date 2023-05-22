@@ -19,15 +19,15 @@ class CustomArgumentParser(ArgumentParser):
 	def add_output_args(self, default_dest):
 		group = self.add_argument_group("output arguments")
 		group.add_argument("-f", "--force", action="store_true", help="allow overwrite existing files")
-		group.add_argument("-o", "--output", "--dest", "--result", metavar="DIR", dest="dest", default=default_dest, help="write output into destination directory DIR")
+		group.add_argument("-o", "--output", "--dest", "--result", metavar="DIR", dest="dest", default=default_dest, help="write output to target directory DIR")
 		return self
 
 	def add_model_args(self):
 		group = self.add_argument_group("model arguments")
 		group.add_argument("-d", "--depth", metavar="N", type=natural, default=8, help="the number of layers in a multilayer perceptron (mapper module)")
-		group.add_argument("-z", "--size", metavar="D", type=natural, default=512, help="the number of nodes in a dense layer (dimension of latent vector)")
+		group.add_argument("-z", "--size", metavar="D", type=natural, default=512, help="the number of nodes in a dense layer (dimension of the latent vector)")
 		group.add_argument("-x", "--levels", metavar="N", type=natural, default=7, help="the number of stacked CNN blocks, defining output resolution as 2^(N+1)")
-		group.add_argument("-c", "--channels", metavar="C", type=natural, nargs=2, default=(512, 64), help="the number of initial and final channels in CNN")
+		group.add_argument("-c", "--channels", metavar="C", type=natural, nargs=2, default=(512, 64), help="the numbers of initial and final channels in the CNN")
 		return self
 
 	def add_evaluation_args(self, include_batch=True, include_noise=True, default_batch=16):
@@ -37,7 +37,7 @@ class CustomArgumentParser(ArgumentParser):
 		if include_noise:
 			group.add_argument("-N", "--noise", metavar="K", dest="noisy", type=ufloat, default=1.0, help="strength multiplier of random noise injections")
 			group.add_argument("-z", "--fixed", metavar="N", type=uint, nargs="?", const=0, help="make noise injections deterministic by given seed N")
-		group.add_argument("-v", "--device", "--gpu", metavar="ID", dest="device", type=device, default=device("CPU"), help="use GPU device of the specified ID (pass 'GPU' as ID to select GPU device automatically)")
+		group.add_argument("-v", "--device", "--gpu", metavar="ID", dest="device", type=device, default=device("CPU"), help="use the GPU device with the specified ID (pass 'GPU' as ID to automatically select a GPU device)")
 		return self
 
 	def add_generation_args(self, allow_zero=False):
