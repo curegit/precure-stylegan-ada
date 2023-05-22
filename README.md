@@ -23,7 +23,7 @@ We also trained the models on other common datasets, demonstrating the stability
 
 Use `requirements.txt` to install minimal dependencies for inferencing.
 
-```sh
+```
 pip3 install -r requirements.txt
 ```
 
@@ -43,7 +43,57 @@ Install the following to run `visualize.py`.
 
 - Pydot (with GraphViz)
 
-## Script Synopses
+## Models
+
+We provide distributable trained generators on common datasets in the `models` folder.
+
+- Flickr-Faces-HQ
+- Animal Faces-HQ (conditional)
+- Anime Faces
+- MNIST (conditional)
+- Kuzushiji-49 (conditional)
+
+You can quickly try them out like this.
+
+```
+python3 generate.py models/afhq.hdf5 -l cat -o output
+```
+
+## Scripts
+
+### `show.py`
+
+### `generate.py`
+
+This script generates images using a trained model.
+Use the `-h` option for more details.
+
+```
+python3 generate.py models/afhq.hdf5 -n 100 -l dog -o output
+```
+
+### `mix.py`
+
+This script mixes styles from style files and creates style-mixed images.
+  Use the `-h` option for more details.
+### `combine.py`
+
+### `animate.py`
+
+makes an animation of the analogy from a trained model.
+  Use the `-h` option for more details.
+
+### `train.py` trains StyleGAN models.
+  Use the `-h` option for more details.
+
+### `visualize.py`
+
+draws an example of a computation graph for debugging (Pydot and Graphviz are required).
+
+### Small Tools
+
+- `tools/check.py` analyzes the Chainer environment.
+- `tools/tile.py` creates a N by M tiled image matrix.
 
 ## Results
 
