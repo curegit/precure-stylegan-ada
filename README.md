@@ -83,7 +83,7 @@ We use ψ = 1.0 (no truncation applied) to evaluate for each Fréchet Inception 
 
 ![MNIST](examples/mnist.png)
 
-### Kuzushiji-49 (ψ = 1.0, FID = 3.77, conditional, ADA enabled)
+### Kuzushiji-49 (ψ = 1.0, FID = 3.77, conditional, ADA enabled, MSGAN)
 
 ![Kuzushiji-49](examples/k49.png)
 
