@@ -50,5 +50,5 @@ class CustomArgumentParser(ArgumentParser):
 		group.add_argument("-t", "--truncation-trick", "--psi", metavar="PSI", dest="psi", type=ufloat, default=1.0, help="apply the truncation trick")
 		ex_group = group.add_mutually_exclusive_group()
 		ex_group.add_argument("-C", "--local-truncation", "--local", dest="local_truncation", action="store_true", help="truncate to the center of each data class when the truncation trick is used with conditional models (by default, the collective center of the specified data classes)")
-		ex_group.add_argument("-T", "--global-truncation", "--global", dest="global_truncation", action="store_true", help="truncate to the center of all data classes when the truncation trick is used with conditional generation (by default, the collective center of specified data classes)")
+		ex_group.add_argument("-T", "--global-truncation", "--global", dest="global_truncation", action="store_true", help="truncate to the center of all data classes when the truncation trick is used with conditional generation (by default, the collective center of the specified data classes)")
 		return self
