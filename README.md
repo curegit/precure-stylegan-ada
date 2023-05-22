@@ -59,6 +59,38 @@ You can quickly try them out like this.
 python3 generate.py models/afhq.hdf5 -l cat -o output
 ```
 
+## Results
+
+We use ψ = 1.0 (no truncation applied) to evaluate for each Fréchet Inception Distance (FID).
+
+### Cure Beauty (ψ = 0.8, FID = 21.98, ADA enabled)
+
+![Cure Beauty](examples/beauty.png)
+
+### Flickr-Faces-HQ (ψ = 0.9, FID = 15.61)
+
+![FFHQ](examples/ffhq.png)
+
+### Animal Faces-HQ (ψ = 0.8, FID = 7.64, conditional, ADA enabled)
+
+![AFHQ](examples/afhq.png)
+
+### Anime Faces (ψ = 0.7, FID = 13.81)
+
+![Anime](examples/anime.png)
+
+### MNIST (ψ = 1.1, FID = 2.61, conditional)
+
+![MNIST](examples/mnist.png)
+
+### Kuzushiji-49 (ψ = 1.0, FID = 3.77, conditional, ADA enabled)
+
+![Kuzushiji-49](examples/k49.png)
+
+### Style Mixing
+
+### Animations
+
 ## Scripts
 
 ### `show.py`
@@ -94,34 +126,6 @@ draws an example of a computation graph for debugging (Pydot and Graphviz are re
 
 - `tools/check.py` analyzes the Chainer environment.
 - `tools/tile.py` creates a N by M tiled image matrix.
-
-## Results
-
-We use ψ = 1.0 (no truncation applied) to evaluate for each Fréchet Inception Distance (FID).
-
-### Cure Beauty (ψ = 0.8, FID = 21.98, ADA enabled)
-
-![Cure Beauty](examples/beauty.png)
-
-### Flickr-Faces-HQ (ψ = 0.9, FID = 15.61)
-
-![FFHQ](examples/ffhq.png)
-
-### Animal Faces-HQ (ψ = 0.8, FID = 7.64, conditional, ADA enabled)
-
-![AFHQ](examples/afhq.png)
-
-### Anime Faces (ψ = 0.7, FID = 13.81)
-
-![Anime](examples/anime.png)
-
-### MNIST (ψ = 1.1, FID = 2.61, conditional)
-
-![MNIST](examples/mnist.png)
-
-### Kuzushiji-49 (ψ = 1.0, FID = 3.77, conditional, ADA enabled)
-
-![Kuzushiji-49](examples/k49.png)
 
 ## See Also
 
