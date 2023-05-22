@@ -114,17 +114,17 @@ def check_args(args):
 	return args
 
 def parse_args():
-	parser = CustomArgumentParser("Create style-interpolating animation")
+	parser = CustomArgumentParser("Create a style-interpolating animation")
 	parser.require_generator().add_output_args("animation").add_generation_args(allow_zero=True)
 	group = parser.add_argument_group("animation arguments")
 	group.add_argument("-J", "--no-samples", action="store_true", help="don't save key images")
 	group.add_argument("-G", "--gif", action="store_true", help="output an additional GIF animation file")
 	group.add_argument("-W", "--webp", action="store_true", help="output an additional WebP animation file")
-	group.add_argument("-F", "--frames", action="store_true", help="output all frames as isolated images additionally")
-	group.add_argument("-L", "--loop", action="store_true", help="interpolate between the last and first images")
-	group.add_argument("-R", "--repeat", action="store_true", help="tell the image writer explicitly that an output image should loop")
+	group.add_argument("-F", "--frames", action="store_true", help="additionally output all frames as isolated images")
+	group.add_argument("-L", "--loop", action="store_true", help="interpolate between the last and first frame")
+	group.add_argument("-R", "--repeat", action="store_true", help="explicitly tell the image writer that an output image should loop")
 	group.add_argument("-D", "--duration", metavar="MS", type=natural, default=100, help="the display duration of each frame in milliseconds")
-	group.add_argument("-I", "--interpolate", metavar="N", type=uint, default=15, help="the number of frames between key images")
+	group.add_argument("-I", "--interpolate", metavar="N", type=uint, default=15, help="the number of intermediate frames between key images")
 	group.add_argument("-P", "--prepend", metavar="STYLE_FILE", nargs="+", action="extend", help="add specified key images (by style NPY file) to the head")
 	group.add_argument("-A", "--append", metavar="STYLE_FILE", nargs="+", action="extend", help="add specified key images (by style NPY file) to the tail")
 	return parser.add_evaluation_args(default_batch=1).parse_args()
