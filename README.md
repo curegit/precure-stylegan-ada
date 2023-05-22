@@ -6,7 +6,7 @@ StyleGAN 2.0 implementation using Chainer with Adaptive Discriminator Augmentati
 
 This project follows on from [the previous project: Precure StyleGAN](https://github.com/curegit/precure-stylegan).
 We aimed to generate facial images of a specific Precure (Japanese Anime) character using the StyleGAN 2.0.
-We employed the Adaptive Discriminator Augmentation (ADA) to improve the image quality, as the previous project showed that the dataset was too small to train decent GANs naively.
+We employed Adaptive Discriminator Augmentation (ADA) to improve the image quality, as the previous project showed that the dataset was too small to train decent GANs naively.
 We trained the models on facial images of Cure Beauty (Smile Pretty Cure!, 2012), whose dataset size is about 3k, and achieved a score of 21.98 in FID, much better than the previous project.
 We also trained the models on other common datasets, demonstrating the stability and robustness of our implementation.
 
