@@ -6,7 +6,7 @@ StyleGAN 2.0 implementation using Chainer with Adaptive Discriminator Augmentati
 
 This project follows on from [the previous project: Precure StyleGAN](https://github.com/curegit/precure-stylegan).
 We aimed to generate facial images of a specific Precure (Japanese Anime) character using the StyleGAN 2.0.
-We employed the Adaptive Discriminator Augmentation (ADA) to improve the image quality, as the previous project showed that the dataset was too small to train decent GANs naively.
+We employed Adaptive Discriminator Augmentation (ADA) to improve the image quality, as the previous project showed that the dataset was too small to train decent GANs naively.
 We trained the models on facial images of Cure Beauty (Smile Pretty Cure!, 2012), whose dataset size is about 3k, and achieved a score of 21.98 in FID, much better than the previous project.
 We also trained the models on other common datasets, demonstrating the stability and robustness of our implementation.
 
@@ -33,7 +33,7 @@ pip3 install -r requirements.txt
 - Matplotlib
 
 You should need GPU support to train your own models.
-Note that it does not support distributed training across multiple GPUs.
+Note that our implementation does not support distributed training across multiple GPUs.
 
 Matplotlib is required to draw learning curves.
 
@@ -43,7 +43,21 @@ Install the following to run `visualize.py`.
 
 - Pydot (with GraphViz)
 
-## Script Synopses
+## Models
+
+We provide these distributable trained generators on common datasets in the `models` folder.
+
+- Flickr-Faces-HQ
+- Animal Faces-HQ (conditional)
+- Anime Faces
+- MNIST (conditional)
+- Kuzushiji-49 (conditional)
+
+You can quickly try them out like this.
+
+```sh
+python3 generate.py models/afhq.hdf5 -o output
+```
 
 ## Results
 
@@ -69,9 +83,74 @@ We use ψ = 1.0 (no truncation applied) to evaluate for each Fréchet Inception 
 
 ![MNIST](examples/mnist.png)
 
-### Kuzushiji-49 (ψ = 1.0, FID = 3.77, conditional, ADA enabled)
+### Kuzushiji-49 (ψ = 1.0, FID = 3.77, conditional, ADA enabled, MSGAN)
 
 ![Kuzushiji-49](examples/k49.png)
+
+### Style Mixing
+
+### Animations
+
+## Scripts
+
+### `show.py`
+
+This script shows information of a trained generator.
+
+example to check the mnist model:
+
+```sh
+python3 show.py models/mnist.hdf5
+```
+
+### `generate.py`
+
+This script generates images using a trained model.
+Use the `-h` option for more details.
+
+example to generate 100 dog images in the `output` folder using the afhq model:
+
+```sh
+python3 generate.py models/afhq.hdf5 -n 100 -l dog -o output
+```
+
+### `mix.py`
+
+This script mixes styles from style files and creates style-mixed images.
+Use the `-h` option for more details.
+
+example to generate 2 anime face images and mix them:
+
+```sh
+python3 generate.py models/anime.hdf5 -n 2 -o anime
+python3 mix.py models/anime.hdf5 -n 1 anime/1-style.npy ... ... anime/2-style.npy -o anime-mix
+```
+
+### `animate.py`
+
+This script makes an animation of the analogy using a trained generator.
+Use the `-h` option for more details.
+
+example to create an animation interpolating 10 face samples using the FFHQ model:
+
+```sh
+python3 animate.py models/ffhq.hdf5 -n 10 -L -o analogy
+```
+
+### `train.py`
+
+Use this script to train your own models.
+Use the `-h` option for more details.
+
+### `visualize.py`
+
+This script draws computation graphs for debugging (Pydot and GraphViz are required).
+Use the `-h` option for more details.
+
+### Small Tools
+
+- `tools/check.py` analyzes the Chainer environment.
+- `tools/tile.py` creates a N by M tiled image matrix.
 
 ## See Also
 
