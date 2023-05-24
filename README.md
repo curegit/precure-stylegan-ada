@@ -33,7 +33,7 @@ pip3 install -r requirements.txt
 - Matplotlib
 
 You should need GPU support to train your own models.
-Note that it does not support distributed training across multiple GPUs.
+Note that our implementation does not support distributed training across multiple GPUs.
 
 Matplotlib is required to draw learning curves.
 
@@ -45,7 +45,7 @@ Install the following to run `visualize.py`.
 
 ## Models
 
-We provide distributable trained generators on common datasets in the `models` folder.
+We provide these distributable trained generators on common datasets in the `models` folder.
 
 - Flickr-Faces-HQ
 - Animal Faces-HQ (conditional)
@@ -94,6 +94,14 @@ We use ψ = 1.0 (no truncation applied) to evaluate for each Fréchet Inception 
 ## Scripts
 
 ### `show.py`
+
+This script shows information of a trained generator.
+
+example to check the mnist model:
+
+```
+python3 show.py models/mnist.hdf5
+```
 
 ### `generate.py`
 
