@@ -23,7 +23,7 @@ We also trained the models on other common datasets, demonstrating the stability
 
 Use `requirements.txt` to install minimal dependencies for inferencing.
 
-```
+```sh
 pip3 install -r requirements.txt
 ```
 
@@ -55,8 +55,8 @@ We provide these distributable trained generators on common datasets in the `mod
 
 You can quickly try them out like this.
 
-```
-python3 generate.py models/afhq.hdf5 -l cat -o output
+```sh
+python3 generate.py models/afhq.hdf5 -o output
 ```
 
 ## Results
@@ -99,7 +99,7 @@ This script shows information of a trained generator.
 
 example to check the mnist model:
 
-```
+```sh
 python3 show.py models/mnist.hdf5
 ```
 
@@ -108,27 +108,44 @@ python3 show.py models/mnist.hdf5
 This script generates images using a trained model.
 Use the `-h` option for more details.
 
-```
+example to generate 100 dog images in the `output` folder using the afhq model:
+
+```sh
 python3 generate.py models/afhq.hdf5 -n 100 -l dog -o output
 ```
 
 ### `mix.py`
 
 This script mixes styles from style files and creates style-mixed images.
-  Use the `-h` option for more details.
-### `combine.py`
+Use the `-h` option for more details.
+
+example to generate 2 anime face images and mix them:
+
+```sh
+python3 generate.py models/anime.hdf5 -n 2 -o anime
+python3 mix.py models/anime.hdf5 -n 1 anime/1-style.npy ... ... anime/2-style.npy -o anime-mix
+```
 
 ### `animate.py`
 
-makes an animation of the analogy from a trained model.
-  Use the `-h` option for more details.
+This script makes an animation of the analogy using a trained generator.
+Use the `-h` option for more details.
 
-### `train.py` trains StyleGAN models.
-  Use the `-h` option for more details.
+example to create an animation interpolating 10 face samples using the FFHQ model:
+
+```sh
+python3 animate.py models/ffhq.hdf5 -n 10 -L -o analogy
+```
+
+### `train.py`
+
+Use this script to train your own models.
+Use the `-h` option for more details.
 
 ### `visualize.py`
 
-draws an example of a computation graph for debugging (Pydot and Graphviz are required).
+This script draws computation graphs for debugging (Pydot and GraphViz are required).
+Use the `-h` option for more details.
 
 ### Small Tools
 
