@@ -119,9 +119,9 @@ python3 generate.py models/afhq.hdf5 -n 100 -l dog -o output
 ### `mix.py`
 
 This script mixes styles from style files and creates style-mixed images.
-Use the `-h` option for more details.
+Use the `-h` option for additional details.
 
-example to generate 2 anime face images and mix them:
+For instance, to generate 2 anime face images and mix them, use:
 
 ```sh
 python3 generate.py models/anime.hdf5 -n 2 -o anime
@@ -133,7 +133,7 @@ python3 mix.py models/anime.hdf5 -n 1 anime/1-style.npy ... ... anime/2-style.np
 This script makes an animation of the analogy using a trained generator.
 Use the `-h` option for more details.
 
-example to create an animation interpolating 10 face samples using the FFHQ model:
+For example, to create an animation that interpolates 10 face samples using the FFHQ model, use:
 
 ```sh
 python3 animate.py models/ffhq.hdf5 -n 10 -L -o analogy
