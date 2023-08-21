@@ -87,6 +87,8 @@ We use ψ = 1.0 (no truncation applied) to evaluate for each Fréchet Inception 
 
 ![Kuzushiji-49](examples/k49.png)
 
+For this training, we used Mode Seeking Regularization (MSGAN) due to problems associated with multiclass data that has a large number of categories.
+
 ### Style Mixing
 
 ### Animations
@@ -97,7 +99,7 @@ We use ψ = 1.0 (no truncation applied) to evaluate for each Fréchet Inception 
 
 This script shows information of a trained generator.
 
-example to check the mnist model:
+For example, to check the MNIST model, use:
 
 ```sh
 python3 show.py models/mnist.hdf5
@@ -105,10 +107,10 @@ python3 show.py models/mnist.hdf5
 
 ### `generate.py`
 
-This script generates images using a trained model.
+This script generates images utilizing a trained model.
 Use the `-h` option for more details.
 
-example to generate 100 dog images in the `output` folder using the afhq model:
+For example, to generate 100 dog images in the `output` folder using the AFHQ model, type:
 
 ```sh
 python3 generate.py models/afhq.hdf5 -n 100 -l dog -o output
@@ -161,6 +163,7 @@ Use the `-h` option for more details.
 
 ### Papers
 
+- [A Style-Based Generator Architecture for Generative Adversarial Networks](https://arxiv.org/abs/1812.04948)
 - [Analyzing and Improving the Image Quality of StyleGAN](https://arxiv.org/abs/1912.04958)
 - [Training Generative Adversarial Networks with Limited Data](https://arxiv.org/abs/2006.06676)
 - [Mode Seeking Generative Adversarial Networks for Diverse Image Synthesis](https://arxiv.org/abs/1903.05628)
