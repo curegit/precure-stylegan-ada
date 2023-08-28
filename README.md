@@ -7,10 +7,10 @@ StyleGAN 2.0 implementation using Chainer with Adaptive Discriminator Augmentati
 This project follows on from [the previous project: Precure StyleGAN](https://github.com/curegit/precure-stylegan).
 We aimed to generate facial images of a specific Precure (Japanese Anime) character using the StyleGAN 2.0.
 We employed Adaptive Discriminator Augmentation (ADA) to improve the image quality, as the previous project showed that the dataset was too small to train decent GANs naively.
-We trained the models on facial images of Cure Beauty (Smile Pretty Cure!, 2012), whose dataset size is about 3k, and achieved a score of 21.98 in FID, much better than the previous project.
+We trained the models on facial images of Cure Beauty (Smile Pretty Cure!, 2012), whose dataset size is about 3k, and achieved a score of 17.39 in FID, much better than the previous project.
 We also trained the models on other common datasets, demonstrating the stability and robustness of our implementation.
 
-![Cure Beauty](examples/beauty.png)
+![Cure Beauty](examples/beauty-2.png)
 
 ## Requirements
 
@@ -63,9 +63,17 @@ python3 generate.py models/afhq.hdf5 -o output
 
 We use ψ = 1.0 (no truncation applied) to evaluate for each Fréchet Inception Distance (FID).
 
-### Cure Beauty (ψ = 0.8, FID = 21.98, ADA enabled)
+All the examples below are uncurated, and all truncations are applied with the `-C` option (shrinking to each class).
 
-![Cure Beauty](examples/beauty.png)
+### Cure Beauty v1 (ψ = 0.8, FID = 21.98, ADA enabled, batch = 16, R1 = 100)
+
+![Cure Beauty v1](examples/beauty-1.png)
+
+### Cure Beauty v2 (ψ = 0.8, FID = 17.39, ADA enabled, batch = 12, R1 = 75)
+
+The smaller batch size and lesser gradient penalty brought better quality and diversity.
+
+![Cure Beauty v2](examples/beauty-2.png)
 
 ### Flickr-Faces-HQ (ψ = 0.9, FID = 15.61)
 
