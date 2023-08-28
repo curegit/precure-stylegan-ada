@@ -4,7 +4,7 @@ from numpy.random import uniform, normal, lognormal
 from chainer.functions import sum, pad
 from stylegan.manipulations.base import Manipulation
 
-indentity = eye(3, dtype=float32)
+identity = eye(3, dtype=float32)
 
 def translation(x, y):
 	return array([[1, 0, x], [0, 1, y], [0, 0, 1]], dtype=float32)
@@ -40,27 +40,27 @@ class AffineTransformation(Manipulation):
 			return x
 		batch, _, height, width = x.shape
 		centering = inverse_translation(-height / 2 + 0.5, -width / 2 + 0.5)
-		affine = indentity @ centering
+		affine = identity @ centering
 		condition = uniform(size=batch) < p
 		scale = lognormal(sigma=self.scale, size=batch)
-		isotropic_scaling = stack([inverse_scaling(s, s) if c else indentity for c, s in zip(condition, scale)])
+		isotropic_scaling = stack([inverse_scaling(s, s) if c else identity for c, s in zip(condition, scale)])
 		affine = affine @ isotropic_scaling
 		condition = uniform(size=batch) < 1 - sqrt(1 - p)
 		theta = uniform(low=-self.rotation, high=self.rotation, size=batch)
-		pre_rotation = stack([inverse_rotation(t) if c else indentity for c, t in zip(condition, theta)])
+		pre_rotation = stack([inverse_rotation(t) if c else identity for c, t in zip(condition, theta)])
 		affine = affine @ pre_rotation
 		condition = uniform(size=batch) < p
 		scale = lognormal(sigma=self.scale, size=batch)
-		anisotropic_scaling = stack([inverse_scaling(1 / s, s) if c else indentity for c, s in zip(condition, scale)])
+		anisotropic_scaling = stack([inverse_scaling(1 / s, s) if c else identity for c, s in zip(condition, scale)])
 		affine = affine @ anisotropic_scaling
 		condition = uniform(size=batch) < 1 - sqrt(1 - p)
 		theta = uniform(low=-self.rotation, high=self.rotation, size=batch)
-		post_rotation = stack([inverse_rotation(t) if c else indentity for c, t in zip(condition, theta)])
+		post_rotation = stack([inverse_rotation(t) if c else identity for c, t in zip(condition, theta)])
 		affine = affine @ post_rotation
 		condition = uniform(size=batch) < p
 		th = height * normal(scale=self.translation, size=batch)
 		tw = width * normal(scale=self.translation, size=batch)
-		translation = stack([inverse_translation(h, w) if c else indentity for c, h, w in zip(condition, th, tw)])
+		translation = stack([inverse_translation(h, w) if c else identity for c, h, w in zip(condition, th, tw)])
 		affine = affine @ translation
 		inverse_centering = inverse_translation(height / 2 - 0.5, width / 2 - 0.5)
 		affine = affine @ inverse_centering

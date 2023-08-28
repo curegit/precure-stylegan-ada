@@ -4,7 +4,7 @@ from numpy.random import uniform, normal, lognormal
 from chainer.functions import concat
 from stylegan.manipulations.base import Manipulation
 
-indentity = eye(4, dtype=float32)
+identity = eye(4, dtype=float32)
 
 def translation(x, y, z):
 	return array([[1, 0, 0, x], [0, 1, 0, y], [0, 0, 1, z], [0, 0, 0, 1]], dtype=float32)
@@ -21,7 +21,7 @@ def scaling(s, t, u):
 def householder(axis):
 	norm = sqrt(sum(a ** 2 for a in axis))
 	v = array([*axis, 0], dtype=float32) / norm
-	return indentity - 2 * outer(v, v)
+	return identity - 2 * outer(v, v)
 
 
 class ColorAffineTransformation(Manipulation):
@@ -40,27 +40,27 @@ class ColorAffineTransformation(Manipulation):
 			return x
 		batch, channels, height, width = x.shape
 		centering = translation(-0.5, -0.5, -0.5)
-		affine = centering @ indentity
+		affine = centering @ identity
 		condition = uniform(size=batch) < p
 		brightness = normal(scale=self.brightness, size=batch)
-		brightness_adjustment = stack([translation(b, b, b) if c else indentity for c, b in zip(condition, brightness)])
+		brightness_adjustment = stack([translation(b, b, b) if c else identity for c, b in zip(condition, brightness)])
 		affine = brightness_adjustment @ affine
 		condition = uniform(size=batch) < p
 		contrast = lognormal(sigma=self.contrast, size=batch)
-		contrast_adjustment = stack([scaling(s, s, s) if c else indentity for c, s in zip(condition, contrast)])
+		contrast_adjustment = stack([scaling(s, s, s) if c else identity for c, s in zip(condition, contrast)])
 		affine = contrast_adjustment @ affine
 		condition = uniform(size=batch) < p / 2
-		luminance_flip = stack([householder([1, 1, 1]) if c else indentity for c in condition])
+		luminance_flip = stack([householder([1, 1, 1]) if c else identity for c in condition])
 		affine = luminance_flip @ affine
 		condition = uniform(size=batch) < p
 		theta = uniform(low=-self.hue_rotation, high=self.hue_rotation, size=batch)
-		hue_rotation = stack([rotation([1, 1, 1], t) if c else indentity for c, t in zip(condition, theta)])
+		hue_rotation = stack([rotation([1, 1, 1], t) if c else identity for c, t in zip(condition, theta)])
 		affine = hue_rotation @ affine
 		condition = uniform(size=batch) < p
 		saturation = lognormal(sigma=self.saturation, size=batch)
 		v = array([1, 1, 1, 0], dtype=float32) / sqrt(3)
 		o = outer(v, v)
-		saturation_adjustment = stack([o + (indentity - o) * array([s, s, s, 1], dtype=float32) if c else indentity for c, s in zip(condition, saturation)])
+		saturation_adjustment = stack([o + (identity - o) * array([s, s, s, 1], dtype=float32) if c else identity for c, s in zip(condition, saturation)])
 		affine = saturation_adjustment @ affine
 		inverse_centering = translation(0.5, 0.5, 0.5)
 		affine = inverse_centering @ affine

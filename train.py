@@ -85,7 +85,7 @@ def main(args):
 		print("Loading a snapshot...")
 		updater.load_states(args.snapshot)
 	if args.transfer is not None:
-		print("Transfering...")
+		print("Transferring...")
 		updater.transfer(*args.transfer)
 	if args.freeze is not None:
 		updater.freeze(*args.freeze)
