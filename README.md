@@ -124,6 +124,25 @@ For example, to generate 100 dog images in the `output` folder using the AFHQ mo
 python3 generate.py models/afhq.hdf5 -n 100 -l dog -o output
 ```
 
+### `combine.py`
+
+This script performs linear combination on style vectors from style files, creating a new style file and image.
+Use the `-h` option for more details.
+
+Example 1: To average two cats:
+
+```sh
+python3 generate.py models/afhq.hdf5 -n 2 -l cat -t 0.8 -o cats
+python3 combine.py models/afhq.hdf5 -n 1 cats/1-style.npy cats/2-style.npy -c 0.5 0.5 -o new-cat
+```
+
+Example 2: To generate 3 human face images and add the style vector difference from image 2 to image 3 to image 1:
+
+```sh
+python3 generate.py models/ffhq.hdf5 -n 3 -t 0.8 -o faces
+python3 combine.py models/ffhq.hdf5 -n 1 faces/1-style.npy faces/2-style.npy faces/3-style.npy -c 1 -1 1 -o new-face
+```
+
 ### `mix.py`
 
 This script mixes styles from style files and creates style-mixed images.
