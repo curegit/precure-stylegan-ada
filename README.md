@@ -7,10 +7,10 @@ StyleGAN 2.0 implementation using Chainer with Adaptive Discriminator Augmentati
 This project follows on from [the previous project: Precure StyleGAN](https://github.com/curegit/precure-stylegan).
 We aimed to generate facial images of a specific Precure (Japanese Anime) character using the StyleGAN 2.0.
 We employed Adaptive Discriminator Augmentation (ADA) to improve the image quality, as the previous project showed that the dataset was too small to train decent GANs naively.
-We trained the models on facial images of Cure Beauty (Smile Pretty Cure!, 2012), whose dataset size is about 3k, and achieved a score of 21.98 in FID, much better than the previous project.
+We trained the models on facial images of Cure Beauty (Smile Pretty Cure!, 2012), whose dataset size is about 3k, and achieved a score of 17.39 in FID, much better than the previous project.
 We also trained the models on other common datasets, demonstrating the stability and robustness of our implementation.
 
-![Cure Beauty](examples/beauty.png)
+![Cure Beauty](examples/beauty-2.png)
 
 ## Requirements
 
@@ -63,9 +63,17 @@ python3 generate.py models/afhq.hdf5 -o output
 
 We use ψ = 1.0 (no truncation applied) to evaluate for each Fréchet Inception Distance (FID).
 
-### Cure Beauty (ψ = 0.8, FID = 21.98, ADA enabled)
+All the examples below are uncurated, and all truncations are applied with the `-C` option (shrinking to each class).
 
-![Cure Beauty](examples/beauty.png)
+### Cure Beauty v1 (ψ = 0.8, FID = 21.98, ADA enabled, batch = 16, R1 = 100)
+
+![Cure Beauty v1](examples/beauty-1.png)
+
+### Cure Beauty v2 (ψ = 0.8, FID = 17.39, ADA enabled, batch = 12, R1 = 75)
+
+The smaller batch size and lesser gradient penalty brought better quality and diversity.
+
+![Cure Beauty v2](examples/beauty-2.png)
 
 ### Flickr-Faces-HQ (ψ = 0.9, FID = 15.61)
 
@@ -87,9 +95,7 @@ We use ψ = 1.0 (no truncation applied) to evaluate for each Fréchet Inception 
 
 ![Kuzushiji-49](examples/k49.png)
 
-### Style Mixing
-
-### Animations
+For this training, we used Mode Seeking Regularization (MSGAN) due to problems associated with multiclass data that has a large number of categories.
 
 ## Scripts
 
@@ -97,7 +103,7 @@ We use ψ = 1.0 (no truncation applied) to evaluate for each Fréchet Inception 
 
 This script shows information of a trained generator.
 
-example to check the mnist model:
+For example, to check the MNIST model, use:
 
 ```sh
 python3 show.py models/mnist.hdf5
@@ -105,21 +111,40 @@ python3 show.py models/mnist.hdf5
 
 ### `generate.py`
 
-This script generates images using a trained model.
+This script generates images utilizing a trained model.
 Use the `-h` option for more details.
 
-example to generate 100 dog images in the `output` folder using the afhq model:
+For example, to generate 100 dog images in the `output` folder using the AFHQ model, type:
 
 ```sh
 python3 generate.py models/afhq.hdf5 -n 100 -l dog -o output
 ```
 
+### `combine.py`
+
+This script performs linear combination on style vectors from style files, creating a new style file and image.
+Use the `-h` option for more details.
+
+Example 1: To average two cats:
+
+```sh
+python3 generate.py models/afhq.hdf5 -n 2 -l cat -t 0.8 -o cats
+python3 combine.py models/afhq.hdf5 -n 1 cats/1-style.npy cats/2-style.npy -c 0.5 0.5 -o new-cat
+```
+
+Example 2: To generate 3 human face images and add the style vector difference from image 2 to image 3 to image 1:
+
+```sh
+python3 generate.py models/ffhq.hdf5 -n 3 -t 0.8 -o faces
+python3 combine.py models/ffhq.hdf5 -n 1 faces/1-style.npy faces/2-style.npy faces/3-style.npy -c 1 -1 1 -o new-face
+```
+
 ### `mix.py`
 
 This script mixes styles from style files and creates style-mixed images.
-Use the `-h` option for more details.
+Use the `-h` option for additional details.
 
-example to generate 2 anime face images and mix them:
+For instance, to generate 2 anime face images and mix them, use:
 
 ```sh
 python3 generate.py models/anime.hdf5 -n 2 -o anime
@@ -131,7 +156,7 @@ python3 mix.py models/anime.hdf5 -n 1 anime/1-style.npy ... ... anime/2-style.np
 This script makes an animation of the analogy using a trained generator.
 Use the `-h` option for more details.
 
-example to create an animation interpolating 10 face samples using the FFHQ model:
+For example, to create an animation that interpolates 10 face samples using the FFHQ model, use:
 
 ```sh
 python3 animate.py models/ffhq.hdf5 -n 10 -L -o analogy
@@ -161,6 +186,7 @@ Use the `-h` option for more details.
 
 ### Papers
 
+- [A Style-Based Generator Architecture for Generative Adversarial Networks](https://arxiv.org/abs/1812.04948)
 - [Analyzing and Improving the Image Quality of StyleGAN](https://arxiv.org/abs/1912.04958)
 - [Training Generative Adversarial Networks with Limited Data](https://arxiv.org/abs/2006.06676)
 - [Mode Seeking Generative Adversarial Networks for Diverse Image Synthesis](https://arxiv.org/abs/1903.05628)
