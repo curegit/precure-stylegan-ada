@@ -97,10 +97,6 @@ The smaller batch size and lesser gradient penalty brought better quality and di
 
 For this training, we used Mode Seeking Regularization (MSGAN) due to problems associated with multiclass data that has a large number of categories.
 
-### Style Mixing
-
-### Animations
-
 ## Scripts
 
 ### `show.py`
