@@ -93,9 +93,9 @@ The smaller batch size and lesser gradient penalty brought better quality and di
 
 ### Kuzushiji-49 (ψ = 1.0, FID = 3.77, conditional, ADA enabled, MSGAN)
 
-![Kuzushiji-49](examples/k49.png)
-
 For this training, we used Mode Seeking Regularization (MSGAN) due to problems associated with multiclass data that has a large number of categories.
+
+![Kuzushiji-49](examples/k49.png)
 
 ## Scripts
 
