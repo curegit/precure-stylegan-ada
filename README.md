@@ -97,6 +97,12 @@ For this training, we used Mode Seeking Regularization (MSGAN) due to problems a
 
 ![Kuzushiji-49](examples/k49.png)
 
+## Manipulation Examples
+
+### Interpolation Animation
+
+![Cure Beauty v2 Animation](examples/beauty-animation.png)
+
 ## Scripts
 
 ### `show.py`
