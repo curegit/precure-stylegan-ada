@@ -10,7 +10,7 @@ We employed Adaptive Discriminator Augmentation (ADA) to improve the image quali
 We trained the models on facial images of Cure Beauty (Smile Pretty Cure!, 2012), whose dataset size is about 3k, and achieved a score of 17.39 in FID, much better than the previous project.
 We also trained the models on other common datasets, demonstrating the stability and robustness of our implementation.
 
-![Cure Beauty](examples/beauty-2.png)
+![Cure Beauty](examples/beauty-curated.png)
 
 ## Requirements
 
