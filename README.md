@@ -173,6 +173,8 @@ python3 animate.py models/ffhq.hdf5 -n 10 -L -o analogy
 Use this script to train your own models.
 Use the `-h` option for more details.
 
+![Training Curve Example](examples/curves.png)
+
 ### `visualize.py`
 
 This script draws computation graphs for debugging (Pydot and GraphViz are required).
