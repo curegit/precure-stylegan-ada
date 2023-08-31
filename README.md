@@ -183,14 +183,14 @@ For example, to start training the AFHQ model:
 
 ```sh
 # Run 100 epochs on GPU
-python3 train.py CAT_IMAGE_DIR DOG_IMAGE_DIR WILD_ANIMAL_IMAGE_DIR -l cat dog wild -o training-result -x 7 -b 32 -g 4 -k 8 --ada -v GPU -e 100
+python3 train.py -e 100 -o training-result -x 7 -b 32 -g 4 -k 8 --ada -v GPU CAT_IMAGE_DIR DOG_IMAGE_DIR WILD_ANIMAL_IMAGE_DIR -l cat dog wild
 ```
 
 To resume training from a snapshot:
 
 ```sh
 # Run another 50 epochs on GPU
-python3 train.py CAT_IMAGE_DIR DOG_IMAGE_DIR WILD_ANIMAL_IMAGE_DIR -l cat dog wild -o training-result-resumed -b 32 -g 4 -k 8 --ada -v GPU -e 50 -s training-result/snapshot.hdf5
+python3 train.py -e 50 -s training-result/snapshot.hdf5 -o training-result-resumed -b 32 -g 4 -k 8 --ada -v GPU CAT_IMAGE_DIR DOG_IMAGE_DIR WILD_ANIMAL_IMAGE_DIR -l cat dog wild
 ```
 
 While network architecture is restored from the snapshot, other hyperparameters are not, so you must pass them again.
