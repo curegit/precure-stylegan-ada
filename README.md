@@ -173,6 +173,25 @@ python3 animate.py models/ffhq.hdf5 -n 10 -L -o analogy
 Use this script to train your own models.
 Use the `-h` option for more details.
 
+For example, to start training the AFHQ model:
+
+```sh
+# Run 100 epochs on GPU
+python3 train.py <CAT_IMAGE_DIR> <DOG_IMAGE_DIR> <WILD_ANIMAL_IMAGE_DIR> -l cat dog wild -o training-result -x 7 -b 32 -g 4 -k 8 --ada -v GPU -e 100
+```
+
+To resume training from a snapshot:
+
+```sh
+# Run another 50 epochs on GPU
+python3 train.py <CAT_IMAGE_DIR> <DOG_IMAGE_DIR> <WILD_ANIMAL_IMAGE_DIR> -l cat dog wild -o training-result-resumed -b 32 -g 4 -k 8 --ada -v GPU -e 50 -s training-result/snapshot.hdf5
+```
+
+While network architecture is restored from the snapshot, other hyperparameters are not, so you must pass them again.
+Also, you should specify the additional training length, not the total duration, because elapsed training duration will not be serialized.
+
+Training curves at the beginning of the training typically look like this:
+
 ![Training Curve Example](examples/curves.png)
 
 ### `visualize.py`
