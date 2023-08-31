@@ -109,15 +109,15 @@ For this training, we used Mode Seeking Regularization (MSGAN) due to problems a
 
 #### 2-Mix
 
-|          Level 1―4           |                  Level 5―7                   |        Result |
-| :---------------------------: | :-----------------------------------------: | :---------------------------: |
-| ![](examples/mix/2/1-4.png) | ![](examples/mix/2/5-7.png) |  ![](examples/mix/2/result.png) |
+|          Level 1–4          |          Level 5–7          |             Result             |
+| :-------------------------: | :-------------------------: | :----------------------------: |
+| ![](examples/mix/2/1-4.png) | ![](examples/mix/2/5-7.png) | ![](examples/mix/2/result.png) |
 
 #### 3-Mix
 
-|          Level 1―3           |                  Level 4―5                   |         Level 6―7           | Result |
-| :---------------------------: | :-----------------------------------------: | :---------------------------: | :---------: |
-| ![](examples/mix/3/1-3.png) | ![](examples/mix/3/4-5.png) | ![](examples/mix/3/6-7.png) |  ![](examples/mix/3/result.png) |
+|          Level 1–3          |          Level 4–5          |          Level 6–7          |             Result             |
+| :-------------------------: | :-------------------------: | :-------------------------: | :----------------------------: |
+| ![](examples/mix/3/1-3.png) | ![](examples/mix/3/4-5.png) | ![](examples/mix/3/6-7.png) | ![](examples/mix/3/result.png) |
 
 ### Interpolation Animation
 
