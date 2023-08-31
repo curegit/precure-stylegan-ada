@@ -99,6 +99,12 @@ For this training, we used Mode Seeking Regularization (MSGAN) due to problems a
 
 ## Manipulation Examples
 
+### Style Interpolation
+
+|          Original 1           |                  Averaged                   |          Original 2           |
+| :---------------------------: | :-----------------------------------------: | :---------------------------: |
+| ![Cat 1](examples/cats/1.png) | ![Cat Averaged](examples/cats/averaged.png) | ![Cat 2](examples/cats/2.png) |
+
 ### Interpolation Animation
 
 ![Cure Beauty v2 Animation](examples/beauty-animation.png)
