@@ -93,9 +93,35 @@ The smaller batch size and lesser gradient penalty brought better quality and di
 
 ### Kuzushiji-49 (ψ = 1.0, FID = 3.77, conditional, ADA enabled, MSGAN)
 
+For this training, we used Mode Seeking Regularization (MSGAN) due to problems associated with multiclass data that has a large number of categories.
+
 ![Kuzushiji-49](examples/k49.png)
 
-For this training, we used Mode Seeking Regularization (MSGAN) due to problems associated with multiclass data that has a large number of categories.
+## Manipulation Examples
+
+### Style Interpolation
+
+|          Original 1           |                  Averaged                   |          Original 2           |
+| :---------------------------: | :-----------------------------------------: | :---------------------------: |
+| ![Cat 1](examples/cats/1.png) | ![Cat Averaged](examples/cats/averaged.png) | ![Cat 2](examples/cats/2.png) |
+
+### Style Mixing
+
+#### 2-Mix
+
+|                 Level 1–4                  |                 Level 5–7                  |                   Result                   |
+| :----------------------------------------: | :----------------------------------------: | :----------------------------------------: |
+| ![Level 1–4 Input](examples/mix/2/1-4.png) | ![Level 5–7 Input](examples/mix/2/5-7.png) | ![2-Mix Result](examples/mix/2/result.png) |
+
+#### 3-Mix
+
+|                 Level 1–3                  |                 Level 4–5                  |                 Level 6–7                  |                   Result                   |
+| :----------------------------------------: | :----------------------------------------: | :----------------------------------------: | :----------------------------------------: |
+| ![Level 1–3 Input](examples/mix/3/1-3.png) | ![Level 4–5 Input](examples/mix/3/4-5.png) | ![Level 6–7 Input](examples/mix/3/6-7.png) | ![3-Mix Result](examples/mix/3/result.png) |
+
+### Interpolation Animation
+
+![Cure Beauty v2 Animation](examples/beauty-animation.png)
 
 ## Scripts
 
@@ -166,6 +192,27 @@ python3 animate.py models/ffhq.hdf5 -n 10 -L -o analogy
 
 Use this script to train your own models.
 Use the `-h` option for more details.
+
+For example, to start training the AFHQ model:
+
+```sh
+# Run 100 epochs on GPU
+python3 train.py -e 100 -o training-result -x 7 -b 32 -g 4 -k 8 --ada CAT_IMAGE_DIR DOG_IMAGE_DIR WILD_ANIMAL_IMAGE_DIR -l cat dog wild -v GPU
+```
+
+To resume training from a snapshot:
+
+```sh
+# Run another 50 epochs on GPU
+python3 train.py -e 50 -s training-result/snapshot.hdf5 -o training-result-resumed -b 32 -g 4 -k 8 --ada CAT_IMAGE_DIR DOG_IMAGE_DIR WILD_ANIMAL_IMAGE_DIR -l cat dog wild -v GPU
+```
+
+While network architecture is restored from the snapshot, other hyperparameters are not, so you must pass them again.
+Also, you should specify the additional training length, not the total duration, because elapsed training duration will not be serialized.
+
+Training curves at the beginning of the training typically look like this:
+
+![Training Curve Example](examples/curves.png)
 
 ### `visualize.py`
 
