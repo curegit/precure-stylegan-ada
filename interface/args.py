@@ -37,7 +37,7 @@ class CustomArgumentParser(ArgumentParser):
 		if include_noise:
 			group.add_argument("-N", "--noise", metavar="K", dest="noisy", type=ufloat, default=1.0, help="strength multiplier of random noise injections")
 			group.add_argument("-z", "--fixed", metavar="N", type=uint, nargs="?", const=0, help="make noise injections deterministic by given seed N")
-		group.add_argument("-v", "--device", "--gpu", metavar="ID", dest="device", type=device, default=(device("GPU") if use_gpu_default else device("CPU")), help="use the GPU device with the specified ID (pass 'GPU' as ID to automatically select a GPU device)")
+		group.add_argument("-v", "--device", "--gpu", metavar="ID", dest="device", type=device, default=(device("GPU") if use_gpu_default else device("CPU")), help="select CPU device or the GPU device with the specified ID (pass 'GPU' as ID to automatically select a GPU device)")
 		return self
 
 	def add_generation_args(self, allow_zero=False):
