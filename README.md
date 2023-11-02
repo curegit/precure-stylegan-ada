@@ -214,6 +214,10 @@ Training curves at the beginning of the training typically look like this:
 
 ![Training Curve Example](examples/curves.png)
 
+#### Transfer learning
+
+comb of `-t` and `-Z`
+
 ### `visualize.py`
 
 This script draws computation graphs for debugging (Pydot and GraphViz are required).
