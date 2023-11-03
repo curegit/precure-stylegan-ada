@@ -193,6 +193,12 @@ python3 animate.py models/ffhq.hdf5 -n 10 -L -o analogy
 Use this script to train your own models.
 Use the `-h` option for more details.
 
+Basically, you need to specify the directories for your dataset, the network architecture parameters, and the training duration.
+Image data should be in RGB or Gray formats with 8-bit depth, and in powers of two square images.
+Use the `-x` option to fit the network shape to the image size of the target dataset.
+
+`--ada` switch enables Adaptive Discriminator Augmentation.
+
 For example, to start training the AFHQ model:
 
 ```sh
