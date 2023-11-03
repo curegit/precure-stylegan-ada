@@ -30,14 +30,14 @@ class CustomArgumentParser(ArgumentParser):
 		group.add_argument("-c", "--channels", metavar="C", type=natural, nargs=2, default=(512, 64), help="the numbers of initial and final channels in the CNN")
 		return self
 
-	def add_evaluation_args(self, include_batch=True, include_noise=True, default_batch=16):
+	def add_evaluation_args(self, include_batch=True, include_noise=True, default_batch=16, use_gpu_default=False):
 		group = self.add_argument_group("evaluation arguments")
 		if include_batch:
 			group.add_argument("-b", "--batch", metavar="N", type=natural, default=default_batch, help="batch size, affecting speed and memory usage")
 		if include_noise:
 			group.add_argument("-N", "--noise", metavar="K", dest="noisy", type=ufloat, default=1.0, help="strength multiplier of random noise injections")
 			group.add_argument("-z", "--fixed", metavar="N", type=uint, nargs="?", const=0, help="make noise injections deterministic by given seed N")
-		group.add_argument("-v", "--device", "--gpu", metavar="ID", dest="device", type=device, default=device("CPU"), help="use the GPU device with the specified ID (pass 'GPU' as ID to automatically select a GPU device)")
+		group.add_argument("-v", "--device", "--gpu", metavar="ID", dest="device", type=device, default=(device("GPU") if use_gpu_default else device("CPU")), help="select CPU device or the GPU device with the specified ID (pass 'GPU' as ID to automatically select a GPU device)")
 		return self
 
 	def add_generation_args(self, allow_zero=False):
