@@ -214,9 +214,13 @@ Training curves at the beginning of the training typically look like this:
 
 ![Training Curve Example](examples/curves.png)
 
-#### Transfer learning
+#### Transfer Learning
 
-comb of `-t` and `-Z`
+Use combination of `-t` option and `-Z` option to perform transfer learning and fine-tuning.
+
+Here's Cure Twinkle examples transferred from Cure Beauty v2.
+
+![Cure Twinkle (Transferred)](examples/transfer.png)
 
 ### `visualize.py`
 
