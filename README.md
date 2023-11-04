@@ -216,9 +216,9 @@ Training curves at the beginning of the training typically look like this:
 
 #### Transfer Learning
 
-Use combination of `-t` option and `-Z` option to perform transfer learning and fine-tuning.
+To perform transfer learning and fine-tuning, you can use a combination of the `-t` option and the `-Z` option.
 
-Here's Cure Twinkle examples transferred from Cure Beauty v2, which is trained on about 300 images.
+Here are some examples of Cure Twinkle transferred from Cure Beauty v2, which was trained on approximately 300 images.
 
 ![Cure Twinkle (Transferred)](examples/transfer.png)
 
