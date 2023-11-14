@@ -48,7 +48,7 @@ def device(string):
 		return GpuDevice.from_device_id(0)
 	try:
 		value = int(string)
-	except:
+	except Exception:
 		raise ValueError() from None
 	if value >= 0:
 		return GpuDevice.from_device_id(value)

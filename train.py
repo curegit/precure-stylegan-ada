@@ -175,7 +175,7 @@ def preprocess_args(args):
 			g = 1 if g.lower() == "all" else uint(g)
 			d = args.levels if d.lower() == "all" else uint(d)
 			args.transfer = snapshot, g, d
-		except:
+		except Exception:
 			eprint("Transfer levels must be non-negative integers!")
 			raise
 	return args
