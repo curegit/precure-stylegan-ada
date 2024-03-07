@@ -24,7 +24,7 @@ def open_filepath_write(dirpath, filename, fileext, exist_ok=True, suffix="+", *
 		while True:
 			try:
 				return open(filepath, "xb" if binary else "x", **kwargs)
-			except OSError:
+			except FileExistsError:
 				filepath = alt_filepath(filepath, suffix)
 
 def glob_recursively(dirpath, fileext):
