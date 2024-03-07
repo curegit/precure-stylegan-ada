@@ -43,7 +43,7 @@ Install the following to run `visualize.py`.
 
 - Pydot (with GraphViz)
 
-## Models
+## Model Zoo
 
 We provide these distributable trained generators on common datasets in the `models` folder.
 
