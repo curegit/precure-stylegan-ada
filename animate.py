@@ -9,7 +9,7 @@ from interface.stdout import chainer_like_tqdm
 from utilities.iter import range_batch, iter_batch
 from utilities.image import to_pil_image, save_image
 from utilities.stdio import eprint
-from utilities.filesys import mkdirs, build_filepath
+from utilities.filesys import mkdirs, open_filepath_write
 from utilities.numpy import load, save
 from utilities.chainer import to_variable, config_valid
 
@@ -80,9 +80,12 @@ def main(args):
 					y.to_cpu()
 					for j in range(n):
 						filename = f"{i + j + 1}"
-						save(build_filepath(args.dest, filename + "-latent", "npy", args.force), z.array[j])
-						save(build_filepath(args.dest, filename + "-style", "npy", args.force), w.array[j])
-						save_image(y.array[j], build_filepath(args.dest, filename, "png", args.force))
+						with open_filepath_write(args.dest, filename + "-latent", "npy", args.force) as fp:
+							save(fp, z.array[j])
+						with open_filepath_write(args.dest, filename + "-style", "npy", args.force) as fp:
+							save(fp, w.array[j])
+						with open_filepath_write(args.dest, filename, "png", args.force) as fp:
+							save_image(y.array[j], fp)
 						bar.update()
 	ws = prepend + sampled_ws + append
 	frame_ws = list(interpolate(ws, args.interpolate, args.loop))
@@ -97,15 +100,16 @@ def main(args):
 				images.append(image)
 				if args.frames:
 					filename = f"frame-{count + 1}"
-					image.save(build_filepath(args.dest, filename, "png", args.force))
+					with open_filepath_write(args.dest, filename, "png", args.force) as fp:
+						image.save(fp)
 				bar.update()
 				count += 1
 	for ext in ["png"] + (["webp"] if args.webp else []) + (["gif"] if args.gif else []):
-		filepath = build_filepath(args.dest, "analogy", ext, args.force)
-		if args.repeat:
-			images[0].save(filepath, save_all=True, duration=args.duration, append_images=images[1:], loop=0)
-		else:
-			images[0].save(filepath, save_all=True, duration=args.duration, append_images=images[1:])
+		with open_filepath_write(args.dest, "analogy", ext, args.force) as fp:
+			if args.repeat:
+				images[0].save(fp, save_all=True, duration=args.duration, append_images=images[1:], loop=0)
+			else:
+				images[0].save(fp, save_all=True, duration=args.duration, append_images=images[1:])
 
 def check_args(args):
 	if len(args.prepend or []) + args.number + len(args.append or []) < 2:

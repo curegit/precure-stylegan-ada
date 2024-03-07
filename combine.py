@@ -10,7 +10,7 @@ from interface.stdout import chainer_like_tqdm
 from utilities.iter import range_batch
 from utilities.image import save_image
 from utilities.stdio import eprint
-from utilities.filesys import mkdirs, build_filepath
+from utilities.filesys import mkdirs, open_filepath_write
 from utilities.numpy import load, save
 from utilities.chainer import to_variable, config_valid
 
@@ -22,14 +22,16 @@ def main(args):
 	ws = array([load(s) for s in args.style])
 	w = sum(w * k for w, k in zip(ws, args.coefs))
 	mkdirs(args.dest)
-	save(build_filepath(args.dest, "new-style", "npy", args.force), w)
+	with open_filepath_write(args.dest, "new-style", "npy", args.force) as fp:
+		save(fp, w)
 	with chainer_like_tqdm(desc="generation", total=args.number) as bar:
 		for i, n in range_batch(args.number, args.batch):
 			y = generator.synthesizer([stack([to_variable(w, device=args.device)] * n)] * generator.levels, noise=args.noisy, fixed=args.fixed)
 			y.to_cpu()
 			for j in range(n):
 				filename = f"{i + j + 1}"
-				save_image(y.array[j], build_filepath(args.dest, filename, "png", args.force))
+				with open_filepath_write(args.dest, filename, "png", args.force) as fp:
+					save_image(y.array[j], fp)
 				bar.update()
 
 def check_args(args):

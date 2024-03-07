@@ -16,6 +16,17 @@ def build_filepath(dirpath, filename, fileext, exist_ok=True, suffix="+"):
 	filepath = os.path.normpath(os.path.join(dirpath, filename) + os.extsep + fileext)
 	return filepath if exist_ok else alt_filepath(filepath, suffix)
 
+def open_filepath_write(dirpath, filename, fileext, exist_ok=True, suffix="+", *, binary=True, **kwargs):
+	filepath = build_filepath(dirpath, filename, fileext, exist_ok=True, suffix=suffix)
+	if exist_ok:
+		return open(filepath, "wb" if binary else "w", **kwargs)
+	else:
+		while True:
+			try:
+				return open(filepath, "xb" if binary else "x", **kwargs)
+			except OSError:
+				filepath = alt_filepath(filepath, suffix)
+
 def glob_recursively(dirpath, fileext):
 	pattern = build_filepath(glob.escape(dirpath), os.path.join("**", "*"), glob.escape(fileext))
 	return [f for f in glob.glob(pattern, recursive=True) if os.path.isfile(f)]

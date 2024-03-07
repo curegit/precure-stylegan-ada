@@ -10,7 +10,7 @@ from utilities.iter import first, range_batch
 from utilities.math import lerp, ilerp
 from utilities.image import save_image
 from utilities.stdio import eprint
-from utilities.filesys import mkdirs, build_filepath
+from utilities.filesys import mkdirs, open_filepath_write
 from utilities.numpy import load
 from utilities.chainer import to_variable, config_valid
 
@@ -106,7 +106,8 @@ def main(args):
 			y.to_cpu()
 			for j in range(n):
 				filename = f"{i + j + 1}"
-				save_image(y.array[j], build_filepath(args.dest, filename, "png", args.force))
+				with open_filepath_write(args.dest, filename, "png", args.force) as fp:
+					save_image(y.array[j], fp)
 				bar.update()
 
 def parse_args():

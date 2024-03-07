@@ -7,7 +7,7 @@ from interface.stdout import chainer_like_tqdm
 from utilities.iter import range_batch
 from utilities.image import save_image
 from utilities.stdio import eprint
-from utilities.filesys import mkdirs, build_filepath
+from utilities.filesys import mkdirs, open_filepath_write
 from utilities.numpy import load, save
 from utilities.chainer import to_variable, config_valid
 
@@ -51,9 +51,12 @@ def main(args):
 			ws[0].to_cpu()
 			for j in range(n):
 				filename = f"{i + j + 1}"
-				save(build_filepath(args.dest, filename + "-latent", "npy", args.force), z.array[j])
-				save(build_filepath(args.dest, filename + "-style", "npy", args.force), ws[0].array[j])
-				save_image(y.array[j], build_filepath(args.dest, filename, "png", args.force))
+				with open_filepath_write(args.dest, filename + "-latent", "npy", args.force) as fp:
+					save(fp, z.array[j])
+				with open_filepath_write(args.dest, filename + "-style", "npy", args.force) as fp:
+					save(fp, ws[0].array[j])
+				with open_filepath_write(args.dest, filename, "png", args.force) as fp:
+					save_image(y.array[j], fp)
 				bar.update()
 
 def parse_args():
