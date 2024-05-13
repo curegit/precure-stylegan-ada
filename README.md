@@ -17,7 +17,7 @@ We also trained the models on other common datasets, demonstrating the stability
 - Python >= 3.8
 - Chainer >= 7.2
 - Pillow >= 9.1
-- NumPy >= 1.17
+- NumPy >= 1.17, < 1.26
 - h5py
 - tqdm
 
