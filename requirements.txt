@@ -1,5 +1,5 @@
 chainer >= 7.2
 pillow >= 9.1
-numpy >= 1.17, < 1.26
+numpy >= 1.17
 h5py
 tqdm
