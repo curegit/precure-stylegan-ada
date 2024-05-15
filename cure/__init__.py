@@ -1,13 +1,16 @@
 import sys
+import warnings
 
 patched = False
 
 def patch():
 	global patched
 	if not patched:
-		patch_distutils()
-		patch_sctypes()
-		patch_type_names()
+		with warnings.catch_warnings():
+			warnings.simplefilter("ignore")
+			patch_distutils()
+			patch_sctypes()
+			patch_type_names()
 	patched = True
 
 def patch_distutils():
