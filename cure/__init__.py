@@ -39,10 +39,31 @@ def patch_type_names():
 		np.bool
 	except Exception:
 		np.bool = bool
+	try:
+		np.int
+	except Exception:
 		np.int = int
+	try:
+		np.float
+	except Exception:
 		np.float = float
+	try:
+		np.complex
+	except Exception:
 		np.complex = complex
+	try:
+		np.object
+	except Exception:
 		np.object = object
+	try:
+		np.str
+	except Exception:
 		np.str = str
+	try:
+		np.long
+	except Exception:
 		np.long = int
+	try:
+		np.unicode
+	except Exception:
 		np.unicode = str
