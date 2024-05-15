@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+import cure
+cure.patch()
+
 from sys import exit
 from pydot import graph_from_dot_data
 from chainer.computational_graph import build_computational_graph

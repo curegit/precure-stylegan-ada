@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+import cure
+cure.patch()
+
 from chainer import print_runtime_info
 
 def main():

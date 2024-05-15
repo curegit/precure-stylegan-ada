@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+import cure
+cure.patch()
+
 from sys import exit
 from numpy import array
 from chainer.functions import stack

@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+import cure
+cure.patch()
+
 from sys import exit
 from stylegan.networks import Generator
 from interface.args import CustomArgumentParser

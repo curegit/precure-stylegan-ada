@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+import cure
+cure.patch()
+
 from sys import exit, argv
 from os.path import basename, realpath
 from chainer.iterators import SerialIterator
