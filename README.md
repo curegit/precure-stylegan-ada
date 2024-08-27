@@ -45,7 +45,7 @@ Install the following to run `visualize.py`.
 
 ## Model Zoo
 
-We provide these distributable trained generators on common datasets in the `models` folder.
+We provide these pre-trained generators on common datasets in the `models` folder.
 
 - Flickr-Faces-HQ
 - Animal Faces-HQ (conditional)
