@@ -242,6 +242,7 @@ Use the `-h` option for more details.
 
 - [StyleGAN FastAPI](https://github.com/curegit/stylegan-fastapi)
 - [StyleGAN Vue](https://github.com/curegit/stylegan-vue)
+- [StyleGAN Web](https://github.com/curegit/stylegan-web)
 - [Precure StyleGAN](https://github.com/curegit/precure-stylegan) (old project)
 
 ## References
