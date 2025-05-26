@@ -74,17 +74,17 @@ def main(args):
 	generator.to_device(args.device)
 	ws = []
 	for s in args.style:
-		if (s == "..."):
+		if s == "...":
 			ws.append(...)
 		else:
 			ws.append(to_variable(load(s), device=args.device))
 	if all(w is ... for w in ws):
 		eprint("You must supply at least one style file!")
 		raise RuntimeError("Input error")
-	if (len(ws) > generator.levels):
+	if len(ws) > generator.levels:
 		eprint("Too many styles!")
 		raise RuntimeError("Input error")
-	if (len(ws) != generator.levels):
+	if len(ws) != generator.levels:
 		if args.justify:
 			ws = justify(ws, generator.levels, align_end=args.lerp)
 		else:
