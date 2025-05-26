@@ -236,7 +236,7 @@ Use the `-h` option for more details.
 ### Small Tools
 
 - `tools/check.py` analyzes the Chainer environment.
-- `tools/tile.py` creates a N by M tiled image matrix.
+- `tools/tile.py` creates an N by M tiled image matrix.
 
 ## See Also
 
