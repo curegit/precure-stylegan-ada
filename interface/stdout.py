@@ -73,7 +73,7 @@ def print_training_args(args):
 	elif args.weight > 0:
 		print(f"Path length regularization: coefficient = {args.weight}, decay = {args.decay} (every iteration)")
 	else:
-		print(f"Path length regularization: disabled")
+		print("Path length regularization: disabled")
 	if args.lms is not None and args.ms > 1:
 		print(f"Mode seeking regularization: coefficient = {args.lms} (every {args.ms} iterations)")
 	elif args.lms is not None:
