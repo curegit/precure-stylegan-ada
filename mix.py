@@ -116,7 +116,7 @@ def main(args):
 def parse_args():
 	parser = CustomArgumentParser("Mix style vectors to compose feature-mixed images")
 	parser.require_generator().add_output_args("mixtures")
-	parser.add_argument("style", metavar="STYLE_FILE", nargs="+", help="input style NPY file for each level, specify '...' to use the previous level's one (you can omit the tailing '...')")
+	parser.add_argument("style", metavar="STYLE_FILE", nargs="+", help="input style NPY file for each level, specify '...' to use the previous level's one (you can omit the trailing '...')")
 	parser.add_argument("-j", "--justify", action="store_true", help="automatically justify input style arguments evenly")
 	parser.add_argument("-l", "--lerp", action="store_true", help="use linear interpolation to resolve '...' instead of repetition")
 	parser.add_argument("-n", "--number", metavar="N", type=uint, default=3, help="the number of images to generate")
