@@ -3,3 +3,4 @@ pillow >= 9.1
 numpy >= 1.17
 h5py
 tqdm
+setuptools < 80
