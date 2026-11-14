@@ -14,7 +14,7 @@ We also trained the models on other common datasets, demonstrating the stability
 
 ## Requirements
 
-- Python >= 3.8
+- Python >= 3.8, < 3.15
 - Chainer >= 7.2
 - Pillow >= 9.1
 - NumPy >= 1.17
