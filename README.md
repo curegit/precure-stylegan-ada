@@ -2,6 +2,9 @@
 
 StyleGAN 2.0 implementation using Chainer with Adaptive Discriminator Augmentation
 
+**Development is moving to the [new PyTorch repository](https://github.com/curegit/precure-stylegan-torch).**
+**Please follow it for future updates.**
+
 ## Abstract
 
 This project follows on from [the previous project: Precure StyleGAN](https://github.com/curegit/precure-stylegan).
@@ -20,6 +23,7 @@ We also trained the models on other common datasets, demonstrating the stability
 - NumPy >= 1.17
 - h5py
 - tqdm
+- Setuptools < 80
 
 Use `requirements.txt` to install minimal dependencies for inferencing.
 
